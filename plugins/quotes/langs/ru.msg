@@ -1,0 +1,1 @@
+This resource does not support quotes numbers! = Бездна не поддерживает номера!

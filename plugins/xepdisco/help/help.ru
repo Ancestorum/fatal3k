@@ -1,0 +1,9 @@
+disco.ccat = *, all, info, muc
+disco.desc = Показывает результаты обзора сервисов для указанного JID.\nТакже можно запросить обзор по узлу (node). Формат запроса jid#node.\nВторой или третий (если также задается ограничитель кол-ва) параметр - поиск. Ищет заданное слово в JID и описании элемента диско. Если поисковым словом задать имя конференции до названия сервера (например qwerty@), то покажет место этой конференции в общем рейтинге.\nВ общий чат может дать max 50 результатов, без указания кол-ва - 10.\nВ приват может дать max 250, без указания кол-ва 50.
+disco.synt = %prefix%disco <сервер> <кол-во_результатов> <поисковая_строка>
+disco.exam = %prefix%disco jabber.aq
+disco.exam = %prefix%disco conference.jabber.aq 5
+disco.exam = %prefix%disco conference.jabber.aq qwerty
+disco.exam = %prefix%disco conference.jabber.aq 5 qwerty
+disco.exam = %prefix%disco conference.jabber.aq qwerty@
+disco.exam = %prefix%disco jabber.aq#services

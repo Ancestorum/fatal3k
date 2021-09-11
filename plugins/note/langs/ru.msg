@@ -1,0 +1,9 @@
+Note has been added! = Заметка добавлена!
+Insert error! May be this note already exists! = Ошибка добавления! Возможно, эта заметка уже существует!
+Added = Записано
+at = в
+Note (total: %s):\n\n%s%s%s = Заметка (всего: %s):\n\n%s%s%s
+Notes (total: %s):\n\n%s%s%s = Заметки (всего: %s):\n\n%s%s%s
+There are no notes! = Нет заметок!
+Note number %s has been deleted! = Заметка номер %s удалена!
+All notes has been removed! = Заметки очищены!

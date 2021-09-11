@@ -1,0 +1,10 @@
+Authorization request has been sent to %s! = Контакту %s послан запрос на авторизацию!
+Account %s already is in the roster, but has been moved to bot-users group! = Контакт %s уже в ростере бота, но перенесен в группу bot-users!
+Account %s already is in the roster and authorized! = Контакт %s уже в ростере бота и авторизован!
+Account %s has been added in the roster, authorization request has been sent! = Контакт %s добавлен в ростер бота и ему отправлен запрос на авторизацию!
+Subscription and account %s has been removed from the roster! = Подписка и контакт %s удалены из ростера бота!
+Account %s not found in the roster! = Контакт %s не найден в ростере бота!
+New account %s has been authorized and added in the roster! = Новый контакт %s был авторизован и добавлен в ростер!
+Account %s has rejected subscription and has not been added! = Контакт %s отказался от подписки и не был добавлен в ростер!
+Roster users (total: %s):\n\n%s = Пользователи бота (всего: %s):\n\n%s
+User: %s\n     \Group(s): %s\n     \Subscription: %s\n     \Status: %s\n     \Access: %s\n = Пользователь: %s\n     \Группы: %s\n     \Подписка: %s\n     \Статус: %s\n     \Доступ: %s\n

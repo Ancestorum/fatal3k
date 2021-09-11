@@ -1,0 +1,13 @@
+[%s]--- %s (%s) has changed nick to %s = [%s]--- %s (%s) изменил имя на %s
+[%s]--- %s has been kicked = [%s]--- %s выгнали из комнаты
+[%s]--- %s has been banned = [%s]--- %s запретили входить в комнату
+[%s]--- %s has left = [%s]--- %s вышел из комнаты
+[%s]--- %s (%s) has joined groupchat as %s/%s = [%s]--- %s (%s) вошел в комнату как %s/%s
+List of watchers has been cleared! = Список конференций за которыми установлено наблюдение очищен, наблюдение снято!
+Watcher has not been set yet! = Наблюдение еще не устанавливалось!
+Invalid number of groupchat! = Неверный номер конференции!
+Groupchat %s has been removed from list of watchers! = Конференция %s удалена из списка конференций за которыми установлено наблюдение, наблюдение снято!
+Watcher for %s has been set! = Наблюдение за конференцией %s установлено!
+Unable to set watcher: bot is not present in tnis groupchat! = Невозможно установить наблюдение, по причине: бот не присутствует в этой конференции!
+Watcher has been already set! = Наблюдение за этой конференцией уже установлено!
+Groupchats with watchers (total: %s):\n\n%s = Конференции за которыми установлено наблюдение (всего: %s):\n\n%s

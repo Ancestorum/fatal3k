@@ -1,0 +1,1 @@
+Statistics of %s:\n\n = Статистика по %s:\n\n

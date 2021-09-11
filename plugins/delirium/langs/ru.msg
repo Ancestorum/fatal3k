@@ -1,0 +1,10 @@
+Sneaky fuckin' Russian? = Шибко умный, да?
+List of users used this command is empty! = Список пользователей использовавших эту команду пуст!
+List of users used this command (total: %s):\n\n%s = Список пользователей использовавших эту команду (всего: %s):\n\n%s
+Replacement string not found: %nick%! = Не найдена строка замены: %nick%!
+Poke phrase has been added! = Добавлено!
+Poke phrase has been deleted! = Удалено!
+Poke phrase note found! = Фраза не найдена!
+List of poke phrases (total: %s):\n\n%s = Список фраз (всего: %s):\n\n%s
+List of poke phrases is empty! = Список фраз пуст!
+Passed! = Пройден успешно!

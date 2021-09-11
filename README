@@ -1,0 +1,16 @@
+fatal-bot v3.0a [Neutrino] package.
+
+Requirements:
+    1) OS Linux/Unix/Win NT.
+    2) Python 3.0 with SQLite3 support.
+
+How to install and use:
+    1) Rename fatal.conf.dist to fatal.conf and edit.
+    2) Start fatal-bot by run fatal.py or fatalctl. To daemonize bot use commandline option -d. For details see ./fatal.py -h or ./fatalctl -h
+    3) From botadmin jid type to bot jid "[COMM_PREFIX]join some_chat@at.some.server" default COMM_PREFIX is "." or use fatal-bot config parameter DEFAULT_CHATROOM to join to your first chatroom.
+    4) fatal-dev@conference.jabber.ru is a bot dev conf.
+    5) Mercurial repos: https://bitbucket.org/ancestor/fatal-bot
+
+PS: Good luck with fatal-bot! ;)
+
+Copyright (c) 2009-2021, Ancestors Soft.

@@ -1,0 +1,122 @@
+#-----------------------------
+# fatal-bot configuration file
+
+# Jabber account where fatal will login
+# If you want to connect jid on specific server, use form <jid> = <connect_server>,
+# for example: user@jabber.org = jabber.sever.com, type it as a parameter in any line
+#------------------------------------------------------------------------------------
+jid = login@server.tld, login2@server.tld, loginN@server.tld
+password = password, password2, passwordN
+port = 5222
+resource = fatal
+
+# TLS/SSL, if no need, comment or leave as is
+#---------------------------------------------
+use_tls_ssl = 0
+
+# Proxy server, if there is a proxy, simply uncomment this params
+#----------------------------------------------------------------
+# proxy_host = 148.233.239.23
+# proxy_port = 80
+# proxy_user = someuser
+# proxy_password = secret
+
+# Default chatroom, uncomment and specify if needed
+#--------------------------------------------------
+# default_chatroom = chatroom@conference.server.tld
+
+# Chatroom nick
+#---------------
+default_nick = fatal-bot
+
+# Keep-alive period in seconds
+#-----------------------------
+keep_alive = 300
+ping_tries = 2
+
+# Jabber accounts that will administrate fatal
+#---------------------------------------------
+admins = admin1@server.tld, admin2@server.tld, adminN@server.tld
+admin_password = secret
+
+# Controls delivery of all private-messages in bot-roster to admin jids
+#----------------------------------------------------------------------
+admins_delivery = 0
+
+# Controls autosubscribe
+#-----------------------
+auto_subscribe = 0
+
+# fatal-bot will try to reconnect on disconnections
+#--------------------------------------------------
+auto_reconnect = 1
+
+# Allow to reconnect failed connection jids forever
+#--------------------------------------------------
+reconnect_forever = 0
+
+# Controls hide/show of fatal-bot console at startup
+#---------------------------------------------------
+show_console = 0
+
+# Specify shell commands and expressions that allowed to run through bot
+# When "all" found then all commands and expressions will be allowed to run
+#--------------------------------------------------------------------------
+shell_allowed = all
+
+# Command prefix. For example: . or * or something you like
+#----------------------------------------------------------
+comm_prefix = .
+
+# List of disabled fatal plugins
+# Uncomment and specify it if you want to disable some plugins
+#-------------------------------------------------------------
+#DISABLED_PLUGINS = plugin1,plugin2,pluginN
+
+# Privacy lists support through xep0016
+#--------------------------------------
+privacy_lists = 1
+
+# Msg chatrooms&private limits
+#-----------------------------
+msg_chatroom_limit = 5000
+msg_private_limit = 10000
+
+# Where to store HTML files from chatrooms logs
+# To disable logging simply comment this param
+#----------------------------------------------
+public_log_dir = logs
+
+# Where to store logs of private chats
+# To disable logging simply comment this param
+#---------------------------------------------
+private_log_dir = privlogs
+
+# Allows to turn on debug mode of xmpppy library
+#-----------------------------------------------
+debug_mode = 0
+
+# If not null bot reloads plugins and core with changed source-code
+# Specifies interval (in minutes) when check and reload changed code
+#-------------------------------------------------------------------
+reload_code = 0
+
+# Only for advanced operating system users
+# If you don't know what does it mean please don't touch
+# Allow to specify count of simultaneously runned threads
+#--------------------------------------------------------
+max_active_threads = 50
+
+# Allow to specify delay before start of each thread
+#---------------------------------------------------
+thread_start_delay = 0.1
+
+# Only for advanced operating system users
+# If you don't know what does it mean please don't touch
+# Stack size tuning for main thread and the others in bytes
+#----------------------------------------------------------
+main_proc_stk_size = 1048576
+def_stk_size = 524288
+
+# End of fatal-bot configuration file
+#------------------------------------

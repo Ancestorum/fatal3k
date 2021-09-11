@@ -1,0 +1,10 @@
+List of auto-command rules has been cleared! = Список правил автокоманд очищен!
+List of auto-command rules (total: %s):\n\n%s = Список правил автокоманд (всего: %s):\n\n%s
+List of auto-command rules is empty! = Список правил автокоманд пуст!
+Invalid number of auto-command rule! = Неверный номер правила автокоманд!
+Auto-command rule has been removed! = Правило автокоманды удалено!
+Command has not specified! = Команда не указана!
+Too few rights to use this command! = Недостаточно прав для использования этой команды!
+Too few rights to use this alias! = Недостаточно прав для использования этого алиаса!
+Auto-command rule has been added! = Правило автокоманды добавлено!
+Command or alias not found! = Команда или алиас не найден(а)!

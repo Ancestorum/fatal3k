@@ -1,0 +1,17 @@
+Error [%s]: Your jid is prohibited in this groupchat! = Ошибка [%s]: Ваш джид запрещен в этой конференции!
+Error [%s]: Selected nick is prohibited in this groupchat! = Ошибка [%s]: Выбранный ник запрещен в этой конференции!
+Error [%s]: Nick is too long! = Ошибка [%s]: Слишком длинный ник!
+Error [%s]: Nick with spaces by edges! = Ошибка [%s]: Ник с пробелами по краям!
+Error [%s]: Your client has empty presence caps! = Ошибка [%s]: Клиенты без капса запрещены в этой конференции!
+Error [%s]: Your status message is too long! = Ошибка [%s]: Ваше статусное сообщение слишком длинное!
+Error [%s]: Your nick contains obscene words! = Ошибка [%s]: Ваш ник содержит нецензурные слова!
+Error [%s]: Your status message contains obscene words! = Ошибка [%s]: Ваше статусное сообщение содержит нецензурные слова!
+Error: Your status message is too long! = Ошибка: Ваше статусное сообщение слишком длинное!
+Error: Nick with spaces by edges! = Ошибка: Ник с пробелами по краям!
+Error: Your client has empty presence caps! = Ошибка: Клиенты без капса запрещены в этой конференции!
+Error: Nick is too long! = Ошибка: Слишком длинный ник!
+Error: Selected nick is prohibited in this groupchat! = Ошибка: Выбранный ник запрещен в этой конференции!
+Error: Message is too long! = Ошибка: Слишком длинное сообщение!
+Error: Your nick contains obscene words! = Ошибка: Ваш ник содержит нецензурные слова!
+Error: Your status message contains obscene words! = Ошибка: Ваше статусное сообщение содержит нецензурные слова!
+Error: Your message contains obscene words! = Ошибка: Ваше сообщение содержит нецензурные слова!

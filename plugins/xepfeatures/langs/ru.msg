@@ -1,0 +1,2 @@
+Jabber-client of %s supports following XEPs (total: %s):\n\n%s = Клиент %s поддерживает следующие стандарты (всего: %s):\n\n%s
+Jabber-client supports following XEPs (total: %s):\n\n%s = Клиент поддерживает следующие стандарты (всего: %s):\n\n%s
