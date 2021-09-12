@@ -421,7 +421,8 @@ class TLS(PlugIn):
         #context = ssl.create_default_context()
 
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        context.load_verify_locations('W:\\Repos\\fatal3k\\modules\\xmpp\\lets-encrypt-x3.pem')
+        
+        context.load_verify_locations(self._owner._cert)
         
         tcpsock=self._owner.Connection
         #tcpsock._sslObj = ssl.wrap_socket(tcpsock._sock, None, None)

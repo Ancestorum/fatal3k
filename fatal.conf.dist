@@ -14,6 +14,8 @@ resource = fatal
 #---------------------------------------------
 use_tls_ssl = 0
 
+cert = path/to/certificate.pem
+
 # Proxy server, if there is a proxy, simply uncomment this params
 #----------------------------------------------------------------
 # proxy_host = 148.233.239.23

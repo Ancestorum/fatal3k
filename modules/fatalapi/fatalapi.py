@@ -3330,9 +3330,10 @@ def connect_client(jid, password='', resource=''):
 
     proxy = get_fatal_var('fproxy')
     use_tls_ssl = get_int_cfg_param('use_tls_ssl')
+    certificate = get_cfg_param('cert')
     
     if use_tls_ssl:
-        conn = jconn.connect(server=(connect_server, port), proxy=proxy, use_srv=False)
+        conn = jconn.connect(server=(connect_server, port), proxy=proxy, cert=certificate, use_srv=False)
     else:
         conn = jconn.connect(server=(connect_server, port), proxy=proxy, secure=use_tls_ssl, use_srv=True)
     

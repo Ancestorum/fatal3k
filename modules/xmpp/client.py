@@ -112,6 +112,7 @@ class CommonClient:
         self.RegisterDisconnectHandler(self.DisconnectHandler)
         self.connected=''
         self._route=0
+        self._cert=None
 
     def RegisterDisconnectHandler(self,handler):
         """ Register handler that will be called on disconnect."""
@@ -168,9 +169,10 @@ class CommonClient:
         self.Dispatcher.restoreHandlers(handlerssave)
         return self.connected
 
-    def connect(self,server=None,proxy=None,ssl=None,use_srv=None):
+    def connect(self,server=None,proxy=None,ssl=None, cert=None,use_srv=None):
         """ Make a tcp/ip connection, protect it with tls/ssl if possible and start XMPP stream.
             Returns None or 'tcp' or 'tls', depending on the result."""
+        self._cert=cert
         if not server: server=(self.Server,self.Port)
         if proxy: sock=transports.HTTPPROXYsocket(proxy,server,use_srv)
         else: sock=transports.TCPsocket(server,use_srv)
@@ -195,7 +197,7 @@ class CommonClient:
 
 class Client(CommonClient):
     """ Example client class, based on CommonClient. """
-    def connect(self,server=None,proxy=None,secure=None,use_srv=True):
+    def connect(self,server=None,proxy=None,secure=None,cert=None,use_srv=True):
         """ Connect to jabber server. If you want to specify different ip/port to connect to you can
             pass it as tuple as first parameter. If there is HTTP proxy between you and server 
             specify it's address and credentials (if needed) in the second argument.
@@ -204,7 +206,8 @@ class Client(CommonClient):
             If you want to disable tls/ssl support completely, set it to 0.
             Example: connect(('192.168.5.5',5222),{'host':'proxy.my.net','port':8080,'user':'me','password':'secret'})
             Returns '' or 'tcp' or 'tls', depending on the result."""
-        if not CommonClient.connect(self,server,proxy,secure,use_srv) or secure!=None and not secure: return self.connected
+        self._cert=cert
+        if not CommonClient.connect(self,server,proxy,secure,cert,use_srv) or secure!=None and not secure: return self.connected
         transports.TLS().PlugIn(self)
         if 'version' not in self.Dispatcher.Stream._document_attrs or not self.Dispatcher.Stream._document_attrs['version']=='1.0': return self.connected
         while not self.Dispatcher.Stream.features and self.Process(1): pass      # If we get version 1.0 stream the features tag MUST BE presented
@@ -219,7 +222,7 @@ class Client(CommonClient):
             random one or library name used. """
         self._User,self._Password,self._Resource=user,password,resource
         while not self.Dispatcher.Stream._document_attrs and self.Process(1): pass
-        if 'version' in self.Dispatcher.Stream._document_attrs and self.Dispatcher.Stream._document_attrs['version']=='1.0':
+        if 'version' in self.Dispatcher.Stream._document_attrs: and self.Dispatcher.Stream._document_attrs['version']=='1.0':
             while not self.Dispatcher.Stream.features and self.Process(1): pass      # If we get version 1.0 stream the features tag MUST BE presented
         if sasl: auth.SASL(user,password).PlugIn(self)
         if not sasl or self.SASL.startsasl=='not-supported':
