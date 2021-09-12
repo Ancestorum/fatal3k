@@ -222,7 +222,7 @@ class Client(CommonClient):
             random one or library name used. """
         self._User,self._Password,self._Resource=user,password,resource
         while not self.Dispatcher.Stream._document_attrs and self.Process(1): pass
-        if 'version' in self.Dispatcher.Stream._document_attrs: and self.Dispatcher.Stream._document_attrs['version']=='1.0':
+        if 'version' in self.Dispatcher.Stream._document_attrs and self.Dispatcher.Stream._document_attrs['version']=='1.0':
             while not self.Dispatcher.Stream.features and self.Process(1): pass      # If we get version 1.0 stream the features tag MUST BE presented
         if sasl: auth.SASL(user,password).PlugIn(self)
         if not sasl or self.SASL.startsasl=='not-supported':
