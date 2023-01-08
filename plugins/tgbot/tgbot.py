@@ -43,15 +43,9 @@ async def get_text_messages(message):
     cparams = message.text.replace(cmdname, '') 
     
     comm_hnd = get_fatal_var('command_handlers', cmdname)
-    
-    jdres = get_cfg_param('admins')
-    
-    bjid = get_cfg_param('jid')
-    
-    dest_source = [bjid, '', '']
 
     if comm_hnd:
-        await atbot.reply_to(message, comm_hnd('console', dest_source, cparams))
+        await atbot.reply_to(message, comm_hnd('console', ['', '', ''], cparams))
     else:
         await atbot.reply_to(message, l('Unknown command!'))
 
