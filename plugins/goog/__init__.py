@@ -15,4 +15,4 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
-from .google import *
+from .goog import *

@@ -74,11 +74,11 @@ if not sys.stdin.isatty():
     
 def main():
     try:
-        cthr = threading.currentThread()
+        cthr = threading.current_thread()
         
         st_time = time.strftime('%H.%M.%S', time.localtime(time.time()))
         
-        cthr.setName('all/main.main_thread.%s' % (st_time))
+        cthr.name = 'all/main.main_thread.%s' % (st_time)
         
         set_fatal_var('info', 'start', time.time())
         

@@ -382,24 +382,28 @@ def is_config_loaded():
 
 def get_revision(sim=False):
     try:
-        if os.path.exists('.hg/cache/branchheads'):
-            fp = file('.hg/cache/branchheads')
+        if os.path.exists('.git\logs\HEAD'):
+            fp = open('.git\logs\HEAD', 'r')
         else:
-            fp = file('.hg/branchheads.cache')
+            return ''
+                
+        data = fp.read()
         
-        data = fp.readlines()
-        rlin = data[0]
-        fp.close()
-        srli = rlin.split()
-        rev = srli[1]
-        rev = 333 + int(rev.strip())
-
-        if sim:
-            return 'r%s' % (rev)
+        revc = 0
+        
+        if data.count('commit:'):
+            revc = data.count('\tcommit:')
         else:
-            return ' (r%s)' % (rev)
+            return ''        
+        
+        fp.close()
+       
+        if sim:
+            return 'r%s' % (revc)
+        else:
+            return ' (r%s)' % (revc)
     except Exception:
-        return ''
+       return ''
 
 class fThread(threading.Thread):
     

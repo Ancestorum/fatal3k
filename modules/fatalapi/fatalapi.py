@@ -117,7 +117,7 @@ def sprint(*args):
 
 def copyright():
     fatal_copy_head = ' ' + '=' * 41
-    fatal_copy_mid = '< Copyright (c) 2009-2021 Ancestors Soft  >'
+    fatal_copy_mid = '< Copyright (c) 2009-2023 Ancestors Soft  >'
     fatal_copy_foot = ' ' + '=' * 41
 
     sprint()
@@ -3221,7 +3221,7 @@ def discoHnd(conn, request, typ):
             osname.close()
         
         if svnr:
-            dfdli.append(('svn', svnr))
+            dfdli.append(('git', svnr))
         
         dfdli.append(('os', osver))
         
