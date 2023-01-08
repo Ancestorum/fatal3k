@@ -12,7 +12,7 @@ resource = fatal
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------
-use_tls_ssl = 0
+use_tls_ssl = 1
 
 cert = path/to/certificate.pem
 

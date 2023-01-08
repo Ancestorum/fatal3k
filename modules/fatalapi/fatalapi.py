@@ -142,7 +142,7 @@ def fatal_version():
     
     vstr = '\n+----------------------------------------------------+\n'
     vstr += '+fatal-bot %s,   free   jabber(XMPP)   bot.+\n' % (fver)
-    vstr += '+----> Copyright (c) 2009-2021 Ancestors Soft. <-----+\n'
+    vstr += '+----> Copyright (c) 2009-2023 Ancestors Soft. <-----+\n'
     
     sprint(vstr, cl_bgreen, True)
 

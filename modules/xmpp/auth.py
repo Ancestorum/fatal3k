@@ -349,11 +349,11 @@ class Bind(PlugIn):
         if self._owner.Dispatcher.Stream.features:
             try: self.FeaturesHandler(self._owner.Dispatcher,self._owner.Dispatcher.Stream.features)
             except NodeProcessed: pass
-        else: self._owner.RegisterHandler('features',self.FeaturesHandler)
+        else: self._owner.RegisterHandler('features',self.FeaturesHandler,xmlns=NS_STREAMS)
 
     def plugout(self):
         """ Remove Bind handler from owner's dispatcher. Used internally. """
-        self._owner.UnregisterHandler('features',self.FeaturesHandler)
+        self._owner.UnregisterHandler('features',self.FeaturesHandler,xmlns=NS_STREAMS)
 
     def FeaturesHandler(self,conn,feats):
         """ Determine if server supports resource binding and set some internal attributes accordingly. """

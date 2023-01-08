@@ -1322,7 +1322,7 @@ _fatalVars.addVar('last', {'c': '', 't': 0})
 
 _fatalVars.addVar('info', {'start': 0, 'ses': 0, 'msg': 0, 'prs': 0, 'iq': 0, 'cmd': 0, 'thr': 0, 'pcycles': 1, 'btraffic': 0, 'pld_thr_id': 0})
 
-_fatalVars.addVar('hgrepos', 'https://bitbucket.org/ancestor/fatal-bot')
+_fatalVars.addVar('hgrepos', 'https://github.com/Ancestorum/fatal3k')
 
 _revision = get_revision()
 _fatalVars.addVar('ftver', {'rev': _revision, 'caps': 'http://fatal-dev.ru/bot/caps', 'botver': {'name': 'fatal-bot [Neutrino]', 'ver': 'v3.0a%s', 'os': ''}})
