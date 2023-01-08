@@ -10,6 +10,11 @@ password = password, password2, passwordN
 port = 5222
 resource = fatal
 
+# Telegram bot api token and chat_id for plugin tgbot
+#----------------------------------------------------
+bot_api_token = <API_TOKEN>
+tgm_chat_id = <CHAT_ID>
+
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------
 use_tls_ssl = 1
