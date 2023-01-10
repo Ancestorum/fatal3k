@@ -131,7 +131,14 @@ def handler_watcher_mess(type, source, body):
                     if splb[0] == '/me':
                         rep = '[%s]* %s %s' % (sgch, nick, splb[1])
                 
-                return msg(wjid, rep)
+                bnick = get_bot_nick(groupchat)
+                
+                if (wjid == 'telegram') and (type != 'private'):
+                    if bnick != nick:
+                        return msg(wjid, rep)
+                else:
+                    if type != 'private':
+                        return msg(wjid, rep)
     
 def handler_watcher(type, source, parameters):
     cid = get_client_id()
@@ -148,6 +155,9 @@ def handler_watcher(type, source, parameters):
 
     if parameters:
         parameters = parameters.strip()
+        
+        if type == 'telegram':
+            jid = type
         
         if parameters[0] == '-' and len(parameters) == 1:
             rmv_fatal_var(cid, 'watchers', jid)
@@ -181,7 +191,10 @@ def handler_watcher(type, source, parameters):
             
             if not check_jid(wgch):
                 return reply(type, source, l('Invalid syntax!'))
-
+            
+            if type == 'telegram':
+                jid = type            
+            
             if not is_var_set(cid, 'watchers', jid):
                 set_fatal_var(cid, 'watchers', jid, 'gchs', [])
             
@@ -200,6 +213,9 @@ def handler_watcher(type, source, parameters):
             else:
                 return reply(type, source, l('Watcher has been already set!'))
     else:
+        if type == 'telegram':
+            jid = type
+        
         if is_var_set(cid, 'watchers', jid):
             rep = l('Groupchats with watchers (total: %s):\n\n%s')
             

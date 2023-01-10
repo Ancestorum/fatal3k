@@ -2394,7 +2394,14 @@ def msg(target, body):
             return
         except Exception:
             return
-
+    
+    if target == 'telegram':
+        tbot = get_fatal_var('tgbot')
+        #chat_id = get_cfg_param('tgm_chat_id')
+        tgmsg = get_fatal_var('last_tg_msg')
+        tbot.send_message(tgmsg.chat.id, body)
+        return
+    
     if not isinstance(body, str):
         body = body.decode('utf8', 'replace')
         
@@ -2456,6 +2463,9 @@ def reply(ltype, source, body):
     elif ltype == 'console':
         msg('console', body)
         return body
+    elif ltype == 'telegram':
+        msg('telegram', body)
+        return body    
     elif ltype == 'null':
         set_fatal_var(cid, source[0], 'last_cmd_result', body)
         return body

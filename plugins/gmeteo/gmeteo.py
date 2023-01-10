@@ -18,6 +18,7 @@
 __all__ = []
 
 import xml.dom.minidom as mdom
+import tempfile
 
 from fatalapi import *
 
@@ -41,12 +42,14 @@ def get_meteo_info(query):
 
 def get_gis_weather(ccode):
     try:
-        wreq = urllib.request.Request('http://informer.gismeteo.ru/xml/%s_1.xml' % (ccode))
+        wreq = urllib.request.Request('http://informer.gismeteo.ru/xml/%s_1.xml' % (ccode),\
+            None, {'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'})
+        
         resp = urllib.request.urlopen(wreq)
         wxml = resp.read()
         resp.close()
         return wxml
-    except:
+    except Exception:
         return ''
     
 def get_element_attvals(dom, element, idx=0):
@@ -59,12 +62,12 @@ def get_element_attvals(dom, element, idx=0):
             attvals[att] = elnode[idx].getAttribute(att)
 
         return attvals
-    except:
+    except Exception:
         return ''
 
 def parse_xml(xml):
     try:
-        tmpxml = os.tmpfile()
+        tmpxml = tempfile.TemporaryFile()
         tmpxml.write(xml)
         tmpxml.seek(0)
         
@@ -75,7 +78,7 @@ def parse_xml(xml):
         dom.normalize()
         
         return dom
-    except:
+    except Exception:
         return ''
     
 def handler_weather_gismeteo(type, source, parameters):
