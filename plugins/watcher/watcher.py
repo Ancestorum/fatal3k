@@ -135,6 +135,11 @@ def handler_watcher_mess(type, source, body):
                 
                 if (wjid == 'telegram') and (type != 'private'):
                     if bnick != nick:
+                        if is_var_set(cid, 'tgm_grp_chid'):                        
+                            tgmsg = get_fatal_var(cid, 'last_tg_msg')
+                            gchid = get_fatal_var(cid, 'tgm_grp_chid')
+                            tgmsg.chat.id = gchid
+                        
                         return msg(wjid, rep)
                 else:
                     if type != 'private':

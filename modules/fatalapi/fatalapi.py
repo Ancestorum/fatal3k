@@ -2396,9 +2396,9 @@ def msg(target, body):
             return
     
     if target == 'telegram':
-        tbot = get_fatal_var('tgbot')
-        #chat_id = get_cfg_param('tgm_chat_id')
-        tgmsg = get_fatal_var('last_tg_msg')
+        cid = get_client_id()
+        tbot = get_fatal_var(cid, 'tgbot')
+        tgmsg = get_fatal_var(cid, 'last_tg_msg')
         tbot.send_message(tgmsg.chat.id, body)
         return
     
