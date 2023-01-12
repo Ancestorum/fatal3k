@@ -893,9 +893,6 @@ class _fHelp(fLocale):
         msgs = self._read_file(filename)
         
         for cli in msgs:
-            if '#' in cli or not cli.strip():
-                continue
-            
             if not cli.endswith('\n'):
                 cli = cli + '\n'
             

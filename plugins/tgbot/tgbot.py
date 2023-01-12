@@ -19,17 +19,68 @@ __all__ = []
 
 from fatalapi import *
 
+import asyncio
 import telebot
 from telebot.async_telebot import AsyncTeleBot
-import asyncio
 
-_cids = get_lst_cfg_param('jid')
 _bot_api_token = get_cfg_param('bot_api_token')
 
 tbot = telebot.TeleBot(_bot_api_token)
 atbot = AsyncTeleBot(_bot_api_token)
 
-set_fatal_var(_cids[0], 'tgbot', tbot)
+def get_tg_chid(gtitle):
+    cid = get_client_id()
+    
+    gtitle = gtitle.replace('&quot;', '"')
+
+    sql = "SELECT id FROM tgchatids WHERE gname='%s';" % (gtitle)
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    return qres[0][0]
+
+def chid_exists(chid):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+
+    sql = "SELECT * FROM tgchatids WHERE id='%s';" % (chid)
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres:
+        return True
+    else:
+        return False
+
+def rmv_tg_chid(chid):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+    
+    if not chid_exists(chid):
+        sql = 'DELETE FROM tgchatids WHERE id="%s";' % (chid)
+   
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    return qres
+
+def set_tg_chid(chid, gtitle):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+    
+    gtitle = gtitle.replace('"', '&quot;')
+    
+    if not chid_exists(chid):
+        sql = "INSERT INTO tgchatids (id, gname) VALUES ('%s', '%s');" % (chid, gtitle.strip())
+    else:
+        sql = "UPDATE tgchatids SET \"gname\"='%s' WHERE \"id\"='%s';" % (gtitle.strip(), chid)
+    
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    return qres
 
 def handler_tbot(type, source, parameters):
     if parameters:
@@ -42,6 +93,10 @@ def handler_tbot(type, source, parameters):
 @atbot.message_handler(content_types=['text'])
 async def command_messages(message):
     cid = get_client_id()
+    
+    if message.chat.type == 'group':
+        if not chid_exists(message.chat.id): 
+            set_tg_chid(message.chat.id, message.chat.title)
     
     set_fatal_var(cid, 'last_tg_msg', message)
     
@@ -58,7 +113,7 @@ async def command_messages(message):
         comm_hnd = get_fatal_var('command_handlers', wprname)
 
         if comm_hnd:
-            comm_hnd('telegram', ['', '', ''], cparams)
+            comm_hnd('telegram', ['', '', ''], cparams.strip())
         else:
             await atbot.reply_to(message, l('Unknown command!'))
     else:
@@ -78,7 +133,24 @@ def polling_proc():
         asyncio.run(atbot.polling())        
         time.sleep(10)
 
-call_in_sep_thr(_cids[0] + '/tbot_polling', polling_proc) 
+def start_tgm_polling():
+    cid = get_client_id()
+    
+    set_fatal_var(cid, 'tgbot', tbot)    
+
+    call_in_sep_thr(cid + '/tbot_polling', polling_proc) 
+
+def create_tg_chids_table():
+    cid = get_client_id()
+    
+    if not is_db_exists('dynamic/%s/tgchatids.db' % (cid)):
+        sql = 'CREATE TABLE tgchatids (id VARCHAR(30) NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'
+        sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+        
+        sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (id);'
+        sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)    
 
 register_command_handler(handler_tbot, 'tgsend', 100)
 
+register_stage0_init(create_tg_chids_table)
+register_stage0_init(start_tgm_polling)

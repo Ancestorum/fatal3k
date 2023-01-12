@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 ##   browser.py
 ##
 ##   Copyright (C) 2004 Alexey "Snake" Nezhdanov
@@ -13,11 +12,11 @@
 ##   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ##   GNU General Public License for more details.
 
-# $Id: browser.py,v 1.12 2007/05/13 17:55:14 normanr Exp $
+# $Id$
 
 """Browser module provides DISCO server framework for your application.
 This functionality can be used for very different purposes - from publishing
-software version and supported features to building of "jabber site" that users
+software version and supported features to building of "XMPP site" that users
 can navigate with their disco browsers and interact with active content.
 
 Such functionality is achieved via registering "DISCO handlers" that are
@@ -26,7 +25,6 @@ automatically called when user requests some node of your disco tree.
 
 from .dispatcher import *
 from .client import PlugIn
-from .protocol import *
 
 class Browser(PlugIn):
     """ WARNING! This class is for components only. It will not work in client mode!
@@ -38,7 +36,7 @@ class Browser(PlugIn):
         node/jid combination only one (or none) handler registered.
         You can register static information or the fully-blown function that will
         calculate the answer dynamically.
-        Example of static info (see JEP-0030, examples 13-14):
+        Example of static info (see XEP-0030, examples 13-14):
         # cl - your xmpppy connection instance.
         b=xmpp.browser.Browser()
         b.PlugIn(cl)
@@ -66,7 +64,7 @@ class Browser(PlugIn):
         info should be a dicionary and must have keys 'ids' and 'features'.
         Both of them should be lists:
             ids is a list of dictionaries and features is a list of text strings.
-        Example (see JEP-0030, examples 1-2)
+        Example (see XEP-0030, examples 1-2)
         # cl - your xmpppy connection instance.
         b=xmpp.browser.Browser()
         b.PlugIn(cl)
@@ -76,7 +74,7 @@ class Browser(PlugIn):
         ids.append({'category':'directory','type':'chatroom','name':'Play-Specific Chatrooms'})
         features=[NS_DISCO_INFO,NS_DISCO_ITEMS,NS_MUC,NS_REGISTER,NS_SEARCH,NS_TIME,NS_VERSION]
         info={'ids':ids,'features':features}
-        # info['xdata']=xmpp.protocol.DataForm() # JEP-0128
+        # info['xdata']=xmpp.protocol.DataForm() # XEP-0128
         b.setDiscoHandler({'items':[],'info':info})
     """
     def __init__(self):
@@ -119,7 +117,7 @@ class Browser(PlugIn):
             elif set or '' in cur: return cur,''
             else: return None,None
         if 1 in cur or set: return cur,1
-        raise "Corrupted data"
+        raise Exception("Corrupted data")
 
     def setDiscoHandler(self,handler,node='',jid=''):
         """ This is the main method that you will use in this class.
@@ -127,7 +125,7 @@ class Browser(PlugIn):
             as handler of some disco tree branch.
             If you do not specify the node this handler will be used for all queried nodes.
             If you do not specify the jid this handler will be used for all queried JIDs.
-            
+
             Usage:
             cl.Browser.setDiscoHandler(someDict,node,jid)
             or
@@ -146,8 +144,8 @@ class Browser(PlugIn):
                                   {'category':'category1','type':'type1','name':'name1'},
                                   {'category':'category2','type':'type2','name':'name2'},
                                   {'category':'category3','type':'type3','name':'name3'},
-                                ], 
-                          'features':['feature1','feature2','feature3','feature4'], 
+                                ],
+                          'features':['feature1','feature2','feature3','feature4'],
                           'xdata':DataForm
                         }
                      }
@@ -181,26 +179,21 @@ class Browser(PlugIn):
             del node[dict][node[str]]
             return handler
 
-    def _DiscoveryHandler(self, conn, request):
+    def _DiscoveryHandler(self,conn,request):
         """ Servers DISCO iq request from the remote client.
             Automatically determines the best handler to use and calls it
             to handle the request. Used internally.
         """
-        
-        node = request.getQuerynode()
-        
+        node=request.getQuerynode()
         if node:
-            nodestr = node
+            nodestr=node
         else:
-            nodestr = 'None'
-        
-        handler =self.getDiscoHandler(node,request.getTo())
-        
+            nodestr='None'
+        handler=self.getDiscoHandler(node,request.getTo())
         if not handler:
             self.DEBUG("No Handler for request with jid->%s node->%s ns->%s"%(request.getTo().__str__().encode('utf8'),nodestr.encode('utf8'),request.getQueryNS().encode('utf8')),'error')
             conn.send(Error(request,ERR_ITEM_NOT_FOUND))
             raise NodeProcessed
-        
         self.DEBUG("Handling request with jid->%s node->%s ns->%s"%(request.getTo().__str__().encode('utf8'),nodestr.encode('utf8'),request.getQueryNS().encode('utf8')),'ok')
         rep=request.buildReply('result')
         if node: rep.setQuerynode(node)

@@ -48,13 +48,14 @@ def handler_disco(type, source, parameters):
                     stop = 10
                 else: 
                     stop = 50
+            
             if type == 'public':
                 if stop > 50: 
                     stop = '50'
             else:
                 if stop > 250: 
                     stop = '250'
-                    
+        
         iq = xmpp.Iq('get')
         Id = 'disco%s' % (time.time())
         iq.setID(Id)
@@ -91,10 +92,13 @@ def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
             if props:
                 for x in props:
                     att = x.getAttrs()
+                    
                     if 'name' in att:
                         try:
-                            st = re.search('^(.*) \((.*)\)$', att['name']).groups()
+                            st = re.search('^(.*) \((.*)\)$', att['name'])
+                            st = st.groups()
                             disco.append([st[0], att['jid'], st[1]])
+                            
                             trig = 1
                         except Exception:
                             if not trig:
@@ -108,6 +112,8 @@ def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
                                     temp.append(att['node'])
                                 
                                 disco.append(temp)
+                            
+                            trig = 0    
                     else:
                         disco.append([att['jid']])
             else:
@@ -192,7 +198,7 @@ def sortdis(dis):
         except Exception:
             diss.append(x)
     
-    disd.sort(lambda x, y: int(x[2]) - int(y[2]))
+    disd.sort()
     disd.reverse()
     diss.sort()
     

@@ -106,11 +106,11 @@ class Commands(PlugIn):
             jid = str(request.getTo())
             # Get specific jid based results
             if jid in self._handlers:
-                for each in list(self._handlers[jid].keys()):
+                for each in self._handlers[jid].keys():
                     items.append((jid,each))
             else:
                 # Get generic results
-                for each in list(self._handlers[''].keys()):
+                for each in self._handlers[''].keys():
                     items.append(('',each))
             if items != []:
                 for each in items:
