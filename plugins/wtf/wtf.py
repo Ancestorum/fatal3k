@@ -325,15 +325,15 @@ def get_part(gdef, part, spart=2000):
     endind = part * spart
     
     if part == 1 and qofparts != part:
-        endind = gdef.find(' ', endind)
+        endind = gdef.find(b' ', int(endind))
     elif part == 1 and qofparts == part:
         endind = qtt
     elif part == qofparts:
-        startind = gdef.find(' ', startind)
+        startind = gdef.find(b' ', int(startind))
         endind = qtt
     else:
-        startind = gdef.find(' ', startind)
-        endind = gdef.find(' ', endind)
+        startind = gdef.find(b' ', int(startind))
+        endind = gdef.find(b' ', int(endind))
     
     opart = gdef[startind:endind]
     opart = opart.decode('utf-8')
@@ -1114,7 +1114,7 @@ def handler_find(type, source, parameters):
 
 def handler_search(type, source, parameters):
     groupchat = source[1]
-    jid = get_true_jid(search)
+    jid = get_true_jid(source)
 
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))

@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 Als <Als@exploit.in>
 #  Help Copyright © 2007 dimichxp <dimichxp@gmail.com>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -112,13 +112,21 @@ def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
                                     temp.append(att['node'])
                                 
                                 disco.append(temp)
-                            
+                                
                             trig = 0    
                     else:
                         disco.append([att['jid']])
             else:
                 return reply(type, source, l('Unable to execute query!'))
             
+            disco_c = []
+            
+            for li in disco: 
+                if li not in disco_c: 
+                    disco_c.append(li)
+            
+            disco = disco_c
+                                   
             if disco:
                 return handler_disco_answ(type, source, stop, disco, srch)
             else:

@@ -3,7 +3,7 @@
 #  fatal variables module
 #  fatalvar.py
 
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by

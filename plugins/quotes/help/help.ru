@@ -1,10 +1,21 @@
-bor.ccat = fun, info, all, *
-bor.desc = Показывает случайную цитату c башорга (bash.org.ru). Также выводит цитату по заданному номеру.
-bor.synt = %prefix%bor [<номер>]
-bor.exam = %prefix%bor
-bor.exam = %prefix%bor 2345
+borg.ccat = fun, info, all, *
+borg.desc = Показывает случайную цитату c башорга (bashorg.org). Также выводит цитату по заданному номеру.
+borg.synt = %prefix%borg [<номер>]
+borg.exam = %prefix%borg
+borg.exam = %prefix%borg 2345
 
-borb.ccat = fun, info, all, *
-borb.desc = Показывает случайную цитату из бездны башорга (bash.org.ru).
-borb.synt = %prefix%borb
-borb.exam = %prefix%borb
+bpit.ccat = fun, info, all, *
+bpit.desc = Показывает случайную цитату из топа ямы башорга (bashorg.org).
+bpit.synt = %prefix%bpit
+bpit.exam = %prefix%bpit
+
+bora.ccat = fun, info, all, *
+bora.desc = Показывает случайную цитату c башорга (bashorg.org).
+bora.synt = %prefix%bora
+bora.exam = %prefix%bora
+
+borc.ccat = fun, info, all, *
+borc.desc = С заданным интервалом (в минутах) показывает случайную цитату c башорга (bashorg.org). Без параметров отключает циклический показ цитат.
+borc.synt = %prefix%borc [ival]
+borc.exam = %prefix%borc 60
+borc.exam = %prefix%borc

@@ -3,7 +3,7 @@
 #  fatal plugin
 #  gismeteo plugin
 
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ __all__ = []
 
 import xml.dom.minidom as mdom
 import tempfile
+import urllib3
 
 from fatalapi import *
 
@@ -42,12 +43,13 @@ def get_meteo_info(query):
 
 def get_gis_weather(ccode):
     try:
-        wreq = urllib.request.Request('http://informer.gismeteo.ru/xml/%s_1.xml' % (ccode),\
-            None, {'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'})
+        url = 'http://informer.gismeteo.ru/xml/%s_1.xml' % (ccode)
+        http = urllib3.PoolManager()    
+        header = {'User-Agent': 'Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.18'}
+
+        resp = http.request('GET', url, headers=header)
+        wxml = resp.data
         
-        resp = urllib.request.urlopen(wreq)
-        wxml = resp.read()
-        resp.close()
         return wxml
     except Exception:
         return ''

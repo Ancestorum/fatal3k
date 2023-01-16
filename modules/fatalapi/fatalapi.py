@@ -1,10 +1,10 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 #  fatal API module
 #  fatalapi.py
 
-#  Copyright � 2009-2016 Ancestors Soft
-#  Some useful ideas � 2010 Quality <admin@qabber.ru>
+#  Copyright © 2009-2023 Ancestors Soft
+#  Some useful ideas © 2010 Quality <admin@qabber.ru>
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -309,6 +309,19 @@ def print_exception(func):
             sprint(log_exc_error())
     return wrapper
 
+def handle_exception(message='', quiet=False):
+    def ewrapper(func):
+        def iwrapper(*ar, **kw):
+            try:
+                return func(*ar, **kw)
+            except Exception:
+                log_exc_error()
+                
+                if not quiet or message:
+                    return l(message)
+        return iwrapper
+    return ewrapper
+
 def handle_xmpp_exc(message='', quiet=False):
     def ewrapper(func):
         def iwrapper(*ar, **kw):
@@ -338,17 +351,12 @@ def semph(sem):
 
 def fatal_gui():
     try:
-        import tkinter
-    except ImportError:
-        return
-
-    try:
-        import tkinter.ttk
+        import _tkinter.ttk
         wlib = ttk
     except ImportError:
-        wlib = Tkinter
+        wlib = _tkinter
     
-    ftk = tkinter.Tk()
+    ftk = _tkinter.Tk()
     
     fmn_frame = wlib.Frame(ftk)
     fmn_frame.pack()
@@ -1395,6 +1403,7 @@ def _reload_chd_pls(chd_pls):
     
     for plugin in chd_pls:
         try:
+            
             _reload(plugin)
         except Exception:
             lfail.append(plugin)
@@ -1486,13 +1495,15 @@ def _load(plugin):
 
 def _reload(plugin):
     plfile = get_fatal_var('ldpls', plugin)
+    
+    locale = get_sys_lang()
+    locale = get_param('locale', locale)
 
+    dpath = os.path.dirname(plfile)
+    load_lc_msgs(locale, dpath)
+    load_hlp_msgs(locale, dpath)
+    
     try:
-        plcomp = '%sc' % (plfile)
-
-        if os.path.exists(plcomp):
-            os.remove(plcomp)
-
         imp.load_source(plugin, plfile)
     except Exception:
         log_exc_error()
@@ -1585,7 +1596,7 @@ def _base64dec(target):
 def _plmd5hash(plugin):
     plf = 'plugins/%s/%s.py' % (plugin, plugin)
     plb = _get_pl_body(plf)
-    return _md5hash(plb)
+    return _md5hash(plb.encode())
 
 def _get_pl_ctime(plfile):
     if os.path.exists(plfile):
@@ -1596,7 +1607,7 @@ def _get_pl_ctime(plfile):
 
 def _get_pl_body(plfile):
     if os.path.exists(plfile):
-        fd = open(plfile, 'r')
+        fd = open(plfile, 'r', encoding="utf-8")
         plbody = fd.read()
         fd.close()
         return plbody
@@ -2087,6 +2098,187 @@ def init_dynamic(cid):
         
         sql = 'CREATE UNIQUE INDEX icmdnames ON cmdnames (iname);'
         sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
+
+#---------------------------------- Telegram routines --------------------------------------------------------
+
+def get_tg_chid(gtitle):
+    cid = get_client_id()
+    
+    gtitle = gtitle.replace('&quot;', '"')
+
+    sql = "SELECT id FROM tgchatids WHERE gname='%s';" % (gtitle)
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_usrid(fnme):
+    cid = get_client_id()
+    
+    fnme = fnme.replace('&quot;', '"')
+
+    sql = "SELECT id FROM tguserids WHERE fname='%s';" % (fnme.strip())
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_fnme(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT fname FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_usrn(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT usrn FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def set_tg_usrid(usrid, fnme, usrn=''):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+    
+    fnme = fnme.replace('"', '&quot;')
+    
+    if usrn:
+        usrn = usrn.replace('"', '&quot;')
+    else:
+        usrn = ''
+    
+    if not usrid_exists(usrid):
+        if usrn:
+            sql = "INSERT INTO tguserids (id, fname, usrn) VALUES ('%s', '%s', '%s');" % (usrid, fnme.strip(), usrn.strip())
+        else:
+            sql = "INSERT INTO tguserids (id, fname) VALUES ('%s', '%s');" % (usrid, fnme.strip())
+    else:
+        if usrn:
+            sql = "UPDATE tguserids SET \"fname\"='%s', \"usrn\"='%s' WHERE \"id\"='%s';" % (fnme.strip(), usrn.strip(), usrid)
+        else:
+            sql = "UPDATE tguserids SET \"fname\"='%s' WHERE \"id\"='%s';" % (fnme.strip(), usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres != '':
+        return True
+    return False
+
+def get_tg_usr_acc(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+    
+    if usrid_exists(usrid):
+        sql = "SELECT acc FROM tguserids WHERE \"id\"='%s';" % (usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def set_tg_usr_acc(usrid, acc):
+    cid = get_client_id()
+    
+    if (type(usrid) != int) or (type(acc) != int):
+        return False 
+    
+    if usrid_exists(usrid):
+        sql = "UPDATE tguserids SET \"acc\"='%s' WHERE \"id\"='%s';" % (acc, usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    return qres
+
+def usrid_exists(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT * FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return True
+    return False
+
+def chid_exists(chid):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+
+    sql = "SELECT * FROM tgchatids WHERE id='%s';" % (chid)
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres:
+        return True
+    return False
+
+def rmv_tg_usrid(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+    
+    if usrid_exists(usrid):
+        sql = 'DELETE FROM tgusrids WHERE id="%s";' % (usrid)
+   
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    return qres
+
+def rmv_tg_chid(chid):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+    
+    if chid_exists(chid):
+        sql = 'DELETE FROM tgchatids WHERE id="%s";' % (chid)
+   
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    return qres
+
+def set_tg_chid(chid, gtitle):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+    
+    gtitle = gtitle.replace('"', '&quot;')
+    
+    if not chid_exists(chid):
+        sql = "INSERT INTO tgchatids (id, gname) VALUES ('%s', '%s');" % (chid, gtitle.strip())
+    else:
+        sql = "UPDATE tgchatids SET \"gname\"='%s' WHERE \"id\"='%s';" % (gtitle.strip(), chid)
+    
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres != '':
+        return True
+    return False
     
 #---------------------------------- Groupchat routines --------------------------------------------------------
 

@@ -22,7 +22,7 @@ __all__ = []
 from fatalapi import *
 
 def handler_ping(type, source, parameters):
-    nick = parameters
+    nick = parameters.strip()
     groupchat = source[1]
     param = ''
     
