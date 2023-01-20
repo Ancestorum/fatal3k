@@ -527,8 +527,11 @@ def handler_changebotstatus(type, source, parameters):
         if not status:
             if len(args) >= 2:
                 status = args[1]
-                
-        change_bot_status(gch_jid, status, show)
+        
+        if show != 'online':        
+            change_bot_status(gch_jid, status, show)
+        else:
+            change_bot_status(gch_jid, status)   
         
         if is_groupchat(gch_jid):
             set_gch_param(gch_jid, 'status_text', status)

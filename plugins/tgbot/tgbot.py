@@ -15,8 +15,6 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
-__all__ = []
-
 from fatalapi import *
 
 import asyncio
@@ -159,8 +157,8 @@ def create_tg_chids_table():
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/tgchatids.db' % (cid)):
-        sql = 'CREATE TABLE tgchatids (idn INTEGER PRIMARY KEY AUTOINCREMENT, \
-            id VARCHAR(30) NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'
+        sql = '''CREATE TABLE tgchatids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
+            id VARCHAR(30) NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'''
         sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
         
         sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (idn);'
@@ -170,9 +168,9 @@ def create_tg_usrids_table():
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/tguserids.db' % (cid)):
-        sql = 'CREATE TABLE tguserids (idn INTEGER PRIMARY KEY AUTOINCREMENT, \
-            id VARCHAR(30) NOT NULL, fname VARCHAR(30) NOT NULL, usrn VARCHAR(30) DEFAULT "", \
-            acc INTEGER NOT NULL DEFAULT 10, UNIQUE (id));' 
+        sql = '''CREATE TABLE tguserids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
+            id VARCHAR(30) NOT NULL, fname VARCHAR(30) NOT NULL, usrn VARCHAR(30) DEFAULT "",
+            acc INTEGER NOT NULL DEFAULT 10, UNIQUE (id));''' 
         
         sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
         

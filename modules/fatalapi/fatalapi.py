@@ -173,15 +173,31 @@ def read_file(filename, lines=False):
         
         return data
     except Exception:
-        return ''
+        return False
+
+def read_file_ex(filename, lines=False):
+    try:
+        fp = open(filename, encoding='windows-1251')
+        
+        if lines:
+            data = fp.readlines()
+        else:    
+            data = fp.read()
+        
+        fp.close()
+        
+        return data
+    except Exception:
+        return False
 
 def write_file(filename, data):
     try:
-        fp = open(filename, 'w', encoding='utf-8')
+        fp = open(filename, 'w', encoding='windows-1251')
         fp.write(data)
         fp.close()
+        return True
     except Exception:
-        pass
+        return False
 
 def _app_file(filename, data):
     try:
@@ -1403,7 +1419,6 @@ def _reload_chd_pls(chd_pls):
     
     for plugin in chd_pls:
         try:
-            
             _reload(plugin)
         except Exception:
             lfail.append(plugin)
@@ -1428,7 +1443,7 @@ def chk_md5_and_reload():
     if not relc:
         return
 
-    chk_interval = relc * 60
+    chk_interval = relc
     
     with semph(wsmph):
         thrc = inc_fatal_var('info', 'thr')
@@ -2444,7 +2459,7 @@ def add_gch(groupchat='', nick='', passw=''):
             return 0
         return 1
 
-def change_bot_status(gch, status, show):
+def change_bot_status(gch, status, show=''):
     if gch:
         prs = xmpp.Presence(gch + '/' + get_bot_nick(gch))
     else:
@@ -2454,10 +2469,8 @@ def change_bot_status(gch, status, show):
     if status:
         prs.setStatus(status)
         
-    if show:
+    if show and (show != 'online'):
         prs.setShow(show)
-    else:
-        prs.setShow('online')
     
     botver = '[unknown]'
     
@@ -2481,12 +2494,11 @@ def set_init_status():
     
     if not param_exists('', 'status_text'):
         stmsg = l('Type %shelp and follow instructions of the bot to understand how to work with me!') % (cprfx)
-        status = 'online'
         
         set_param('status_text', stmsg)
         set_param('status_show', status)
         
-        change_bot_status('', stmsg, status)
+        change_bot_status('', stmsg)
     else:
         stmsg = get_param('status_text', l('Type %shelp and follow instructions of the bot to understand how to work with me!') % (cprfx))
         status = get_param('status_show', 'online')
@@ -2541,7 +2553,9 @@ def join_groupchat(groupchat='', nick='', passw=''):
     if ver:
         botver = ver % (rev)
 
-    prs.setShow(show)
+    if (show != '') and (show != 'online'):
+        prs.setShow(show)
+        
     prs.setStatus(stmsg)
     pres = prs.setTag('x', namespace=xmpp.NS_MUC)
     prs.setTag('c', namespace=xmpp.NS_CAPS, attrs={'node': cpn, 'ver': botver})
@@ -2642,12 +2656,16 @@ def reply(ltype, source, body):
     cid = get_client_id()
     groupchat = source[1]
     nick = source[2]
+    fjid = source[0]
     
     if not isinstance(body, str):
         body = body.decode('utf8', 'replace')
         
     if ltype == 'public':
-        msg(groupchat, nick + ': ' + body)
+        if fjid == groupchat:
+            msg(groupchat, body)
+        else:
+            msg(groupchat, nick + ': ' + body)
         return body
     elif ltype == 'private':
         msg(source[0], body)                     

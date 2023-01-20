@@ -15,7 +15,8 @@ bora.synt = %prefix%bora
 bora.exam = %prefix%bora
 
 borc.ccat = fun, info, all, *
-borc.desc = С заданным интервалом (в минутах) показывает случайную цитату c башорга (bashorg.org). Без параметров отключает циклический показ цитат.
-borc.synt = %prefix%borc [ival]
+borc.desc = С заданным интервалом (в минутах) показывает случайную цитату c башорга (bashorg.org). Без параметров показывает время когда будет показана следующая цитата. Параметр "-" отключает циклический показ цитат.
+borc.synt = %prefix%borc [-|ival]
 borc.exam = %prefix%borc 60
+borc.exam = %prefix%borc -
 borc.exam = %prefix%borc

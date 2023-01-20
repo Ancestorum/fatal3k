@@ -221,6 +221,38 @@ def enum_fatal_tasks():
     if tsko:
         return tsko.Enumerate()
 
+def is_task_exists(tskn):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.isTaskExists(tskn)
+
+def list_fatal_tasks():
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.lstTasks()
+
+def get_task_last(tskn):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.getTaskLast(tskn)
+        
+def get_task_ival(tskn):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.getTaskIval(tskn)
+
 def rmv_all_tasks():
     cid = get_client_id()
     
@@ -554,9 +586,10 @@ class _fCycleTasks(object):
                 rtsks = tuple(self._rtsks)
 
                 for tskl in rtsks:
-                    ival = self._tasks[tskl]['ival']
-                    self._ivals.remove(ival)
-                    del self._tasks[tskl]
+                    if tskl in self._tasks:
+                        ival = self._tasks[tskl]['ival']
+                        self._ivals.remove(ival)
+                        del self._tasks[tskl]
 
                 self._rtsks = []
 
@@ -606,6 +639,20 @@ class _fCycleTasks(object):
             self._nivls.append(ival)
             self._ntsks[tskn] = {'func': func, 'ival': ival, 'args': args, 'count': 0, 'once': once, 'last': time.time(), 'strd': 0, 'pmiv': 0, 'inthr': inthr}
 
+    def getTaskLast(self, tskn):
+        if tskn in self._ntsks:
+            return self._ntsks[tskn]['last'] + self._ntsks[tskn]['ival']
+        elif tskn in self._tasks:
+            return self._tasks[tskn]['last'] + self._tasks[tskn]['ival']
+        return 0
+
+    def getTaskIval(self, tskn):
+        if tskn in self._ntsks:
+            return self._ntsks[tskn]['ival']
+        elif tskn in self._tasks:
+            return self._tasks[tskn]['ival']
+        return 0
+
     def rmvTask(self, tskn):
         if tskn in self._tasks:
             self._rtsks.append(tskn)
@@ -615,6 +662,14 @@ class _fCycleTasks(object):
             self._nivls.remove(ival)
 
             del self._ntsks[tskn]
+    
+    def isTaskExists(self, tskn):
+        if (tskn in self._ntsks) or (tskn in self._tasks):
+            return True
+        return False
+    
+    def lstTasks(self):
+        return tuple(self._ntsks)
             
     def Clear(self):
         self._tasks = {}
@@ -934,7 +989,7 @@ class _fHelp(fLocale):
                         
                         if dhvl:
                             self._data[hnam][hsec].extend(dhvl)
-                    
+
                     continue
                 
                 self._data[hnam][hsec] = dhvl.strip()

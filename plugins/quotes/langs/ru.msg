@@ -4,3 +4,6 @@ Quote №%s <%s> [page№%s]: \n\n%s\n\nLink: %s = Цитата №%s <%s> [ст
 Quote №%s: \n\n%s = Цитата №%s: \n\n%s
 Cycle quote from bashorg.org has been turned on! = Циклический показ цитат с bashorg.org включен!
 Cycle quote from bashorg.org has been turned off! = Циклический показ цитат с bashorg.org отключен!
+Cycle quote from bashorg.org has been already turned on! = Циклический показ цитат с bashorg.org уже включен!
+Cycle quote from bashorg.org has not been turned on yet! = Циклический показ цитат с bashorg.org еще не включался!
+Next quote at %s (in %s/each %s)! = Следующая цитата в %s (через %s/каждые %s)!
