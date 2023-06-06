@@ -82,6 +82,9 @@ async def handle_video_content(message):
 
 @atbot.message_handler(content_types=['text'])
 async def command_messages(message):
+    if (time.time() - message.date) > 8:
+        return
+    
     cid = get_client_id()
     mchat = message.chat.type
     usrid = message.from_user.id
@@ -143,14 +146,19 @@ async def command_messages(message):
                     msg(wgch, rep)    
 
 def polling_proc():
-    while True:
-        asyncio.run(atbot.polling())        
-        time.sleep(10)
+    try:
+        while True:
+            asyncio.run(atbot.polling())
+
+            time.sleep(10)
+    except Exception:
+        pass      
 
 def start_tgm_polling():
     cid = get_client_id()
     
     set_fatal_var(cid, 'tgbot', tbot)
+    
     call_in_sep_thr(cid + '/tbot_polling', polling_proc) 
 
 def create_tg_chids_table():

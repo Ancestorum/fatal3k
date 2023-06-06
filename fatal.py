@@ -170,7 +170,7 @@ def main():
                 
                 ires = fatal_console()
                     
-                if ires == False:
+                if ires == False and os_uname == 'linux':
                     signal.pause()
                     
                     break

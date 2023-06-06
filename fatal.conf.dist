@@ -10,10 +10,11 @@ password = password, password2, passwordN
 port = 5222
 resource = fatal
 
-# Telegram bot api token and chat_id for plugin tgbot
-#----------------------------------------------------
+# Telegram bot api token, chat_id and userid for plugin tgbot
+#------------------------------------------------------------
 bot_api_token = <API_TOKEN>
 tgm_chat_id = <CHAT_ID>
+tgbot_admin_id = <USER_ID>
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------
@@ -34,7 +35,7 @@ cert = path/to/certificate.pem
 
 # Chatroom nick
 #---------------
-default_nick = fatal-bot
+default_nick = fatal3k
 
 # Keep-alive period in seconds
 #-----------------------------
@@ -78,7 +79,7 @@ comm_prefix = .
 # List of disabled fatal plugins
 # Uncomment and specify it if you want to disable some plugins
 #-------------------------------------------------------------
-#DISABLED_PLUGINS = plugin1,plugin2,pluginN
+#disabled_plugins = plugin1,plugin2,pluginN
 
 # Privacy lists support through xep0016
 #--------------------------------------

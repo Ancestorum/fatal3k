@@ -109,10 +109,11 @@ def sprint(*args):
     try:
         for arg in args:
             print(color + arg + ncolor)
-            
+
         if not args:
             print()
     except Exception:
+        log_exc_error()
         log_error(str(args), 'syslogs/output.log')
 
 def copyright():
@@ -214,9 +215,9 @@ def log_exc_error(file='syslogs/error.log'):
     _app_file(file, '%s%s\n' % (exc_time, exc_err))
     
     if is_var_set('cle'):
-        outs = '%s%s\n' % (exc_time, exc_err)
+        outs = '%s%s' % (exc_time, exc_err)
         return cl_bred + outs + cl_none
-    return '%s%s\n' % (exc_time, exc_err)
+    return '%s%s' % (exc_time, exc_err)
 
 def log_error(err, file='syslogs/error.log'):
     err_time = time.strftime('[%d.%m.%Y/%H:%M:%S]: ', time.localtime(time.time()))
@@ -1332,8 +1333,9 @@ def fatal_console():
                 else:
                     call_in_sep_thr(owner + '/console', cmdhnd, 'console', [owner + '/' + resource, owner, ''], '')
                 
-                cpolen = int(os.read(cpipei, 5))
-                sprint(os.read(cpipei, cpolen))
+                readsc = os.fdopen(cpipei)
+                constr = readsc.read()
+                sprint(constr)
                 
                 rmv_fatal_var('console_cpipeo')
 
@@ -1363,8 +1365,9 @@ def fatal_console():
                     else:
                         call_in_sep_thr(owner + '/console', cmdhnd, 'console', [owner + '/' + resource, owner, ''], '')
                     
-                    cpolen = int(os.read(cpipei, 5))
-                    sprint(os.read(cpipei, cpolen))
+                    readsc = os.fdopen(cpipei)
+                    constr = readsc.read()
+                    sprint(constr)
                     
                     rmv_fatal_var('console_cpipeo')
 
@@ -1393,7 +1396,8 @@ def fatal_console():
     except IOError:
         return False
     except Exception:
-        log_exc_error()
+        sprint()
+        sprint(log_exc_error())
         
 #-------------------------------- Plugins routines -----------------------------------------
     
@@ -2585,20 +2589,15 @@ def msg(target, body):
         return body
     
     if target == 'console':
-        if os.name == 'posix':
-            costr = '\n' + str(codecs.encode(body, 'cp866')) + '\n'
-        elif os.name == 'nt':
-            costr = '\n' + str(codecs.encode(body, 'cp866')) + '\n'
-        else:
-            costr = '\n' + body + '\n'
+        costr = '\n' + body + '\n'
         
         try:
-            colen = str(len(costr))[:5].zfill(5)
             cpipeo = get_int_fatal_var('console_cpipeo')
-            os.write(cpipeo, colen)
-            os.write(cpipeo, costr)
+            wrtdsc = os.fdopen(cpipeo, 'w')
+            wrtdsc.write(costr)
             return
         except Exception:
+            log_exc_error()
             return
     
     if target == 'telegram':
@@ -3478,7 +3477,6 @@ def reconnect(jid, password, resource):
             mn_xmpp_thr = get_fatal_var(jid, 'main_xmpp_stanza_pc')
             mn_xmpp_thr.kill()
         
-        set_fatal_var(jid, 'disconnected', True)
         rmv_fatal_var(jid, 'gchrosters')
         
         rmv_all_tasks()
@@ -3493,26 +3491,29 @@ def reconnect(jid, password, resource):
                     set_fatal_var(jid, 'reconnects', 5)
                     set_fatal_var(jid, 'wait_for_try', 3)
     except Exception:
-        sprint(log_exc_error())
+        log_exc_error()
 
-@handle_xmpp_exc(quiet=True)
+@handle_xmpp_exc()
 def dcHnd():
     cid = get_client_id()
     
-    if not get_fatal_var(cid, 'disconnected') and get_int_cfg_param('auto_reconnect'):
+    if not is_var_set(cid, 'disconnected') and is_param_set('auto_reconnect'):
         sprint('\nDisconnected.\n\Reconnecting...')
-        time.sleep(3)
         
+        dec_fatal_var('connected_count') 
+        set_fatal_var(cid, 'keep_alive_checks', 0)
+
         psw = get_fatal_var(cid, 'passwd')
         rsc = get_fatal_var(cid, 'rsrc')
         
-        reconnect(cid, psw, rsc)
+        call_in_sep_thr(cid + '/start', reconnect, cid, psw, rsc)
     else:
         sprint('\nClient %s disconnected.' % (cid))
         
-        if get_int_fatal_var('clients') == 1:
-            sprint(log_error('Exit!'))
-            os._exit(1)
+        if not is_param_set('keep_alive'):
+            if get_int_fatal_var('clients') == 1:
+                sprint(log_error('Exit!'))
+                os._exit(1)
     
     send_client_state()
 
@@ -3567,7 +3568,9 @@ def connect_client(jid, password='', resource=''):
             
             call_in_sep_thr(jid + '/start', reconnect, jid, password, resource)
             
-            dec_fatal_var(jid, 'reconnects')
+            if not is_param_set('reconnect_forever'):
+                dec_fatal_var(jid, 'reconnects')
+            
             inc_fatal_var(jid, 'wait_for_try', 3)
         else:
             set_fatal_var(jid, 'reconnects', 5)
@@ -3669,7 +3672,7 @@ def connect_client(jid, password='', resource=''):
     
     tname = make_thr_name(jid, 'connect_client', 'task_manager')
     start_scheduler(tname)
-    
+
     if is_db_exists('dynamic/%s/chatrooms.db' % (jid)):
         groupchats = get_chatrooms_list()
         
@@ -3736,18 +3739,45 @@ def connect_client(jid, password='', resource=''):
 
     send_client_state('suc')
 
+def get_curr_thr_name():
+    curr_thr = threading.currentThread()
+    thr_name = curr_thr.getName()
+    return thr_name
+
 def main_xmpp_stanza_pc():
     cid = get_client_id()
     
+    thrn = get_curr_thr_name()
+
+    set_fatal_var(cid, thrn, 'cnt', 0)
+
     try:
         jconn = get_client_conn()
         
         while True:
+            set_fatal_var(cid, thrn, 'rtm', time.time())
+
             if not is_var_set(cid):
                 return
          
             pdata = jconn.Process(8)
             
+            if is_var_set(cid, thrn):
+                rtm = get_fatal_var(cid, thrn, 'rtm')
+                lst = time.time() - rtm
+
+                if lst < 1:
+                    inc_fatal_var(cid, thrn, 'cnt')
+                else:
+                    set_fatal_var(cid, thrn, 'cnt', 0)
+
+                cnt = get_fatal_var(cid, thrn, 'cnt')
+
+                if cnt >= 10000:
+                    rmv_fatal_var(cid, thrn)
+                    sprint(log_error('\nInfinite loop has been detected, exit that loop!\n'))
+                    return
+
             if pdata and pdata != '0':
                 inc_fatal_var(cid, 'info', 'btraffic', len(pdata))
                 inc_fatal_var(cid, 'info', 'pcycles')

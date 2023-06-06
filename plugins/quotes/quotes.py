@@ -16,6 +16,8 @@
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
 
+__all__ = []
+
 from fatalapi import *
 
 import urllib3
@@ -121,6 +123,12 @@ def handler_borg_pittop_get(type, source, parameters):
         return reply(type, source, l('This resource does not support quotes numbers!'))
 
 def handler_borg_orgall_get(type, source, parameters):
+    ival = get_gch_param(source[1], 'borc.ival', '0')
+    
+    if ival:
+        last = time.time()
+        set_gch_param(source[1], 'borc.last', str(last))
+    
     if not parameters.strip():
         pind = random.randrange(1, 2021)
 
@@ -262,16 +270,13 @@ def borg_pull_quotes(src, page=0):
 
     stop = time.time()
     elap = stop - start
-    log_raw_stnzs('Dump time: %s sec.' % (elap), 'static/pit_pages/bashorg.log')
+    log_raw_stnzs('Dump time: %s sec.' % (timeElapsed(elap)), 'static/pit_pages/bashorg.log')
     reply('private', src, 'Dump time: %s sec.' % (elap)) 
 
 def create_quotes_table():
     if not is_db_exists('static/pit_pages/borpit.db'):
         sql = '''CREATE TABLE quotes (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            page INTEGER NOT NULL, id VARCHAR(30) NOT NULL, quote TEXT, UNIQUE (id));'''
-        sqlquery('static/pit_pages/borpit.db', sql)
-
-        sql = 'CREATE UNIQUE INDEX iquotes ON quotes (idn);'
+            page INTEGER NOT NULL, id VARCHAR(30) NOT NULL, quote TEXT);'''
         sqlquery('static/pit_pages/borpit.db', sql)
 
 def add_bashorg_quote(idc, page, quote):
@@ -303,8 +308,13 @@ def handler_borg_cycle_quote(type, source, parameters):
 
             newsrc = [source[1], source[1], '']
             
-            add_fatal_task(taskn, handler_borg_orgall_get, ('public', newsrc, ''), ival)
-
+            add_fatal_task(taskn, handler_borg_orgall_get, ('private', source, ''), ival)
+            
+            tlst = time.time()
+            
+            set_gch_param(source[1], 'borc.last', str(tlst))
+            set_gch_param(source[1], 'borc.ival', str(ival))
+            
             return reply(type, source, l('Cycle quote from bashorg.org has been turned on!'))
         else:
             tlast = get_task_last(taskn)
@@ -315,6 +325,7 @@ def handler_borg_cycle_quote(type, source, parameters):
         if sparam == '-':
             if is_task_exists(taskn):  
                 rmv_fatal_task(taskn)
+                set_gch_param(source[1], 'borc.ival', '0')
                 return reply(type, source, l('Cycle quote from bashorg.org has been turned off!'))
             else:    
                 return reply(type, source, l('Cycle quote from bashorg.org has not been turned on yet!'))
@@ -370,7 +381,33 @@ def borg_pull_pages_cmd(type, source, parameters):
     dest = '%s/%s' % (source[1].strip(), source[2].strip())
     call_in_sep_thr('%s/dump_pit_pages' % (cid), borg_pull_pages, dest)    
 
+def cycle_quote_resume(gch):
+    if param_exists(gch, 'borc.ival'):
+        ival = get_gch_param(gch, 'borc.ival', '0')
+        ival = int(ival)
+        taskn = 'borc.%s' % (gch)
+        
+        if ival:
+            newsrc = [gch+'/ancestor', gch, '']
+            add_fatal_task(taskn, handler_borg_orgall_get, ('private', newsrc, ''), ival)
+            
+        if param_exists(gch, 'borc.last'):
+            last = time.time()
+            last = get_gch_param(gch, 'borc.last', str(last))
+            last = float(last)
+            tlst = last + ival - time.time()    
+            
+            clas = int(time.time() - last)
+           
+            if tlst > 0:
+                set_task_last(taskn, last)
+                set_task_count(taskn, clas)
+            else: 
+                last = time.time()
+                set_gch_param(gch, 'borc.last', str(last))
+
 register_stage0_init(create_quotes_table)
+register_stage1_init(cycle_quote_resume)
 
 register_command_handler(borg_pull_quotes_cmd, 'pqdb', 100)
 register_command_handler(borg_pull_pages_cmd, 'bopp', 100)

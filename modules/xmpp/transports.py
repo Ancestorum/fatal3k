@@ -175,10 +175,13 @@ class TCPsocket(PlugIn):
     def plugout(self):
         """ Disconnect from the remote server and unregister self.disconnected method from
             the owner's dispatcher. """
-        self._sock.close()
-        if 'Connection' in self._owner.__dict__:
-            del self._owner.Connection
-            self._owner.UnregisterDisconnectHandler(self.disconnected)
+        try:
+            self._sock.close()
+            if 'Connection' in self._owner.__dict__:
+                del self._owner.Connection
+                self._owner.UnregisterDisconnectHandler(self.disconnected)
+        except Exception:
+            self.DEBUG("Couldn't found apropriate socket!",'error')
 
     def receive(self):
         """ Reads all pending incoming data.

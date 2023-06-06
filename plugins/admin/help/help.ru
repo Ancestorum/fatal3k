@@ -1,6 +1,7 @@
 ﻿join.ccat = admin, muc, all, *
-join.desc = Зайти в определенную конференцию. Если она под паролем то нужно писать пароль сразу после ее названия или после ника, если он уазан.
+join.desc = Зайти в определенную конференцию. Если она под паролем то нужно писать пароль сразу после ее названия или после ника, если он уазан. Если бот зарегистрирован на том же сервере на котором находится конференция, то @conference.jabber.aq указывать не обязательно.
 join.synt = %prefix%join <конференция> [<ник_бота>[:<пароль>]]
+join.exam = %prefix%join conf
 join.exam = %prefix%join conf@conference.jabber.aq
 join.exam = %prefix%join conf@conference.jabber.aq somebot
 join.exam = %prefix%join conf@conference.jabber.aq somebot:secret
