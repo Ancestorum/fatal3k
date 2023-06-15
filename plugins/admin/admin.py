@@ -1311,7 +1311,7 @@ register_command_handler(handler_bot_lang, 'bot_lang', 100)
 register_command_handler(handler_connect, 'connect', 100)
 register_command_handler(handler_disconnect, 'disconnect', 100)
 register_command_handler(handler_syslog, 'syslog', 100)
-register_command_handler(handler_prefix_control, 'prefix', 0)
+register_command_handler(handler_prefix_control, 'prefix', 100)
 register_command_handler(handler_admin_config, 'config', 100)
 
 register_stage0_init(init_gblock_param)

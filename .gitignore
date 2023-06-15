@@ -6,5 +6,4 @@ syslogs/
 *.synw-session
 *.syn
 *.pid
-*.pem
 *.log
