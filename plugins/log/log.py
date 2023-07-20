@@ -26,7 +26,6 @@ from fatalapi import *
 
 def log_write_header(fp, source, xxx_todo_changeme):
     (year, month, day, hour, minute, second, weekday, yearday, daylightsavings) = xxx_todo_changeme
-    source = source.encode('utf-8')
     
     if not is_groupchat(source):
         gch_jid = source.split('%', 1)[0]
@@ -72,7 +71,7 @@ a.h1 {text-decoration: none;color: #369;}
 <h2>%s</h2>
 <div>
 <tt>
-""".encode('utf-8') % (' - '.join([source, date]), source, source, date))
+""" % (' - '.join([source, date]), source, source, date))
 
 def log_write_footer(fp):
     fp.write('\n</tt>\n</div>\n</body>\n</html>')
@@ -268,7 +267,6 @@ def log_write(body, nick, type, jid, ismoder=0):
     fp.write('<span class="timestamp"><a id="t' + timestamp[1:-1] + '.' + decimal + '" href="#t' + timestamp[1:-1] + '.' + decimal + '">' + timestamp + '</a></span> ')
 
     defnick = get_cfg_param('default_nick')
-    #defnick = defnick.encode('utf-8')
 
     if not nick:
         fp.write('<span class="system">%s</span><br />\n' % (body))

@@ -1068,7 +1068,7 @@ def sqlquery(dbpath, query):
             return result
         except Exception:
             if cursor:
-                cursor.close()
+               cursor.close()
                 
             if connection:
                 connection.commit()
