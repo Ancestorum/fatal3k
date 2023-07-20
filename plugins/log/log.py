@@ -29,7 +29,7 @@ def log_write_header(fp, source, xxx_todo_changeme):
     
     if not is_groupchat(source):
         gch_jid = source.split('%', 1)[0]
-        
+
         if is_groupchat(gch_jid):
             gch_nick = source.split('%', 1)[-1]
             source = '%s/%s' % (gch_jid, gch_nick)
@@ -66,7 +66,7 @@ a.h1 {text-decoration: none;color: #369;}
 </style>
 </head>
 <body>
-<div id="mark">fatal-bot log</div>
+<div id="mark">bot log</div>
 <h1><a class="h1" href="xmpp:%s?join" title="Join room">%s</a></h1>
 <h2>%s</h2>
 <div>
@@ -83,7 +83,7 @@ def log_get_fp(type, source, xxx_todo_changeme1):
         
         if is_groupchat(gch_jid):
             gch_nick = source.split('/', 1)[-1]
-            source = gch_jid + '%' + gch_nick
+            source = gch_jid + '-' + gch_nick
 
     if type == 'public':
         logdir = get_cfg_param('public_log_dir')
@@ -103,24 +103,23 @@ def log_get_fp(type, source, xxx_todo_changeme1):
     filename = '.'.join(['/'.join([logdir, source, str_year, str_month, str_day]), 'html'])
     alt_filename = '.'.join(['/'.join([logdir, source, str_year, str_month, str_day]), '_alt.html'])
 
-    pathex = '/'.join([logdir, source, str_year, str_month]).encode('utf-8')
+    pathex = '/'.join([logdir, source, str_year, str_month])
 
     if not os.path.exists(pathex):
         pexli = [logdir, logdir + '/' + source, logdir + '/' + source + '/' + str_year, logdir + '/' + source + '/' + str_year + '/' + str_month]
-        pneli = [li for li in pexli if not os.path.exists(li.encode('utf-8'))]
+        pneli = [li for li in pexli if not os.path.exists(li)]
         
         try:
             for dli in pneli:
-                os.mkdir(dli.encode('utf-8'))
+                os.mkdir(dli)
         except Exception:
             pass
 
     if param_exists('', source):
         lpath = get_param(source)
         
-        if os.path.exists(lpath.encode('utf-8')):
-            fp_old = open(get_param(source).encode('utf-8'), 'a', encoding='utf-8')
-            
+        if os.path.exists(lpath):
+            fp_old = open(get_param(source), 'a', encoding='utf-8')
             sfn = str(fp_old.name).split('/')[-1].split('.', 1)[0]
             sfn_day = 35
             
@@ -132,24 +131,24 @@ def log_get_fp(type, source, xxx_todo_changeme1):
                 
             fp_old.close()
             
-        if os.path.exists(filename.encode('utf-8')):
-            fp = open(filename.encode('utf-8'), 'a', encoding='utf-8')
-            return fp
+        if os.path.exists(filename):
+            fp = open(filename, 'a', encoding='utf-8')
+            return(fp)
         else:
             set_param(source, filename)
-            fp = open(filename.encode('utf-8'), 'w', encoding='utf-8')
+            fp = open(filename, 'w', encoding='utf-8')
             log_write_header(fp, source, (year, month, day, hour, minute, second, weekday, yearday, daylightsavings))
-            return fp
+            return(fp)
     else:
-        if os.path.exists(filename.encode('utf-8')):
+        if os.path.exists(filename):
             set_param(source, filename)
-            fp = open(alt_filename.encode('utf-8'), 'a', encoding='utf-8')
-            return fp
+            fp = open(alt_filename, 'a', encoding='utf-8')
+            return(fp)
         else:
             set_param(source, filename)
-            fp = open(filename.encode('utf-8'), 'w', encoding='utf-8')
+            fp = open(filename, 'w', encoding='utf-8')
             log_write_header(fp, source, (year, month, day, hour, minute, second, weekday, yearday, daylightsavings))
-            return fp
+            return(fp)
 
 def log_regex_url(matchobj):
     return '<a href="' + matchobj.group(0) + '">' + matchobj.group(0) + '</a>'
@@ -195,7 +194,7 @@ def handler_logw_control(type, source, parameters):
         
 def log_handler_message(type, source, body):
     cid = get_client_id()
-    
+
     groupchat = source[1]
     
     if not body:
@@ -211,12 +210,10 @@ def log_handler_message(type, source, body):
         
         log_write(body, nick, type, groupchat, ismoder)
     elif type == 'private' and is_param_set('private_log_dir'):
-        jid = get_true_jid(source)
-        gch_jid = jid.split('/', 1)[0]
-        
-        if gch_jid == groupchat:
-            gch_jid = jid.split('/')[-1]
-        
+
+        jid = source[1]+'-'+source[2] 
+        gch_jid = get_true_jid(source)
+
         log_write(body, gch_jid, type, jid)
 
 def log_handler_outgoing_message(target, body, obody):
@@ -224,37 +221,34 @@ def log_handler_outgoing_message(target, body, obody):
         return
     
     nick = get_cfg_param('default_nick')
-    
-    jid = get_true_jid(target)
+    jid = str(target).replace('/', '-')
 
     if type(target) is str:
         gch_jid = target.split('/', 1)[0]
-        
     if type(target) is type:
         gch_jid = target.getStripped()
     else:
-        gch_jid = target
+        gch_jid = str(target).split('/', 1)[0]
+        nick = get_bot_nick(gch_jid)
+    
+        if not nick:
+            nick = get_cfg_param('default_nick')
         
     if is_groupchat(gch_jid):
         nick = get_bot_nick(gch_jid)
-        
-        if not nick:
-            nick = get_cfg_param('default_nick')
     
     log_write(body, nick, 'private', jid)
 
 def log_write(body, nick, type, jid, ismoder=0):
     if not is_groupchat(jid):
         jid = get_true_jid(jid)
-        
+
     decimal = str(int(math.modf(time.time())[0] * 100000))
     (year, month, day, hour, minute, second, weekday, yearday, daylightsavings) = time.localtime()
 
     body = body.replace('&', '&amp;').replace('"', '&quot;').replace('<', '&lt;').replace('>', '&gt;')
     body = re.sub('(http|ftp)(\:\/\/[^\s<]+)', log_regex_url, body)
     body = body.replace('\n', '<br/>')
-    #body = body.encode('utf-8')
-    #nick = nick.encode('utf-8')
     
     timestamp = '[%.2i:%.2i:%.2i]' % (hour, minute, second)
 

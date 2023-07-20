@@ -146,7 +146,7 @@ def save_phrase(phrase, gch):
     cid = get_client_id()
     
     phrase = phrase.replace(r'"', r'&quot;')
-    sql = "INSERT INTO phrases (phrase) VALUES ('%s');" % (phrase.strip().encode('utf-8'))
+    sql = "INSERT INTO phrases (phrase) VALUES ('%s');" % (phrase.strip())
     
     rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
     
@@ -206,7 +206,7 @@ def get_reply(phrase, gch):
         rep = list(rep[0])
         
         if len(rep) >= 2:
-            rep_phrase = rep[1].encode('utf-8')
+            rep_phrase = rep[1]
             
         rep_phrase = rep_phrase.replace(r'&quot;', r'"')
         set_fatal_var(cid, 'last_phrase_id', gch, rep[0])
@@ -324,7 +324,7 @@ def handler_pai(type, source, body):
                         
                         if rep.split(' ')[0] == '/me':
                             if '%nick%' in rep:
-                                rep = rep.replace('%nick%', nick.encode('utf-8'))
+                                rep = rep.replace('%nick%', nick)
                             
                             return msg(groupchat, rep)
                         else:	
@@ -338,7 +338,7 @@ def handler_pai(type, source, body):
                         
                         if rep.split(' ')[0] == '/me':
                             if '%nick%' in rep:
-                                rep = rep.replace('%nick%', nick.encode('utf-8'))
+                                rep = rep.replace('%nick%', nick)
                             
                             return msg(groupchat, rep)
                         else:	
@@ -365,11 +365,11 @@ def handler_pai(type, source, body):
                         
                         if rep:
                             time.sleep(random.randrange(3, think))
-                            time.sleep(len(rep.decode('utf-8')) / chps)
+                            time.sleep(len(rep) / chps)
                             
                             if rep.split(' ')[0] == '/me':
                                 if '%nick%' in rep:
-                                    rep = rep.replace('%nick%', nick.encode('utf-8'))
+                                    rep = rep.replace('%nick%', nick)
                                         
                                 return msg(groupchat, rep)
                             else:	
@@ -388,10 +388,10 @@ def handler_pai(type, source, body):
                 if rep:
                     if rep.split(' ')[0] == '/me':
                         if '%nick%' in rep:
-                            rep = rep.replace('%nick%', nick.encode('utf-8'))
+                            rep = rep.replace('%nick%', nick)
 
                     time.sleep(random.randrange(3, think))
-                    time.sleep(len(rep.decode('utf-8')) / chps)
+                    time.sleep(len(rep) / chps)
                     return reply(type, source, rep)
 
 def handler_pai_control(type, source, parameters):

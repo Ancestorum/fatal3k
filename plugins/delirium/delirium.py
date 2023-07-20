@@ -221,7 +221,7 @@ def handler_clean_conf(type, source, parameters):
         return reply(type, source, l('This command can be used only in groupchat!'))
 
     for x in range(1, 21):
-        msg(groupchat, '')
+        msg(groupchat, ' ')
         time.sleep(1.3)
     
     rep = l('Done!')

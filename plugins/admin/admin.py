@@ -1083,7 +1083,6 @@ def handler_syslog(type, source, parameters):
                     slns = lnsdt[-lines:]
                     
                     olns = ''.join(slns)
-                    olns = olns.decode('utf-8')
 
                     rep = l('System bot logfile "%s" (lines: %s; displayed: %s):\n\n%s') % (logf, len(lnsdt), len(slns), olns.strip())
                 else:

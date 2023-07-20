@@ -98,12 +98,12 @@ def handler_python_sh(type, source, parameters):
         return reply(type, source, l('Some of requested operations in your shell-statement are not allowed by administrator!'))
     
     if os.name == 'posix':
-        pipe = os.popen('sh -c "%s" 2>&1' % (parameters.encode('utf-8')))
+        pipe = os.popen('sh -c "%s" 2>&1' % (parameters))
         return_value = pipe.read()
         pipe.close()
     elif os.name == 'nt':
-        pipe = os.popen('%s' % (parameters.encode('utf-8')))
-        return_value = pipe.read().decode('cp866')
+        pipe = os.popen('%s' % (parameters))
+        return_value = pipe.read()
         pipe.close()
     
     return reply(type, source, return_value.strip())

@@ -49,24 +49,23 @@ def get_gis_weather(ccode):
 
         resp = http.request('GET', url, headers=header)
         wxml = resp.data
-        
         return wxml
     except Exception:
         return ''
-    
+         
 def get_element_attvals(dom, element, idx=0):
     try:
         attvals = {}
         elnode = dom.getElementsByTagName(element.upper())
         attkeys = list(elnode[idx].attributes.keys())
-        
+
         for att in attkeys:
             attvals[att] = elnode[idx].getAttribute(att)
 
         return attvals
     except Exception:
         return ''
-
+ 
 def parse_xml(xml):
     try:
         tmpxml = tempfile.TemporaryFile()
@@ -74,7 +73,6 @@ def parse_xml(xml):
         tmpxml.seek(0)
         
         dom = mdom.parse(tmpxml)
-        
         tmpxml.close()
         
         dom.normalize()
@@ -82,7 +80,7 @@ def parse_xml(xml):
         return dom
     except Exception:
         return ''
-    
+        
 def handler_weather_gismeteo(type, source, parameters):
     gmweekday = {'1': l('Sunday'), '2': l('Monday'), '3': l('Tuesday'), '4': l('Wednesday'), '5': l('Thursday'), '6': l('Friday'), '7': l('Saturday'), '8': l('Sunday')}
     
@@ -127,55 +125,49 @@ def handler_weather_gismeteo(type, source, parameters):
             else:
                 town = city_code.capitalize()
             
-            forecast = get_element_attvals(dom, 'forecast')
+            rep = l('Weather %s:\n\n') % (town)
             
-            day = forecast['day']
-            nmonth = forecast['month']
-            month = gmmonth[nmonth]
-            year = forecast['year']
-            hour = forecast['hour']
+            indx = 0
+            while indx < 4:
+                forecast = get_element_attvals(dom, 'forecast', indx)
+                day = forecast['day']
+                month = forecast['month']
+                year = forecast['year']
+                hour = forecast['hour']
+                rep += l('%s.%s.%s %s:00:\n') % (day, month, year, hour)            
+                            
+                temperature = get_element_attvals(dom, 'temperature', indx)
+                tempmin = temperature['min']
+                tempmax = temperature['max']
+                rep += l('Temperature: %s-%s°C.\n') % (tempmin, tempmax)
             
-            rep = l('Weather %s, for %s %s, %s - %s:00:\n') % (town, day, month, year, hour)
+                relwet = get_element_attvals(dom, 'relwet', indx)
+                wetmin = relwet['min']
+                wetmax = relwet['max']
+                rep += l('Humidity: %s-%s%%.\n') % (wetmin, wetmax)
             
-            temperature = get_element_attvals(dom, 'temperature')
-            tempmin = temperature['min']
-            tempmax = temperature['max']
+                wind = get_element_attvals(dom, 'wind', indx)
+                ndir = wind['direction']
+                wdir = gmwinddir[ndir]
+                windmin = wind['min']
+                windmax = wind['max']
+                rep += l('Wind: %s, %s-%s m/s.\n') % (wdir, windmin, windmax)
             
-            rep += l('\nTemperature: %s/%s°C.') % (tempmin, tempmax)
+                pressure = get_element_attvals(dom, 'pressure', indx)
+                pressmin = pressure['min']
+                pressmax = pressure['max']
+                rep += l('Pressure: %s-%s mmHg.\n') % (pressmin, pressmax)
             
-            relwet = get_element_attvals(dom, 'relwet')
-            wetmin = relwet['min']
-            wetmax = relwet['max']
-            
-            rep += l('\nHumidity: %s-%s%%.') % (wetmin, wetmax)
-            
-            wind = get_element_attvals(dom, 'wind')
-            
-            ndir = wind['direction']
-            wdir = gmwinddir[ndir]
-            windmin = wind['min']
-            windmax = wind['max']
-            
-            rep += l('\nWind: %s, %s-%s m/s.') % (wdir, windmin, windmax)
-            
-            pressure = get_element_attvals(dom, 'pressure')
-            
-            pressmin = pressure['min']
-            pressmax = pressure['max']
-            
-            rep += l('\nPressure: %s-%s mmHg.') % (pressmin, pressmax)
-            
-            phenomena = get_element_attvals(dom, 'phenomena')
-            
-            ncloud = phenomena['cloudiness']
-            cloud = gmcloudiness[ncloud]
-            
-            rep += l('\nCloudiness: %s.') % (cloud)
-            
-            nprecip = phenomena['precipitation']
-            precip = gmprecipitation[nprecip]
-            
-            rep += l('\nPrecipitation: %s.') % (precip)
+                phenomena = get_element_attvals(dom, 'phenomena', indx)
+                ncloud = phenomena['cloudiness']
+                cloud = gmcloudiness[ncloud]
+                nprecip = phenomena['precipitation']
+                precip = gmprecipitation[nprecip]
+                if indx != 3:
+                    rep += l('Sky: %s, %s.\n\n') % (cloud, precip)
+                else:
+                    rep += l('Sky: %s, %s.') % (cloud, precip)
+                indx += 1
             
             return reply(type, source, rep)
         else:
@@ -183,4 +175,4 @@ def handler_weather_gismeteo(type, source, parameters):
     else:
         return reply(type, source, l('Invalid syntax!'))
         
-register_command_handler(handler_weather_gismeteo, 'gismeteo', 10)
+register_command_handler(handler_weather_gismeteo, 'gismeteo', 11)
