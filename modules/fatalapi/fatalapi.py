@@ -161,6 +161,16 @@ def fatal_help():
 
     sprint(hstr)
 
+def equalize_lists(lsto=[], lstt=[], dfvl='fatal3k'):
+    if (len(lsto) != len(lstt)) and (len(lsto) != 0):
+        dlt = len(lsto) - len(lstt)
+
+        while dlt >= 1:
+            lstt.append(dfvl)
+            dlt -= 1
+            
+    return lsto, lstt
+
 def read_file(filename, lines=False):
     try:
         fp = open(filename, encoding='utf-8')
@@ -2500,7 +2510,7 @@ def set_init_status():
         stmsg = l('Type %shelp and follow instructions of the bot to understand how to work with me!') % (cprfx)
         
         set_param('status_text', stmsg)
-        set_param('status_show', status)
+        set_param('status_show', 'online')
         
         change_bot_status('', stmsg)
     else:
@@ -3062,11 +3072,13 @@ def keep_alive_check():
         
         psw = get_fatal_var(bjid, 'passwd')
         rsc = get_fatal_var(bjid, 'rsrc')
+        prt = get_fatal_var(bjid, 'port')
+        tls = get_fatal_var(bjid, 'tlssl')
 
         dec_fatal_var('connected_count') 
         set_fatal_var(bjid, 'keep_alive_checks', 0)
         
-        reconnect(bjid, psw, rsc)
+        reconnect(bjid, psw, rsc, prt, tls)
         
         return
 
@@ -3471,7 +3483,7 @@ def discoHnd(conn, request, typ):
             
         return items
 
-def reconnect(jid, password, resource):
+def reconnect(jid, password, resource, port=5222, tlssl=1):
     try:
         if is_var_set(jid, 'main_xmpp_stanza_pc'):
             mn_xmpp_thr = get_fatal_var(jid, 'main_xmpp_stanza_pc')
@@ -3483,7 +3495,7 @@ def reconnect(jid, password, resource):
         
         time.sleep(5)
 
-        connect_client(jid, password, resource)
+        connect_client(jid, password, resource, port, tlssl)
 
         if is_var_set(jid, 'if_client_connected'):
             if not is_var_set(jid, 'reconnects'):
@@ -3505,8 +3517,10 @@ def dcHnd():
 
         psw = get_fatal_var(cid, 'passwd')
         rsc = get_fatal_var(cid, 'rsrc')
-        
-        call_in_sep_thr(cid + '/start', reconnect, cid, psw, rsc)
+        port = get_fatal_var(cid, 'port')
+        tlssl = get_fatal_var(cid, 'tlssl')
+
+        call_in_sep_thr(cid + '/start', reconnect, cid, psw, rsc, port, tlssl)
     else:
         sprint('\nClient %s disconnected.' % (cid))
         
@@ -3517,7 +3531,7 @@ def dcHnd():
     
     send_client_state()
 
-def connect_client(jid, password='', resource=''):
+def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     if not jid:
         send_client_state('brk')
         return
@@ -3527,8 +3541,8 @@ def connect_client(jid, password='', resource=''):
 
     set_fatal_var(jid, 'passwd', password)
     set_fatal_var(jid, 'rsrc', resource)
-
-    port = get_int_cfg_param('port')
+    set_fatal_var(jid, 'port', port)
+    set_fatal_var(jid, 'tlssl', tlssl)
     
     dbg_mode = get_int_cfg_param('debug_mode')
     
@@ -3550,13 +3564,13 @@ def connect_client(jid, password='', resource=''):
     connect_server = get_cfg_param(jid, server)
 
     proxy = get_fatal_var('fproxy')
-    use_tls_ssl = get_int_cfg_param('use_tls_ssl')
+    #use_tls_ssl = get_int_cfg_param('use_tls_ssl')
     certificate = get_cfg_param('cert')
     
-    if use_tls_ssl:
+    if tlssl:
         conn = jconn.connect(server=(connect_server, port), proxy=proxy, cert=certificate, use_srv=False)
     else:
-        conn = jconn.connect(server=(connect_server, port), proxy=proxy, secure=use_tls_ssl, use_srv=True)
+        conn = jconn.connect(server=(connect_server, port), proxy=proxy, secure=tlssl, use_srv=True)
     
     if not conn:
         if get_int_fatal_var(jid, 'reconnects') > 0:
@@ -3566,7 +3580,7 @@ def connect_client(jid, password='', resource=''):
             
             time.sleep(wait_for_try)
             
-            call_in_sep_thr(jid + '/start', reconnect, jid, password, resource)
+            call_in_sep_thr(jid + '/start', reconnect, jid, password, resource, port, tlssl)
             
             if not is_param_set('reconnect_forever'):
                 dec_fatal_var(jid, 'reconnects')

@@ -7,8 +7,8 @@
 #------------------------------------------------------------------------------------
 jid = login@server.tld, login2@server.tld, loginN@server.tld
 password = password, password2, passwordN
-port = 5222
-resource = fatal
+port = 5222, 5223, 5222
+resource = res, res2, res3
 
 # Telegram bot api token, chat_id and userid for plugin tgbot
 #------------------------------------------------------------
@@ -18,7 +18,7 @@ tgbot_admin_id = <USER_ID>
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------
-use_tls_ssl = 1
+use_tls_ssl = 1, 0, 1
 
 cert = path/to/certificate.pem
 

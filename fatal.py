@@ -95,6 +95,8 @@ def main():
         cljds = get_lst_cfg_param('jid')
         cpsws = get_lst_cfg_param('password')
         crscs = get_lst_cfg_param('resource')
+        ports = get_lst_cfg_param('port')
+        tlss = get_lst_cfg_param('use_tls_ssl')
         
         if not cljds:
             init_clients_vars(['fatal-bot'])
@@ -126,11 +128,21 @@ def main():
 
         set_fatal_var('connected_count', 0)
 
+        equalize_lists(cljds, crscs, 'r' + rand10())
+        equalize_lists(cljds, ports, 5222)
+        equalize_lists(cljds, tlss, 1)
+        
+        ports = [int(li) for li in ports]
+        tlss = [int(li) for li in tlss]
+
         while cljds:
             cli = cljds.pop(0)
             pswi = cpsws.pop(0)
+            rsci = crscs.pop(0)
+            prti = ports.pop(0)
+            tlsi = tlss.pop(0)
             
-            call_in_sep_thr(cli + '/main', connect_client, cli, pswi, crscs[0])
+            call_in_sep_thr(cli + '/main', connect_client, cli, pswi, rsci, prti, tlsi)
         
             sres = read_client_state()
         
