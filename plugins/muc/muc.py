@@ -453,8 +453,9 @@ def process_regvoice(gch, nick, jid):
 def handler_muc_join(groupchat, nick, aff, role):
     cid = get_client_id()
     
-    jid = get_true_jid(groupchat + '/' + nick)
-        
+    #jid = get_true_jid(groupchat + '/' + nick)
+    jid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
+    
     res = ''
     
     avon = int(get_gch_param(groupchat, 'av_on', '0'))
@@ -597,7 +598,8 @@ def handler_muc_presence(prs):
     pfrom = prs.getFrom()
     groupchat = get_stripped(pfrom)
     nick = get_resource(pfrom)
-    jid = get_true_jid(groupchat + '/' + nick)
+    #jid = get_true_jid(groupchat + '/' + nick)
+    jid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
     scode = prs.getStatusCode()
 
     if scode == '303' and ptype == 'unavailable':
@@ -850,7 +852,7 @@ def handler_akick(type, source, parameters):
                 if not 'rjid' in gch_dic[nick]:
                     continue
 
-                jid = get_stripped(gch_dic[nick]['rjid'])
+                jid = gch_dic[nick]['rjid'] #get_stripped(gch_dic[nick]['rjid'])
                 
                 if is_gch_user(groupchat, nick):
                     set_amuc(groupchat, kick, akexp, nick, jid)
@@ -938,7 +940,7 @@ def handler_amoderator(type, source, parameters):
                 if not 'rjid' in gch_dic[nick]:
                     continue
 
-                jid = get_stripped(gch_dic[nick]['rjid'])
+                jid = gch_dic[nick]['rjid'] #get_stripped(gch_dic[nick]['rjid'])
                 
                 if is_gch_user(groupchat, nick):
                     set_amuc(groupchat, moderator, amexp, nick, jid)
@@ -1018,7 +1020,7 @@ def handler_avisitor(type, source, parameters):
                 if not 'rjid' in gch_dic[nick]:
                     continue
 
-                jid = get_stripped(gch_dic[nick]['rjid'])
+                jid = gch_dic[nick]['rjid'] #get_stripped(gch_dic[nick]['rjid'])
                 
                 if is_gch_user(groupchat, nick):
                     set_amuc(groupchat, visitor, avexp, nick, jid)
@@ -1098,7 +1100,7 @@ def handler_aban(type, source, parameters):
                 if not 'rjid' in gch_dic[nick]:
                     continue
 
-                jid = get_stripped(gch_dic[nick]['rjid'])
+                jid = gch_dic[nick]['rjid'] #get_stripped(gch_dic[nick]['rjid'])
                 
                 if is_gch_user(groupchat, nick):
                     set_amuc(groupchat, ban, abexp, nick, jid)

@@ -461,21 +461,18 @@ def is_config_loaded():
 
 def get_revision(sim=False):
     try:
-        if os.path.exists('.git\logs\HEAD'):
-            fp = open('.git\logs\HEAD', 'r')
-        else:
-            return ''
-                
-        data = fp.read()
-        
-        revc = 0
-        
-        if data.count('commit:'):
-            revc = data.count('\tcommit:')
-        else:
-            return ''        
-        
-        fp.close()
+        revc = ''
+
+        if os.name == 'posix':
+            pipe = os.popen('sh -c "git rev-list --count main" 2>&1')
+            revc = pipe.read()
+            pipe.close()
+        elif os.name == 'nt':
+            pipe = os.popen('git rev-list --count main')
+            revc = pipe.read()
+            pipe.close()
+       
+        revc = revc.strip()
        
         if sim:
             return 'r%s' % (revc)

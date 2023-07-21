@@ -210,6 +210,8 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
     snick = nick
     sjid = get_true_jid(groupchat + '/' + snick)
 
+    fjid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
+
     if sjid == cid:
         return
 
@@ -228,11 +230,11 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
             rcomm = acomm
         
         params = params.replace('%nick%', snick)
-        params = params.replace('%jid%', sjid)
+        params = params.replace('%jid%', fjid)
         params = params.replace('%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
-            if exp.findall(sjid):
+            if exp.findall(fjid):
                 cmd_hnd = get_fatal_var('command_handlers', rcomm)
                 source = [groupchat + '/' + snick, groupchat, snick]
                 cmd_hnd('null', source, params)
@@ -249,7 +251,7 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
             rcomm = acomm
         
         params = params.replace('%nick%', snick)
-        params = params.replace('%jid%', sjid)
+        params = params.replace('%jid%', fjid)
         params = params.replace('%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
