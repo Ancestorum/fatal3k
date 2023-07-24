@@ -17,17 +17,191 @@
 
 from fatalapi import *
 
-import asyncio
 import telebot
-from telebot.async_telebot import AsyncTeleBot
              
-_bot_api_token = get_cfg_param('tgbot_api_token')
+def get_tg_chid(gtitle):
+    cid = get_client_id()
+    
+    gtitle = gtitle.replace('&quot;', '"')
 
-tbot = telebot.TeleBot(_bot_api_token)
-atbot = AsyncTeleBot(_bot_api_token)
+    sql = "SELECT id FROM tgchatids WHERE gname='%s';" % (gtitle)
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_usrid(fnme):
+    cid = get_client_id()
+    
+    fnme = fnme.replace('&quot;', '"')
+
+    sql = "SELECT id FROM tguserids WHERE fname='%s';" % (fnme.strip())
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_fnme(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT fname FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_usrn(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT usrn FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def set_tg_usrid(usrid, fnme, usrn=''):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+    
+    fnme = fnme.replace('"', '&quot;')
+    
+    if usrn:
+        usrn = usrn.replace('"', '&quot;')
+    else:
+        usrn = ''
+    
+    if not usrid_exists(usrid):
+        if usrn:
+            sql = "INSERT INTO tguserids (id, fname, usrn) VALUES ('%s', '%s', '%s');" % (usrid, fnme.strip(), usrn.strip())
+        else:
+            sql = "INSERT INTO tguserids (id, fname) VALUES ('%s', '%s');" % (usrid, fnme.strip())
+    else:
+        if usrn:
+            sql = "UPDATE tguserids SET \"fname\"='%s', \"usrn\"='%s' WHERE \"id\"='%s';" % (fnme.strip(), usrn.strip(), usrid)
+        else:
+            sql = "UPDATE tguserids SET \"fname\"='%s' WHERE \"id\"='%s';" % (fnme.strip(), usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres != '':
+        return True
+    return False
+
+def get_tg_usr_acc(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+    
+    if usrid_exists(usrid):
+        sql = "SELECT acc FROM tguserids WHERE \"id\"='%s';" % (usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def set_tg_usr_acc(usrid, acc):
+    cid = get_client_id()
+    
+    if (type(usrid) != int) or (type(acc) != int):
+        return False 
+    
+    if usrid_exists(usrid):
+        sql = "UPDATE tguserids SET \"acc\"='%s' WHERE \"id\"='%s';" % (acc, usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    return qres
+
+def usrid_exists(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT * FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return True
+    return False
+
+def chid_exists(chid):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+
+    sql = "SELECT * FROM tgchatids WHERE id='%s';" % (chid)
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres:
+        return True
+    return False
+
+def rmv_tg_usrid(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+    
+    if usrid_exists(usrid):
+        sql = 'DELETE FROM tgusrids WHERE id="%s";' % (usrid)
+   
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    return qres
+
+def rmv_tg_chid(chid):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+    
+    if chid_exists(chid):
+        sql = 'DELETE FROM tgchatids WHERE id="%s";' % (chid)
+   
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    return qres
+
+def set_tg_chid(chid, gtitle):
+    cid = get_client_id()
+    
+    if type(chid) != int:
+        return False 
+    
+    gtitle = gtitle.replace('"', '&quot;')
+    
+    if not chid_exists(chid):
+        sql = "INSERT INTO tgchatids (id, gname) VALUES ('%s', '%s');" % (chid, gtitle.strip())
+    else:
+        sql = "UPDATE tgchatids SET \"gname\"='%s' WHERE \"id\"='%s';" % (gtitle.strip(), chid)
+    
+    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    
+    if qres != '':
+        return True
+    return False
 
 def handler_tgaccess(type, source, parameters):
     cid = get_client_id()
+    
+    tbot = get_fatal_var(cid, 'tgbot')
     
     accdesc = {'-100': l('(full ignoring)'), '-1': l('(blocked)'), \
         '0': l('(none)'), '1': l('(low user)'), '10': l('(user)'), \
@@ -62,30 +236,37 @@ def handler_tgaccess(type, source, parameters):
         else:
             tbot.reply_to(lmsg, l('Not found!'))    
 
-@atbot.message_handler(content_types=['photo'])
-async def handle_photo_content(message):
+def handle_photo_content(message):
+    cid = get_client_id()
+    
+    tbot = get_fatal_var(cid, 'tgbot')
+    
     if message.chat.type == 'private':
         photo_id = message.photo[-1].file_id
         
-        file_url = await atbot.get_file_url(photo_id)
+        file_url = tbot.get_file_url(photo_id)
        
-        await atbot.reply_to(message, file_url)
+        tbot.reply_to(message, file_url)
         
-@atbot.message_handler(content_types=['video'])
-async def handle_video_content(message):
+def handle_video_content(message):
+    cid = get_client_id()
+    
+    tbot = get_fatal_var(cid, 'tgbot')
+        
     if message.chat.type == 'private':
         video_id = message.video.file_id
         
-        file_url = await atbot.get_file_url(video_id)
+        file_url = tbot.get_file_url(video_id)
        
-        await atbot.reply_to(message, file_url)
+        tbot.reply_to(message, file_url)
 
-@atbot.message_handler(content_types=['text'])
-async def command_messages(message):
+def command_messages(message):
     if (time.time() - message.date) > 8:
         return
-    
+
     cid = get_client_id()
+    tbot = get_fatal_var(cid, 'tgbot')
+    
     mchat = message.chat.type
     usrid = message.from_user.id
     fname = message.from_user.first_name
@@ -130,9 +311,9 @@ async def command_messages(message):
             if comm_hnd:
                 comm_hnd('telegram', ['', '', ''], cparams.strip())
             else:
-                await atbot.reply_to(message, l('Unknown command!'))
+                tbot.reply_to(message, l('Unknown command!'))
         else:
-            await atbot.reply_to(message, l('Too few rights!'))   
+            tbot.reply_to(message, l('Too few rights!'))   
     else:
         if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
             set_fatal_var(cid, 'tgm_grp_chid', message.chat.id)
@@ -146,33 +327,30 @@ async def command_messages(message):
                     msg(wgch, rep)    
 
 def polling_proc():
-    try:
-        while True:
-            asyncio.run(atbot.polling())
-
-            time.sleep(10)
-    except Exception:
-        pass      
-
-def start_tgm_polling():
     cid = get_client_id()
+    tbot = get_fatal_var(cid, 'tgbot')
+    
+    try:
+        tbot.infinity_polling(interval=0, timeout=3)
+    except Exception:
+        log_exc_error()     
+
+def init_tgm_bot():
+    cid = get_client_id()
+    
+    bot_api_token = get_cfg_param('tgbot_api_token')
+
+    tbot = telebot.TeleBot(bot_api_token)
     
     set_fatal_var(cid, 'tgbot', tbot)
     
-    call_in_sep_thr(cid + '/tbot_polling', polling_proc) 
-
-def create_tg_chids_table():
-    cid = get_client_id()
+    tbot.register_message_handler(command_messages, content_types=['text'])
+    tbot.register_message_handler(handle_photo_content, content_types=['photo'])
+    tbot.register_message_handler(handle_video_content, content_types=['video'])
     
-    if not is_db_exists('dynamic/%s/tgchatids.db' % (cid)):
-        sql = '''CREATE TABLE tgchatids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            id VARCHAR(30) NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'''
-        sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    call_in_sep_thr(cid + '/tbot_polling', polling_proc) 
         
-        sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (idn);'
-        sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
-        
-def create_tg_usrids_table():
+def create_tg_tables():
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/tguserids.db' % (cid)):
@@ -183,10 +361,18 @@ def create_tg_usrids_table():
         sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
         
         sql = 'CREATE UNIQUE INDEX itguserids ON tguserids (idn);'
-        sqlquery('dynamic/%s/tguserids.db' % (cid), sql)    
+        sqlquery('dynamic/%s/tguserids.db' % (cid), sql) 
+
+    if not is_db_exists('dynamic/%s/tgchatids.db' % (cid)):
+        sql = '''CREATE TABLE tgchatids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
+            id VARCHAR(30) NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'''
+        sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+        
+        sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (idn);'
+        sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
 
 register_command_handler(handler_tgaccess, 'tgaccess', 10)
 
-register_stage0_init(create_tg_usrids_table)
-register_stage0_init(create_tg_chids_table)
-register_stage0_init(start_tgm_polling)
+register_stage0_init(create_tg_tables)
+
+register_stage0_init(init_tgm_bot)

@@ -131,7 +131,7 @@ def main():
         equalize_lists(cljds, crscs, 'r' + rand10())
         equalize_lists(cljds, ports, 5222)
         equalize_lists(cljds, tlss, 1)
-        
+
         ports = [int(li) for li in ports]
         tlss = [int(li) for li in tlss]
 
