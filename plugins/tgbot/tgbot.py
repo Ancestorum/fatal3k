@@ -326,7 +326,7 @@ def command_messages(message):
                 for wgch in wgchs:
                     msg(wgch, rep)    
 
-def polling_proc():
+def tgm_polling_proc():
     cid = get_client_id()
     tbot = get_fatal_var(cid, 'tgbot')
     
@@ -338,17 +338,18 @@ def polling_proc():
 def init_tgm_bot():
     cid = get_client_id()
     
-    bot_api_token = get_cfg_param('tgbot_api_token')
+    if not is_var_set(cid, 'tgbot'):
+        bot_api_token = get_cfg_param('tgbot_api_token')
 
-    tbot = telebot.TeleBot(bot_api_token)
-    
-    set_fatal_var(cid, 'tgbot', tbot)
-    
-    tbot.register_message_handler(command_messages, content_types=['text'])
-    tbot.register_message_handler(handle_photo_content, content_types=['photo'])
-    tbot.register_message_handler(handle_video_content, content_types=['video'])
-    
-    call_in_sep_thr(cid + '/tbot_polling', polling_proc) 
+        tbot = telebot.TeleBot(bot_api_token)
+        
+        set_fatal_var(cid, 'tgbot', tbot)
+        
+        tbot.register_message_handler(command_messages, content_types=['text'])
+        tbot.register_message_handler(handle_photo_content, content_types=['photo'])
+        tbot.register_message_handler(handle_video_content, content_types=['video'])
+        
+        call_in_sep_thr(cid + '/init_tgm_bot', tgm_polling_proc) 
         
 def create_tg_tables():
     cid = get_client_id()
@@ -374,5 +375,4 @@ def create_tg_tables():
 register_command_handler(handler_tgaccess, 'tgaccess', 10)
 
 register_stage0_init(create_tg_tables)
-
 register_stage0_init(init_tgm_bot)

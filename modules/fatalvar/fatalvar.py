@@ -82,8 +82,13 @@ def _eval_md5(path):
 def get_client_id():
     curr_thr = threading.currentThread()
     thr_name = curr_thr.getName()
-    sptnm = thr_name.split('/', 1)    
-    return sptnm[0]
+    sptnm = thr_name.split('/', 1) 
+    cid = sptnm[0]
+    
+    if cid == 'all' or not thr_name.count('/'):
+        cid = get_fatal_var('curr_cons_owner')
+    
+    return cid
 
 def change_locale(locale):
     cid = get_client_id()

@@ -1,5 +1,5 @@
 """
-$Id: Class.py,v 1.6.4.2 2011/03/23 01:42:07 customdesigned Exp $
+$Id: Class.py,v 1.6.2.1 2011/03/16 20:06:39 customdesigned Exp $
 
  This file is part of the pydns project.
  Homepage: http://pydns.sourceforge.net
@@ -30,16 +30,13 @@ for _name in _names:
     if _name[0] != '_': classmap[eval(_name)] = _name
 
 def classstr(klass):
-    if klass in classmap: return classmap[klass]
-    else: return repr(klass)
+    if classmap.has_key(klass): return classmap[klass]
+    else: return `klass`
 
 #
 # $Log: Class.py,v $
-# Revision 1.6.4.2  2011/03/23 01:42:07  customdesigned
-# Changes from 2.3 branch
-#
-# Revision 1.6.4.1  2011/02/18 19:35:22  customdesigned
-# Python3 updates from Scott Kitterman
+# Revision 1.6.2.1  2011/03/16 20:06:39  customdesigned
+# Refer to explicit LICENSE file.
 #
 # Revision 1.6  2002/04/23 12:52:19  anthonybaxter
 # cleanup whitespace.

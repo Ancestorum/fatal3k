@@ -1,40 +1,36 @@
 # -*- encoding: utf-8 -*-
-# $Id: __init__.py,v 1.8.2.7.2.2 2011/03/23 01:42:07 customdesigned Exp $
+# $Id: __init__.py,v 1.8.2.10 2012/02/03 23:04:01 customdesigned Exp $
 #
 # This file is part of the pydns project.
 # Homepage: http://pydns.sourceforge.net
 #
-# Changes for Python3 port © 2011 Scott Kitterman <scott@kitterman.com>
-#
 # This code is covered by the standard Python License. See LICENSE for details.
+#
 
 # __init__.py for DNS class.
 
-__version__ = '3.0.1'
+__version__ = '2.3.6'
 
-from . import Type
-from . import Opcode
-from . import Status
-from . import Class
-from .Base import DnsRequest
-from .Base import DNSError
-from .Lib import DnsResult
-from .Base import *
-from .Lib import *
+import Type,Opcode,Status,Class
+from Base import DnsRequest, DNSError
+from Lib import DnsResult
+from Base import *
+from Lib import *
 Error=DNSError
-from .lazy import *
+from lazy import *
 Request = DnsRequest
 Result = DnsResult
 
-Base._DiscoverNameServers()
-
 #
 # $Log: __init__.py,v $
-# Revision 1.8.2.7.2.2  2011/03/23 01:42:07  customdesigned
-# Changes from 2.3 branch
+# Revision 1.8.2.10  2012/02/03 23:04:01  customdesigned
+# Release 2.3.6
 #
-# Revision 1.8.2.7.2.1  2011/02/18 19:35:22  customdesigned
-# Python3 updates from Scott Kitterman
+# Revision 1.8.2.9  2011/03/16 20:06:39  customdesigned
+# Refer to explicit LICENSE file.
+#
+# Revision 1.8.2.8  2011/03/03 21:57:15  customdesigned
+# Release 2.3.5
 #
 # Revision 1.8.2.7  2009/06/09 18:05:29  customdesigned
 # Release 2.3.4

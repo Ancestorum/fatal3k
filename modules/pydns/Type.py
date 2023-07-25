@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
- $Id: Type.py,v 1.6.2.2.2.2 2011/03/23 01:42:07 customdesigned Exp $
+ $Id: Type.py,v 1.6.2.3 2011/03/16 20:06:39 customdesigned Exp $
 
  This file is part of the pydns project.
  Homepage: http://pydns.sourceforge.net
@@ -50,15 +50,12 @@ for _name in _names:
     if _name[0] != '_': typemap[eval(_name)] = _name
 
 def typestr(type):
-    if type in typemap: return typemap[type]
-    else: return repr(type)
+    if typemap.has_key(type): return typemap[type]
+    else: return `type`
 #
 # $Log: Type.py,v $
-# Revision 1.6.2.2.2.2  2011/03/23 01:42:07  customdesigned
-# Changes from 2.3 branch
-#
-# Revision 1.6.2.2.2.1  2011/02/18 19:35:22  customdesigned
-# Python3 updates from Scott Kitterman
+# Revision 1.6.2.3  2011/03/16 20:06:39  customdesigned
+# Refer to explicit LICENSE file.
 #
 # Revision 1.6.2.2  2009/06/09 18:39:06  customdesigned
 # Built-in SPF support
@@ -77,7 +74,7 @@ def typestr(type):
 # added identifying header to top of each file
 #
 # Revision 1.3  2001/07/19 07:38:28  anthony
-# added type code for SRV. From Michael StrÃ¶der.
+# added type code for SRV. From Michael Ströder.
 #
 # Revision 1.2  2001/07/19 06:57:07  anthony
 # cvs keywords added
