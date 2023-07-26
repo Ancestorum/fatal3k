@@ -12,9 +12,9 @@ resource = res, res2, res3
 
 # Telegram bot api token, chat_id and userid for plugin tgbot
 #------------------------------------------------------------
-bot_api_token = <API_TOKEN>
-tgm_chat_id = <CHAT_ID>
-tgbot_admin_id = <USER_ID>
+bot_api_token = 
+tgm_chat_id = 
+tgbot_admin_id = 
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------

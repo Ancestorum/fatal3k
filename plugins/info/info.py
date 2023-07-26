@@ -1184,6 +1184,16 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                 rtime = rtime.split(':')
                 rtime = [li for li in rtime if li != '']
                 
+                brtime = False
+                
+                for tli in rtime:
+                    if not tli.isdigit():
+                        brtime = True
+                        break
+                        
+                if brtime:
+                    return reply(type, source, l('Invalid syntax!'))
+                
                 if len(rtime) == 3:
                     sc = int(rtime[2])
                     mn = int(rtime[1])
@@ -1213,6 +1223,10 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     return reply(type, source, l('Expired remind!'))
             else:
                 rtimes = spltdp[0]
+                
+                if not rtimes.isdigit():
+                    return reply(type, source, l('Invalid syntax!'))
+                
                 secs = int(rtimes) * 60
                 cts = time.time()
                 dts = cts + secs

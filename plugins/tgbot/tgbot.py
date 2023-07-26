@@ -198,7 +198,10 @@ def set_tg_chid(chid, gtitle):
         return True
     return False
 
-def handler_tgaccess(type, source, parameters):
+def handler_tgaccess(message):
+    if (time.time() - message.date) > 8:
+        return
+    
     cid = get_client_id()
     
     tbot = get_fatal_var(cid, 'tgbot')
@@ -209,16 +212,19 @@ def handler_tgaccess(type, source, parameters):
         '20': l('(admin)'), '30': l('(owner)'), '40': l('(joiner)'), \
         '100': l('(suderadmin)')}
     
-    lmsg = get_fatal_var(cid, 'last_tg_msg')
-    usrid = lmsg.from_user.id
-    chid = lmsg.chat.id
+    usrid = message.from_user.id
+    chid = message.chat.id
+    
+    command = message.text.split()[0]
+    
+    parameters = message.text.replace(command, '') 
     
     if not parameters:
         level = get_tg_usr_acc(usrid)
         
         levdesc = accdesc[str(level)]
         
-        tbot.reply_to(lmsg, '%s %s' % (level, levdesc))
+        tbot.reply_to(message, '%s %s' % (level, levdesc))
     else:
         parameters = parameters.strip()
         
@@ -232,9 +238,12 @@ def handler_tgaccess(type, source, parameters):
             
             levdesc = accdesc[str(level)]
             
-            tbot.reply_to(lmsg, '%s %s' % (level, levdesc))
+            tbot.reply_to(message, '%s %s' % (level, levdesc))
         else:
-            tbot.reply_to(lmsg, l('Not found!'))    
+            tbot.reply_to(message, l('Not found!'))    
+
+def handler_tgaccess_jcmd(type, source, parameters):
+    reply(type, source, l('This command you can only use in Telegram!'))
 
 def handle_photo_content(message):
     cid = get_client_id()
@@ -266,6 +275,8 @@ def command_messages(message):
 
     cid = get_client_id()
     tbot = get_fatal_var(cid, 'tgbot')
+    
+    fbdn_cmds = ['access']
     
     mchat = message.chat.type
     usrid = message.from_user.id
@@ -299,6 +310,10 @@ def command_messages(message):
     if message.text.startswith('/'):
         cmdname = message.text.split()[0]
         wprname = cmdname.replace('/','').strip()
+        
+        if wprname in fbdn_cmds:
+            tbot.reply_to(message, l('This command you can only use in jabber! Use /tgaccess for this function!'))
+            return
         
         real_access = get_int_fatal_var('commands', wprname, 'access')
         usracc = int(get_tg_usr_acc(usrid))
@@ -337,7 +352,7 @@ def tgm_polling_proc():
 
 def init_tgm_bot():
     cid = get_client_id()
-    
+  
     if not is_var_set(cid, 'tgbot'):
         bot_api_token = get_cfg_param('tgbot_api_token')
 
@@ -345,6 +360,7 @@ def init_tgm_bot():
         
         set_fatal_var(cid, 'tgbot', tbot)
         
+        tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
         tbot.register_message_handler(command_messages, content_types=['text'])
         tbot.register_message_handler(handle_photo_content, content_types=['photo'])
         tbot.register_message_handler(handle_video_content, content_types=['video'])
@@ -372,7 +388,8 @@ def create_tg_tables():
         sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (idn);'
         sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
 
-register_command_handler(handler_tgaccess, 'tgaccess', 10)
+if is_param_set('tgbot_api_token'):
+    register_command_handler(handler_tgaccess_jcmd, 'tgaccess', 10)
 
-register_stage0_init(create_tg_tables)
-register_stage0_init(init_tgm_bot)
+    register_stage0_init(create_tg_tables)
+    register_stage0_init(init_tgm_bot)

@@ -296,7 +296,7 @@ def escrep(text):
             .replace('&quot;', '"').replace('\t', '').replace('||||:]', '')\
                 .replace('>[:\n', '')
 
-def handler_borg_cycle_quote(type, source, parameters):
+def handler_borg_cycle_quote(type, source, parameters): 
     taskn = 'borc.%s' % (source[1])
     sparam = parameters.strip()
     
@@ -308,12 +308,14 @@ def handler_borg_cycle_quote(type, source, parameters):
 
             newsrc = [source[1], source[1], '']
             
-            add_fatal_task(taskn, handler_borg_orgall_get, ('private', source, ''), ival)
+            add_fatal_task(taskn, handler_borg_orgall_get, (type, source, ''), ival)
             
             tlst = time.time()
             
             set_gch_param(source[1], 'borc.last', str(tlst))
             set_gch_param(source[1], 'borc.ival', str(ival))
+            set_gch_param(source[1], 'borc.type', type)
+            set_gch_param(source[1], 'borc.src', str(source[0]))
             
             return reply(type, source, l('Cycle quote from bashorg.org has been turned on!'))
         else:
@@ -332,15 +334,15 @@ def handler_borg_cycle_quote(type, source, parameters):
         else:
             if is_task_exists(taskn):
                 tlast = get_task_last(taskn)
-                nquote = time.strftime('%H:%M:%S', time.localtime(tlast))
                 tival = get_task_ival(taskn)
+                nquote = time.strftime('%H:%M:%S', time.localtime(tlast))
                 qina = timeElapsed(tlast-time.time())
                 each = timeElapsed(tival)
                 return reply(type, source, l('Next quote at %s (in %s/each %s)!') % (nquote, qina, each))
             else:
                 return reply(type, source, l('Cycle quote from bashorg.org has not been turned on yet!')) 
 
-def borg_pull_pages(dest, page=1):
+def borg_pull_pages(dest, page=1): 
     start = time.time() 
 
     pind = int(page)
@@ -384,12 +386,14 @@ def borg_pull_pages_cmd(type, source, parameters):
 def cycle_quote_resume(gch):
     if param_exists(gch, 'borc.ival'):
         ival = get_gch_param(gch, 'borc.ival', '0')
+        type = get_gch_param(gch, 'borc.type', 'public')
+        source = get_gch_param(gch, 'borc.src', '')
         ival = int(ival)
         taskn = 'borc.%s' % (gch)
         
         if ival:
-            newsrc = [gch+'/ancestor', gch, '']
-            add_fatal_task(taskn, handler_borg_orgall_get, ('private', newsrc, ''), ival)
+            newsrc = [source, gch, '']
+            add_fatal_task(taskn, handler_borg_orgall_get, (type, newsrc, ''), ival)
             
         if param_exists(gch, 'borc.last'):
             last = time.time()

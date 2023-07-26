@@ -25,6 +25,7 @@ import queue
 import heapq
 import threading
 from math import gcd
+from functools import reduce
 
 from threading import Event
 
@@ -350,25 +351,27 @@ def is_event_init(ename):
 def init_fatal_event(ename):
     cid = get_client_id()    
 
-    _fatalVars.setVar(cid, ename, Event())
+    _fatalVars.setVar(cid, ename, 'evnt', Event())
 
 def wait_fatal_event(ename, timeout=None):
     cid = get_client_id()
     
     evnt = Event()
     
-    _fatalVars.setVar(cid, ename, evnt)
+    _fatalVars.setVar(cid, ename, 'evnt', evnt)
+    _fatalVars.setVar(cid, ename, 'start', time.time())
+    
     evnt.wait(timeout)
 
     if timeout: 
-        _fatalVars.delVar(ename)
+        _fatalVars.delVar(cid, ename)
 
 def set_fatal_event(ename):
     cid = get_client_id()
     
-    evnt = _fatalVars.getVar(cid, ename)
+    evnt = _fatalVars.getVar(cid, ename, 'evnt')
     evnt.set()
-    _fatalVars.delVar(ename)
+    _fatalVars.delVar(cid, ename)
 
 def get_fatal_var(*args):
     return _fatalVars.getVar(*args)
@@ -478,7 +481,10 @@ def get_revision(sim=False):
             pipe.close()
        
         revc = revc.strip()
-       
+
+        if not revc.isdigit():
+            return ''
+
         if sim:
             return 'r%s' % (revc)
         else:
@@ -537,6 +543,47 @@ class _fCycleTasks(object):
         self._strd = 0
         self._resume = False
         self._sdel = 1
+        self._just_started = False
+
+    def _shift_times(self):
+        cid = get_client_id()
+        
+        if self._miv > 1:
+            try:
+                tskl = tuple(self._tasks)
+                
+                tmel = round(time.time()-get_fatal_var(cid, 'task_manager_event', 'start'))
+                
+                for tsk in tskl:
+                    count = self._tasks[tsk]['count']
+                    rmns = self._tasks[tsk]['remns']
+                    last = self._tasks[tsk]['last']
+                    
+                    self._tasks[tsk]['count'] = count + tmel
+                    self._tasks[tsk]['remns'] = rmns - tmel
+            except Exception:
+                pass
+
+    def _calc_gcd(self, numl):
+        if numl:
+            x = reduce(gcd, numl)
+            return x
+        return 1
+        
+    def _recalc_gcd(self):
+        tskl = tuple(self._tasks)
+
+        gcdl = []
+
+        for tsk in tskl:
+            gcdl.append(self._tasks[tsk]['remns'])
+        
+        gcdl = [li for li in gcdl if li != 0]
+        
+        if len(gcdl) <= 1:
+            gcdl.append(1)
+        
+        self._miv = self._calc_gcd(gcdl)
 
     def _worker(self):
         while True:
@@ -546,7 +593,25 @@ class _fCycleTasks(object):
         
             tskl = tuple(self._tasks)
             
-            self._miv = gcd(*self._ivals)
+            if self._just_started:
+                self._miv = self._calc_gcd(self._ivals)
+                self._just_started = False
+            
+            if is_var_set(get_client_id(), 'tskmgr_debug'):
+                rtll = []
+                ntll = []
+                
+                for tsk in tskl:
+                    ntll.append(tsk)
+                    rtll.append(self._tasks[tsk]['remns'])
+
+                print('>> '+'\n>> '.join(ntll))
+                print(str(rtll)+': '+str(self._calc_gcd(rtll))+'/'+str(self._miv)+'\n')
+                
+                rtll = []
+                ntll = []
+            
+            #self._recalc_gcd()
             
             for tsk in tskl:
                 func = self._tasks[tsk]['func']
@@ -562,7 +627,8 @@ class _fCycleTasks(object):
                 
                 try:
                     #if count >= ival - shft:
-                    if nela <= time.time() + 1: 
+                    #if nela <= time.time(): 
+                    if (rmns - 1 <= 0) and (count >= ival):
                         self._tasks[tsk]['count'] = 0
                         self._tasks[tsk]['remns'] = ival
 
@@ -581,8 +647,7 @@ class _fCycleTasks(object):
                         else:
                             func(*args)
                         
-                        self._tasks[tsk]['pmiv'] = self._miv
-                        self._tasks[tsk]['last'] = nela
+                        self._tasks[tsk]['last'] += ival
                         self._tasks[tsk]['strd'] += 1
                         self._strd += 1
                     else:
@@ -591,25 +656,25 @@ class _fCycleTasks(object):
                 except Exception:
                     self._fails += 1
                 
-                '''#if tsk == 'client_keep_alive_check':
-                ttstr = time.strftime('%H:%M:%S', time.localtime(time.time()))
-                tlstr = time.strftime('%H:%M:%S', time.localtime(self._tasks[tsk]['last']))
-                nestr = time.strftime('%H:%M:%S', time.localtime(nela))
-                
-                print('[%s]' % (ttstr))
-                print('name: %s' % (tsk))
-                print('mivl: %s' % (self._miv))
-                print('cunt: %s' % (count))
-                print('ival: %s' % (ival))
-                print('rmns: %s' % (rmns))
-                print('last: %s' % (tlstr))
-                print('next: %s' % (nestr))
-                print('thid: %s' % (self._tid))
-                print('fail: %s\n' % (self._fails))'''
+                if is_var_set(get_client_id(), 'tskmgr_debug2'):
+                    if tsk == 'client_keep_alive_check' or tsk.count('remind') or tsk.count('borc'):
+                        ttstr = time.strftime('%H:%M:%S', time.localtime(time.time()))
+                        tlstr = time.strftime('%H:%M:%S', time.localtime(self._tasks[tsk]['last']))
+                        nestr = time.strftime('%H:%M:%S', time.localtime(nela))
+                        
+                        print('[%s]' % (ttstr))
+                        print('name: %s' % (tsk))
+                        print('mivl: %s' % (self._miv))
+                        print('cunt: %s' % (count))
+                        print('ival: %s' % (ival))
+                        print('rmns: %s' % (rmns))
+                        print('last: %s' % (tlstr))
+                        print('next: %s\n' % (nestr))
+                        #print('thid: %s' % (self._tid))
+                        #print('fail: %s\n' % (self._fails))
                     
             wait_fatal_event('task_manager_event', self._miv)
-            #time.sleep(self._miv)
-               
+                          
             if self._rtsks:
                 rtsks = tuple(self._rtsks)
 
@@ -621,8 +686,8 @@ class _fCycleTasks(object):
 
                 self._rtsks = []
 
-                self._miv = gcd(*self._ivals)
-
+                self._recalc_gcd()
+                
             self._ivals.extend(self._nivls)
 
             for tskn in self._ntsks:
@@ -633,8 +698,8 @@ class _fCycleTasks(object):
                     self._resume = False
              
             if self._nivls:
-                self._miv = gcd(*self._ivals)
-                
+                self._recalc_gcd()
+                                
             init_fatal_event('task_manager_event')
             
             self._nivls = []
@@ -651,7 +716,11 @@ class _fCycleTasks(object):
             
             self._nivls.append(ival)
             self._ntsks[tskn] = {'func': func, 'ival': int(ival), 'args': args, 'count': 0, 'remns': int(ival), 'once': once, 'last': time.time(), 'strd': 0, 'inthr': inthr}
-            
+         
+            self._shift_times()
+         
+            self._recalc_gcd()
+         
             if is_event_init('task_manager_event'):
                 set_fatal_event('task_manager_event')
 
@@ -723,13 +792,14 @@ class _fCycleTasks(object):
                 self._tasks[tsk]['last'] = time.time()
             
             if self._ivals:
-                self._miv = gcd(*self._ivals)
+                self._miv = self._calc_gcd(self._ivals)
             else:
                 self._miv = sdel
             
             self._wrktmr = fThread(None, self._worker, tname)
             self._wrktmr.ttype = 'sys'
             self._wrktmr.start()
+            self._just_started = True
 
     def Stop(self):
         if self._wrktmr:
@@ -1024,7 +1094,9 @@ class _fHelp(fLocale):
                             dhvl = [hvi.strip() for hvi in dhvl if not hvi in self._data[hnam][hsec]] 
                         
                         if dhvl:
-                            self._data[hnam][hsec].extend(dhvl)
+                            for dhl in dhvl:
+                                if not dhl in self._data[hnam][hsec]:
+                                    self._data[hnam][hsec].append(dhl)
 
                     continue
                 

@@ -210,7 +210,21 @@ def order_unban(groupchat, jid):
     jconn.send(iq)
 
 def start_check_idle():
-    add_fatal_task('order_check_idle', func=order_check_idle, ival=120, inthr=False)
+    cid = get_client_id()
+    
+    gchs = list(get_fatal_var(cid, 'gchrosters'))
+    
+    idle_cond = False
+    
+    for gch in gchs:
+        flidco = int(get_gch_param(gch, 'filt_idle_cond', '0'))
+        
+        if flidco:
+            idle_cond = True
+            break
+    
+    if idle_cond:
+        add_fatal_task('order_check_idle', func=order_check_idle, ival=120, inthr=False)
 
 def order_check_idle():
     cid = get_client_id()
@@ -232,7 +246,9 @@ def order_check_idle():
                     
                     if idle > timee:
                         order_kick(gch, nick, l('Silence more than %s!') % (timeElapsed(idle)))
-    
+        else:
+            rmv_fatal_task('order_check_idle')
+
 #------------------------------------------------------------------------------
 
 def handler_order_message(type, source, body):
@@ -763,9 +779,11 @@ def handler_order_filt(type, source, parameters):
                 return reply(type, source, l('Kick for silence has been set after %s seconds (%s)!') % (parameters[2], timeElapsed(int(parameters[2]))))
             elif parameters[1] == '0':
                 set_gch_param(groupchat, 'filt_idle_cond', '0')
+                rmv_fatal_task('order_check_idle')
                 return reply(type, source, l('Kick for silence filter has been turned off!'))
             elif parameters[1] == '1':
                 set_gch_param(groupchat, 'filt_idle_cond', '1')
+                add_fatal_task('order_check_idle', func=order_check_idle, ival=120, inthr=False)
                 return reply(type, source, l('Kick for silence filter has been turned on!'))
             else:
                 return reply(type, source, l('Invalid syntax!'))
