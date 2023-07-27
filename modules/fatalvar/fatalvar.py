@@ -168,7 +168,7 @@ def load_hlp_msgs(locale, dpath, cid=''):
         hlpo = get_fatal_var(cid, 'help')
 
         if hlpo:
-            hlpo.msgsLoad(locf)
+            hlpo.msgsLoad(locf, dpath)
 
 def reld_acc_hlp_msgs(locale, cid):
     plsl = os.listdir('plugins')
@@ -623,12 +623,12 @@ class _fCycleTasks(object):
                 inth = self._tasks[tsk]['inthr']
                 rmns = self._tasks[tsk]['remns']
 
-                nela = self._tasks[tsk]['last'] + ival
+                nela = self._tasks[tsk]['next']
                 
                 try:
                     #if count >= ival - shft:
                     #if nela <= time.time(): 
-                    if (rmns - 1 <= 0) and (count >= ival):
+                    if nela <= time.time():
                         self._tasks[tsk]['count'] = 0
                         self._tasks[tsk]['remns'] = ival
 
@@ -647,7 +647,9 @@ class _fCycleTasks(object):
                         else:
                             func(*args)
                         
-                        self._tasks[tsk]['last'] += ival
+                        curt = time.time()
+                        self._tasks[tsk]['last'] = curt
+                        self._tasks[tsk]['next'] = curt + ival
                         self._tasks[tsk]['strd'] += 1
                         self._strd += 1
                     else:
@@ -715,7 +717,7 @@ class _fCycleTasks(object):
                 tskn = '%s%d' % (func_name, self._tid)
             
             self._nivls.append(ival)
-            self._ntsks[tskn] = {'func': func, 'ival': int(ival), 'args': args, 'count': 0, 'remns': int(ival), 'once': once, 'last': time.time(), 'strd': 0, 'inthr': inthr}
+            self._ntsks[tskn] = {'func': func, 'ival': int(ival), 'args': args, 'count': 0, 'remns': int(ival), 'once': once, 'last': time.time(), 'next': time.time()+int(ival), 'strd': 0, 'inthr': inthr}
          
             self._shift_times()
          
@@ -1034,6 +1036,17 @@ class _fHelp(fLocale):
         else:
             return []
     
+    def _get_slave_dict(self, hnam, ddict):
+        kks = list(self._data)
+        ndt = {}
+        
+        for ki in kks:
+            if hnam in list(self._data[ki]):
+                ndt = self._data[ki] 
+                break
+        
+        return ndt
+         
     def setLocale(self, locale):
         mfiles = self._files
         self._files = []
@@ -1041,17 +1054,39 @@ class _fHelp(fLocale):
         
         for fli in mfiles:
             dof = os.path.dirname(fli)
+            
+            spll = fli.split('/')
+            dpt = spll[-3]
+            
+            if dpt.count('\\'):
+                spll = dpt.split('\\')
+                dpt = spll[-1]
+            
             hlf = '%s/help.%s' % (dof, locale)
 
             if os.path.exists(hlf):
-                self.msgsLoad(hlf)
+                self.msgsLoad(hlf, dpt)
                 continue
             
-            self.msgsLoad('%s/help.ru' % (dof))
+            self.msgsLoad('%s/help.ru' % (dof), dpt)
     
-    def msgsLoad(self, filename):
-        self._files.append(filename)
+    def msgsLoad(self, filename, dpath=''):
+        if not filename in self._files:
+            self._files.append(filename)
+        
         msgs = self._read_file(filename)
+       
+        dpt = ''
+       
+        if dpath:
+            if dpath.count('\\'):
+                spll = dpath.split('\\')
+                dpt = spll[-1]
+            else:
+                spll = dpath.split('/')
+                dpt = spll[-1]
+         
+        self._data[dpt] = {}
         
         for cli in msgs:
             if not cli.endswith('\n'):
@@ -1075,53 +1110,61 @@ class _fHelp(fLocale):
                 if len(hnam) > 17:
                     continue
                 
-                if not hnam in self._data:
-                    self._data[hnam] = {}
+                if not hnam in self._data[dpt]:
+                    self._data[dpt][hnam] = {}
                 
                 dhvl = hval
                 
                 if hsec in ('ccat', 'exam'):
-                    if not hsec in self._data[hnam]:
-                        self._data[hnam][hsec] = []
+                    if not hsec in self._data[dpt][hnam]:
+                        self._data[dpt][hnam][hsec] = []
                     
-                    if not dhvl in self._data[hnam][hsec]:
+                    if not dhvl in self._data[dpt][hnam][hsec]:
                         if hsec == 'exam':
                             dhvl = [dhvl.strip()]
                         else:
                             dhvl = self._str_to_list(dhvl)
                         
-                        if len(dhvl) > 1:
-                            dhvl = [hvi.strip() for hvi in dhvl if not hvi in self._data[hnam][hsec]] 
+                        dhvl = [hvi.strip() for hvi in dhvl if not hvi in self._data[dpt][hnam][hsec]] 
                         
-                        if dhvl:
-                            for dhl in dhvl:
-                                if not dhl in self._data[hnam][hsec]:
-                                    self._data[hnam][hsec].append(dhl)
+                        self._data[dpt][hnam][hsec].extend(dhvl)
 
                     continue
                 
-                self._data[hnam][hsec] = dhvl.strip()
+                self._data[dpt][hnam][hsec] = dhvl.strip()
     
     def setHelpSect(self, hnam, sect, sval):
-        if hnam in self._data:
-            if not sect in self._data[hnam]:
-                self._data[hnam][sect] = sval
+        ndt = self._get_slave_dict(hnam, self._data)
+
+        if hnam in ndt:
+            if not sect in ndt[hnam]:
+                ndt[hnam][sect] = sval
 
     def addHelpSect(self, hnam, sect, sval):
-        if not hnam in self._data:
-            self._data[hnam] = {'desc': '', 'ccat': '', 'exam': '', 'synt': ''}
+        ndt = self._get_slave_dict(hnam, self._data)
         
-        if sect in self._data[hnam]:
-            self._data[hnam][sect] = sval
+        if not hnam in ndt:
+            ndt[hnam] = {'desc': '', 'ccat': '', 'exam': '', 'synt': ''}
+        
+        if sect in ndt[hnam]:
+            ndt[hnam][sect] = sval
 
     def getHelpSect(self, hnam, sect):
-        if hnam in self._data:
-            if sect in self._data[hnam]:
-                return self._data[hnam][sect]
+        ndt = self._get_slave_dict(hnam, self._data)        
+        
+        if hnam in ndt:
+            if sect in ndt[hnam]:
+                return ndt[hnam][sect]
         return ''
 
     def getHelpCats(self):
-        hdat = self._data.copy()
+        hdat = {}
+        
+        for ki in list(self._data):
+            for ti in list(self._data[ki]):
+                hdat[ti] = self._data[ki][ti]
+        
+        #hdat = self._data.copy()
         cats = []
         
         for hnm in hdat:
@@ -1136,12 +1179,14 @@ class _fHelp(fLocale):
         return cats
 
     def getHelpInfo(self, hnam, sect=''):
-        if hnam in self._data:
+        ndt = self._get_slave_dict(hnam, self._data)
+        
+        if hnam in ndt:
             if sect:
-                if sect in self._data[hnam]:
-                    return self._data[hnam][sect]
+                if sect in ndt[hnam]:
+                    return ndt[hnam][sect]
             else:
-                return self._data[hnam]
+                return ndt[hnam]
         return {}
     
 class _fVars(object):
@@ -1486,7 +1531,7 @@ _fatalVars.addVar('last', {'c': '', 't': 0})
 
 _fatalVars.addVar('info', {'start': 0, 'ses': 0, 'msg': 0, 'prs': 0, 'iq': 0, 'cmd': 0, 'thr': 0, 'pcycles': 1, 'btraffic': 0, 'pld_thr_id': 0})
 
-_fatalVars.addVar('hgrepos', 'https://github.com/Ancestorum/fatal3k')
+_fatalVars.addVar('repos', 'https://github.com/Ancestorum/fatal3k')
 
 _revision = get_revision()
 _fatalVars.addVar('ftver', {'rev': _revision, 'caps': 'http://fatal-dev.ru/bot/caps', 'botver': {'name': 'fatal-bot [Neutrino]', 'ver': 'v3.0a%s', 'os': ''}})

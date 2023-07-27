@@ -249,7 +249,7 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         
         if acomm:
             rcomm = acomm
-        
+            
         params = params.replace('%nick%', snick)
         params = params.replace('%jid%', sjid)
         params = params.replace('%groupchat%', groupchat)
