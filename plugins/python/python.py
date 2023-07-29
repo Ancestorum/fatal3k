@@ -93,7 +93,9 @@ def handler_python_exec(type, source, parameters):
 
 def handler_python_sh(type, source, parameters):
     return_value = ''
-
+    
+    start = time.time()
+    
     if not check_allowed(parameters):
         return reply(type, source, l('Some of requested operations in your shell-statement are not allowed by administrator!'))
     
@@ -103,10 +105,12 @@ def handler_python_sh(type, source, parameters):
         pipe.close()
     elif os.name == 'nt':
         pipe = os.popen('%s' % (parameters))
-        return_value = pipe.read()
+        return_value = pipe.read().encode('cp1251').decode('cp866')
         pipe.close()
     
-    return reply(type, source, return_value.strip())
+    stop = time.time()
+    
+    return reply(type, source, l('Shell output result (in: %s sec.):\n\n%s') % (round(stop-start, 3), return_value.strip()))
     
 def handler_python_calc(type, source, parameters):
     parameters = parameters.strip()

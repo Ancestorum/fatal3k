@@ -3161,7 +3161,7 @@ def presenceHnd(conn, prs):
     if is_groupchat(groupchat):
         call_presence_handlers(prs)
 
-@handle_xmpp_exc(quiet=True)
+@handle_xmpp_exc(quiet=False)
 def iqHnd(conn, iq):
     cid = get_client_id()
     
