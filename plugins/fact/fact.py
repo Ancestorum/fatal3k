@@ -25,11 +25,11 @@ def get_tld_info(query):
     query = query.replace('"', '&quot;')
     query = query.lower()
 
-    sql = "SELECT name FROM tlds WHERE tld='%s';" % (query)
+    sql = "SELECT info FROM tlds WHERE tld='%s';" % (query)
     qres = sqlquery('static/tlds.db', sql)
     
     if not qres:
-        sql = "SELECT tld FROM tlds WHERE name LIKE '%s%%';" % (query)
+        sql = "SELECT tld FROM tlds WHERE info LIKE '%s%%';" % (query)
         qres = sqlquery('static/tlds.db', sql)
     
     if qres:

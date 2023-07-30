@@ -76,13 +76,19 @@ def main():
     try:
         cthr = threading.current_thread()
         
-        st_time = time.strftime('%H.%M.%S', time.localtime(time.time()))
+        sttm = time.time()
+        
+        st_time = time.strftime('%H.%M.%S', time.localtime(sttm))
         
         cthr.name = 'all/main.main_thread.%s' % (st_time)
         
-        set_fatal_var('info', 'start', time.time())
+        set_fatal_var('info', 'start', sttm)
         
         sprint('\n...---===STARTING FATAL-BOT===---...\n')
+        
+        sttm = time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(sttm))
+
+        sprint('\Starting time: %s\n' % (sttm))
         
         if is_param_set('reload_code'):
             cr_md5 = core_md5('fatal.py')

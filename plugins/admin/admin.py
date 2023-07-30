@@ -119,8 +119,10 @@ def handler_remote(type, source, parameters):
             
         if type == 'console':
             return comm_hnd('console', dest_source, dest_params)
-        else:
-            return comm_hnd('private', dest_source, dest_params)
+
+        if type == 'telegram':
+            return comm_hnd('telegram', dest_source, dest_params)
+        return comm_hnd('private', dest_source, dest_params)            
     else:
         gchli = get_num_list(groupchats)
         
