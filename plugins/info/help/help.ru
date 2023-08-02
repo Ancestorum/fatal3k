@@ -75,6 +75,15 @@ remind.exam = %prefix%remind 10 Хватит ждать, пора!
 remind.exam = %prefix%remind 5 ping
 remind.exam = %prefix%remind 30 unban some@jabber.aq
 
+ctask.ccat = info, muc, all, *
+ctask.desc = Выводит в приват результат выполнения команды или сообщение, каждые n минут. Время задается в минутах, тогда задается интервал времени через который нужно вывести напоминание, например 2. Чтобы удалить какую-либо циклическую задачу нужно указать номер со знаком "-" перед номером, чтобы очистить список циклических задач, т.е. удалить все имеющиеся циклические задачи нужно указать знак "-". Без параметров выводит список циклических задач. Если дать команду в общем чате, циклическая задача будет создана для чата - групповая циклическая задача. 
+ctask.synt = %prefix%ctask [<minutes>|-<номер>|-] [<message>|<command>]
+ctask.exam = %prefix%ctask
+ctask.exam = %prefix%ctask -
+ctask.exam = %prefix%ctask -2
+ctask.exam = %prefix%ctask 5 borg
+ctask.exam = %prefix%ctask 10 ping
+
 dmess.ccat = info, muc, all, *
 dmess.desc = Включает или отключает автоматическую систему отложенных сообщений.
 dmess.synt = %prefix%dmess [1|0]

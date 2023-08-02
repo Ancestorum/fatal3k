@@ -20,6 +20,7 @@
 __all__ = []
 
 from fatalapi import *
+from math import trunc
 
 def get_and_out_jids(type, source, gch, affiliation, succstr, failstr):
     iq = xmpp.Iq('get')
@@ -101,6 +102,16 @@ def get_thr_list():
     
     return (len(enu_list), thr_list)
 
+def is_rem_exists(gch, timerid):
+    cid = get_client_id()
+    
+    sql = "SELECT * FROM reminds WHERE timerid='%s';" % (timerid)
+    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    
+    if qres:
+        return True
+    return False
+
 def check_timerid(gch, timerid):
     cid = get_client_id()
     
@@ -109,12 +120,10 @@ def check_timerid(gch, timerid):
     
     if qres:
         return False
-    else:
-        return True
+    return True
     
-def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid=''):
-    atime = time.strftime('%H:%M:%S', time.localtime(dts))
-    rsecs = int(round(dts - cts))
+def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False):
+    rsecs = trunc(dts - cts)
     
     if not nick:
         nick = get_rem_nick(groupchat, jid)
@@ -127,7 +136,18 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid=''):
         type = 'private'
     
     if is_gch_user(groupchat, nick) or is_groupchat(jid):
-        del_remind(groupchat, jid, mess, timerid)
+        if not cycle:
+            del_remind(groupchat, jid, mess, timerid)
+        else:
+            rtimes = round((dts - cts) / 60)
+            ncts = get_task_last('cycle_%s' % (timerid)) 
+            ndts = get_task_last('cycle_%s' % (timerid)) + (dts - cts)
+            cts = trunc(ncts)
+            dts = trunc(ndts)
+            
+            if is_rem_exists(groupchat, timerid):
+                del_remind(groupchat, jid, mess, timerid)
+                save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle)
         
         strm = mess.strip()
         splm = strm.split(' ', 1)
@@ -152,11 +172,21 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid=''):
                 cmdhnd(type, source, pars)
                 return
 
+        atime = time.strftime('%H:%M:%S', time.localtime(cts))
+
         if type == 'public':
-            rep = l('Public remind at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess)            
+            if not cycle:
+                rep = l('Public remind at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess)
+            else:
+                rep = l('Public cycle task at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess) 
+            
             msg(jid, rep)
         else:
-            rep = l('Remind at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess)
+            if not cycle:
+                rep = l('Remind at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess)
+            else:
+                rep = l('Cycle task at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess)
+            
             reply(type, source, rep)
         
         return rep
@@ -209,19 +239,20 @@ def get_rem_nick(gch, jid):
         nick = nickl[-1]
         
     return nick
-        
-def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid):
-    mess = mess.replace(r'"', r'&quot;')
-    sql = "INSERT INTO reminds (nick, jid, rtime, ctms, dsts, mess, status, timerid) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');" % (nick, jid, rtime, ctms, dsts, mess, status, timerid)
-    
+ 
+def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=False):
     cid = get_client_id()
+    mess = mess.replace(r'"', r'&quot;')
+    sql = '''INSERT INTO reminds (nick, jid, rtime, ctms, dsts, mess, status, timerid, ctask) 
+              VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');''' % (nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle))
     
     rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
     
     if rep != '':
         return rep
     else:
-        upd_sql = "UPDATE reminds SET \"nick\"='%s', \"jid\"='%s', \"rtime\"='%s', \"ctms\"='%s', \"dsts\"='%s', \"status\"='%s', \"timerid\"='%s' WHERE mess='%s';" % (nick, jid, rtime, ctms, dsts, status, mess, timerid)
+        upd_sql = '''UPDATE reminds SET "nick"='%s', "jid"='%s', "rtime"='%s', 
+                         "ctms"='%s', "dsts"='%s', "status"='%s', "timerid"='%s' WHERE mess='%s';''' % (nick, jid, rtime, ctms, dsts, status, mess, timerid)
         
         rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
         
@@ -248,10 +279,14 @@ def recover_remind(gch, rem_handler, recover, reminds):
         
         rem_handler(type, source, parameters, recover, rem[1], rem[3], rem[7])
 
-def show_reminds(gch, jid, reminds, pref='', suff=''):
+def show_reminds(gch, jid, reminds, pref='', suff='', cycle=False):
     cid = get_client_id()
     
-    freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run']
+    if not cycle:
+        freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run' and not int(rel[8])]
+    else:
+        freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run' and int(rel[8])]
+      
     nick = ''
     
     if is_groupchat(jid):
@@ -282,10 +317,10 @@ def show_reminds(gch, jid, reminds, pref='', suff=''):
     if sh_freml:
         rng = list(range(len(sh_freml)))
         
-        if suff:
-            nremli = ['%s) %s%s%s:\n%s' % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(float(sh_freml[li][4]))), suff + timeElapsed(float(sh_freml[li][4]) - time.time()), sh_freml[li][5]) for li in rng]
+        if suff: 
+            nremli = ['%s) %s%s%s:\n%s' % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(int(sh_freml[li][4]))), suff + timeElapsed(int(sh_freml[li][4]) - trunc(time.time())), sh_freml[li][5]) for li in rng]
         else:
-            nremli = [l('%s) %s%s, %s ago:\n%s') % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(float(sh_freml[li][4]))), timeElapsed(time.time() - float(sh_freml[li][4])), sh_freml[li][5]) for li in rng]
+            nremli = [l('%s) %s%s, %s ago:\n%s') % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(int(sh_freml[li][4]))), timeElapsed(trunc(time.time()) - int(sh_freml[li][4])), sh_freml[li][5]) for li in rng]
         
         return nremli
     else:
@@ -293,35 +328,37 @@ def show_reminds(gch, jid, reminds, pref='', suff=''):
 
 def exp_reminds(reminds, jid):
     ctm = time.time()
-    chkreml = [rel for rel in reminds if float(rel[4]) <= ctm and rel[1] == jid]
+    chkreml = [rel for rel in reminds if int(rel[4]) <= ctm and rel[1] == jid]
     return chkreml
 
 def check_reminds(reminds, jid):
-    ctm = time.time()
-    chkreml = [rel for rel in reminds if float(rel[4]) > ctm and rel[1] == jid]
+    ctm = trunc(time.time())
+    chkreml = [rel for rel in reminds if int(rel[4]) > ctm and rel[1] == jid]
     return chkreml
 
 def del_remind(gch, jid, mess, timerid=''):
+    cid = get_client_id()
+    
     if timerid:
         del_sql = "DELETE FROM reminds WHERE jid='%s' AND mess='%s' AND timerid='%s';" % (jid, mess, timerid)
     else:
         del_sql = "DELETE FROM reminds WHERE jid='%s' AND mess='%s';" % (jid, mess)
-    
-    cid = get_client_id()
     
     res = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), del_sql)
     
     return res
 
 def get_reminds(gch):
-    del_sql = "DELETE FROM reminds WHERE status='done';"
-    
     cid = get_client_id()
+
+    del_sql = "DELETE FROM reminds WHERE status='done';"
     
     sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), del_sql)
     
     sql = "SELECT * FROM reminds WHERE status='run' ORDER BY dsts;"
+    
     reminds = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    
     return reminds
 
 def get_dm_nicks(gch):
@@ -503,21 +540,32 @@ def get_info_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/users.db' % (cid, gch)):
-        sql = 'CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, nick VARCHAR(30) NOT NULL, jid VARCHAR(30) NOT NULL, ujoin VARCHAR(20) NOT NULL, uleave VARCHAR(20) NOT NULL, reason VARCHAR, UNIQUE (nick));'
+        sql = '''CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                 nick VARCHAR(30) NOT NULL, jid VARCHAR(30) NOT NULL, 
+                 ujoin VARCHAR(20) NOT NULL, uleave VARCHAR(20) NOT NULL, 
+                 reason VARCHAR, UNIQUE (nick));'''
         sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX iusers ON users (nick);'
-        sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+        sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql) 
         
     if not is_db_exists('dynamic/%s/%s/reminds.db' % (cid, gch)):
-        sql = 'CREATE TABLE reminds (nick VARCHAR(30) NOT NULL, jid VARCHAR(30) NOT NULL, rtime VARCHAR(20) NOT NULL, ctms VARCHAR(20) NOT NULL, dsts VARCHAR(20) NOT NULL, mess VARCHAR NOT NULL, status VARCHAR(10) NOT NULL, timerid VARCHAR(20) NOT NULL, UNIQUE (timerid));'
+        sql = '''CREATE TABLE reminds (nick VARCHAR(30) NOT NULL, 
+                jid VARCHAR(30) NOT NULL, rtime VARCHAR(20) NOT NULL, 
+                ctms VARCHAR(20) NOT NULL, dsts VARCHAR(20) NOT NULL, 
+                mess VARCHAR NOT NULL, status VARCHAR(10) NOT NULL, 
+                timerid VARCHAR(20) NOT NULL, ctask VARCHAR(1) NOT NULL, 
+                UNIQUE (timerid));'''
         sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
         
         sql = 'CREATE INDEX ireminds ON reminds (nick, jid);'
         sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
         
     if not is_db_exists('dynamic/%s/%s/dmess.db' % (cid, gch)):
-        sql = 'CREATE TABLE dmess (snick VARCHAR(30) NOT NULL, sjid VARCHAR(30) NOT NULL, dnick VARCHAR(30) NOT NULL, djid VARCHAR(30) NOT NULL, mess VARCHAR NOT NULL, date VARCHAR(20) NOT NULL);'
+        sql = '''CREATE TABLE dmess (snick VARCHAR(30) NOT NULL, 
+                sjid VARCHAR(30) NOT NULL, dnick VARCHAR(30) NOT NULL, 
+                djid VARCHAR(30) NOT NULL, mess VARCHAR NOT NULL, 
+                date VARCHAR(20) NOT NULL);'''
         sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
     
         sql = 'CREATE INDEX idmess ON dmess (sjid, djid);'
@@ -550,8 +598,7 @@ def handler_dmess_control(type, source, parameters):
         
         if dmess:
             return reply(type, source, l('Automatic system of delayed messages is turned on in this groupchat!'))
-        else:
-            return reply(type, source, l('Automatic system of delayed messages is turned off in this groupchat!'))
+        return reply(type, source, l('Automatic system of delayed messages is turned off in this groupchat!'))
 
 def handler_dmess(type, source, body):
     cid = get_client_id()
@@ -1162,7 +1209,24 @@ def handler_thr_dump(type, source, parameters):
     write_file('thr_list.dmp', dump.encode('utf-8'))
     return reply(type, source, l('Saved!'))
 
-def handler_remind(type, source, parameters, recover=False, jid='', rcts='', timerid=''):
+def handler_ctask(type, source, parameters):
+    spar = parameters.split(' ', 1)
+    
+    spli = spar[0]
+    
+    if parameters:
+        if spli.isdigit():
+            handler_remind(type, source, parameters, cycle=True)
+        elif len(spli) == 1 and spli == '-':
+            handler_remind(type, source, parameters, cycle=True)
+        elif len(spli) > 1 and spli[0] == '-':
+            handler_remind(type, source, parameters, cycle=True)
+        else:
+            return reply(type, source, l('Invalid syntax!'))
+    else:
+        handler_remind(type, source, parameters, cycle=True)
+
+def handler_remind(type, source, parameters, recover=False, jid='', rcts='', timerid='', cycle=False):
     groupchat = source[1]
     nick = source[2]
     
@@ -1214,8 +1278,8 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                 ctm[5] = sc
                     
                 dst = tuple(ctm)
-                cts = time.time()
-                dts = time.mktime(dst)
+                cts = trunc(time.time())
+                dts = trunc(time.mktime(dst))
                 
                 secs = int(round(dts - cts))
                 
@@ -1228,8 +1292,8 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     return reply(type, source, l('Invalid syntax!'))
                 
                 secs = int(rtimes) * 60
-                cts = time.time()
-                dts = cts + secs
+                cts = trunc(time.time())
+                dts = trunc(cts + secs)
             
             mess = spltdp[1]
             
@@ -1245,20 +1309,23 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     nick = ''
                 
                 if not recover:
-                    timerid = 'task' + str(random.randrange(10000000, 99999999))
+                    timerid = 'task%s' % (rand10())
                     chk_tmrid = check_timerid(groupchat, timerid)
                     
                     while not chk_tmrid:
-                        timerid = 'task' + str(random.randrange(10000000, 99999999))
+                        timerid = 'task%s' % (rand10())
                         chk_tmrid = check_timerid(groupchat, timerid)
                 
                 if type == 'public':
                     jid = groupchat
                 
                 if not recover:
-                    save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid)
+                    save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle)
                 
-                add_fatal_task('remind_%s' % (timerid), rem_timer, (groupchat, cts, dts, nick, jid, mess, timerid), secs, True)
+                if cycle:
+                    add_fatal_task('cycle_%s' % (timerid), rem_timer, (groupchat, cts, dts, nick, jid, mess, timerid, cycle), secs, False)
+                else:
+                    add_fatal_task('remind_%s' % (timerid), rem_timer, (groupchat, cts, dts, nick, jid, mess, timerid), secs, True)
                 
                 return rep
             else:
@@ -1286,19 +1353,33 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     else:
                         rems = check_reminds(reminds, jid)
                     
-                    if not rems:
-                        if type == 'public':
-                            return reply(type, source, l('List of public reminds is empty!'))
-                        else:    
-                            return reply(type, source, l('List of reminds is empty!'))
-                    elif nrem > len(rems):
-                        return reply(type, source, l('Invalid remind number!'))
+                    if not cycle:
+                        nrems = [li for li in rems if not int(li[8])]
+                    else:
+                        nrems = [li for li in rems if int(li[8])]
                     
-                    timerid = rems[nrem - 1][7]
-                    mess = rems[nrem - 1][5]
-                    jid = rems[nrem - 1][1]
+                    if not nrems:
+                        if type == 'public':
+                            if not cycle:
+                                return reply(type, source, l('List of public reminds is empty!'))
+                            return reply(type, source, l('List of public cycle tasks is empty!'))
+                        else:
+                            if not cycle:
+                                return reply(type, source, l('List of reminds is empty!'))
+                            return reply(type, source, l('List of cycle tasks is empty!'))
+                    elif nrem > len(nrems):
+                        if not cycle:
+                            return reply(type, source, l('Invalid remind number!'))
+                        return reply(type, source, l('Invalid cycle task number!'))
+                    
+                    timerid = nrems[nrem - 1][7]
+                    mess = nrems[nrem - 1][5]
+                    jid = nrems[nrem - 1][1]
 
-                    tskn = 'remind_%s' % (timerid)
+                    if not cycle:
+                        tskn = 'remind_%s' % (timerid)
+                    else:
+                        tskn = 'cycle_%s' % (timerid)
 
                     rmv_fatal_task(tskn)
 
@@ -1308,9 +1389,15 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                         rep = l('Delete error!')
                     else:
                         if type == 'public':
-                            rep = l('Public remind number %s has been removed!') % (nrem)
+                            if not cycle:
+                                rep = l('Public remind number %s has been removed!') % (nrem)
+                            else:
+                                rep = l('Public cycle task number %s has been removed!') % (nrem)
                         else:
-                            rep = l('Remind number %s has been removed!') % (nrem)
+                            if not cycle:
+                                rep = l('Remind number %s has been removed!') % (nrem)
+                            else:
+                                rep = l('Cycle task number %s has been removed!') % (nrem)
                         
                     return reply(type, source, rep)
                 else:
@@ -1321,24 +1408,38 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     else:
                         rems = check_reminds(reminds, jid)
                     
-                    if not rems:
-                        if type == 'public':
-                            return reply(type, source, l('List of public reminds is empty!'))
-                        else:    
-                            return reply(type, source, l('List of reminds is empty!'))
+                    if not cycle:
+                        nrems = [li for li in rems if not int(li[8])]
+                    else:
+                        nrems = [li for li in rems if int(li[8])]
                     
-                    for nrem in rems:
+                    if not nrems:
+                        if type == 'public':
+                            if not cycle:
+                                return reply(type, source, l('List of public reminds is empty!'))
+                            return reply(type, source, l('List of public cycle tasks is empty!'))
+                        else:
+                            if not cycle:
+                                return reply(type, source, l('List of reminds is empty!'))
+                            return reply(type, source, l('List of cycle tasks is empty!'))
+                    
+                    for nrem in nrems:
                         timerid = nrem[7]
                         mess = nrem[5]
                         jid = nrem[1]
                         
-                        tskn = 'remind_%s' % (timerid)
+                        if cycle:
+                            tskn = 'cycle_%s' % (timerid)
+                        else:    
+                            tskn = 'remind_%s' % (timerid)
 
                         rmv_fatal_task(tskn)
 
                         del_remind(groupchat, jid, mess, timerid)
                   
-                    return reply(type, source, l('List of remind has been cleared!'))
+                    if not cycle:
+                        return reply(type, source, l('List of remind has been cleared!'))
+                    return reply(type, source, l('List of cycle tasks has been cleared!'))
             else:
                 return reply(type, source, l('Invalid syntax!'))
         else:
@@ -1348,23 +1449,37 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
         rems = check_reminds(reminds, jid)
         prems = check_reminds(reminds, groupchat)
         
-        nrepl = show_reminds(groupchat, jid, rems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
-        nrepp = show_reminds(groupchat, groupchat, prems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
+        if not cycle:
+            nrepl = show_reminds(groupchat, jid, rems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
+            nrepp = show_reminds(groupchat, groupchat, prems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
+        else:
+            nrepl = show_reminds(groupchat, jid, rems, pref=l('Next run at') + ' ', suff=l(', remain') + ' ', cycle=True)
+            nrepp = show_reminds(groupchat, groupchat, prems, pref=l('Next run at') + ' ', suff=l(', remain') + ' ', cycle=True)
         
         if type == 'public':
-            if nrepp:
-                rep = l('Public reminds (total: %s):\n\n%s') % (len(nrepp), '\n\n'.join(nrepp))
+            if nrepp: 
+                if not cycle:
+                    rep = l('Public reminds (total: %s):\n\n%s') % (len(nrepp), '\n\n'.join(nrepp))
+                else:
+                    rep = l('Public cycle tasks (total: %s):\n\n%s') % (len(nrepp), '\n\n'.join(nrepp))
                 
                 return reply(type, source, rep)
             else:
-                return reply(type, source, l('There are no public reminds!'))
+                if not cycle:
+                    return reply(type, source, l('There are no public reminds!'))
+                return reply(type, source, l('There are no public cycle tasks!'))
         else:
             if nrepl:
-                rep = l('Reminds (total: %s):\n\n%s') % (len(nrepl), '\n\n'.join(nrepl))
+                if not cycle:
+                    rep = l('Reminds (total: %s):\n\n%s') % (len(nrepl), '\n\n'.join(nrepl))
+                else:
+                    rep = l('Cycle tasks (total: %s):\n\n%s') % (len(nrepl), '\n\n'.join(nrepl))
                 
                 return reply(type, source, rep)
             else:
-                return reply(type, source, l('There are no private reminds!'))
+                if not cycle:
+                    return reply(type, source, l('There are no private reminds!'))
+                return reply(type, source, l('There are no private cycle tasks!'))
 
 register_stage1_init(get_info_state)
 register_join_handler(handler_user_join)
@@ -1384,6 +1499,7 @@ register_command_handler(handler_admins, 'admins', 20)
 register_command_handler(handler_owners, 'owners', 20)
 register_command_handler(handler_outcasts, 'banned', 20)
 register_command_handler(handler_remind, 'remind', 11)
+register_command_handler(handler_ctask, 'ctask', 11)
 register_command_handler(handler_dmess_control, 'dmess', 20)
 register_command_handler(handler_tell, 'tell', 11)
 register_command_handler(handler_thr_show, 'thr_show', 100)

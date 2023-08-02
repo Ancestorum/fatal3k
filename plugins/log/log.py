@@ -83,12 +83,14 @@ def log_get_fp(type, source, xxx_todo_changeme1):
         
         if is_groupchat(gch_jid):
             gch_nick = source.split('/', 1)[-1]
-            source = gch_jid + '-' + gch_nick
+            source = '%s-%s' % (gch_jid, gch_nick)
+
+    cid = get_client_id()
 
     if type == 'public':
-        logdir = get_cfg_param('public_log_dir')
+        logdir = '%s/%s' % (get_cfg_param('public_log_dir'), cid)
     else:
-        logdir = get_cfg_param('private_log_dir')
+        logdir =  '%s/%s' % (get_cfg_param('private_log_dir'), cid)
 
     if logdir[-1] == '/':
         logdir = logdir[:-1]
@@ -106,7 +108,7 @@ def log_get_fp(type, source, xxx_todo_changeme1):
     pathex = '/'.join([logdir, source, str_year, str_month])
 
     if not os.path.exists(pathex):
-        pexli = [logdir, logdir + '/' + source, logdir + '/' + source + '/' + str_year, logdir + '/' + source + '/' + str_year + '/' + str_month]
+        pexli = [logdir, '%s/%s' % (logdir, source), '%s/%s/%s' % (logdir, source, str_year), '%s/%s/%s/%s' % (logdir, source, str_year, str_month)]
         pneli = [li for li in pexli if not os.path.exists(li)]
         
         try:
@@ -133,25 +135,25 @@ def log_get_fp(type, source, xxx_todo_changeme1):
             
         if os.path.exists(filename):
             fp = open(filename, 'a', encoding='utf-8')
-            return(fp)
+            return fp
         else:
             set_param(source, filename)
             fp = open(filename, 'w', encoding='utf-8')
             log_write_header(fp, source, (year, month, day, hour, minute, second, weekday, yearday, daylightsavings))
-            return(fp)
+            return fp
     else:
         if os.path.exists(filename):
             set_param(source, filename)
             fp = open(alt_filename, 'a', encoding='utf-8')
-            return(fp)
+            return fp 
         else:
             set_param(source, filename)
             fp = open(filename, 'w', encoding='utf-8')
             log_write_header(fp, source, (year, month, day, hour, minute, second, weekday, yearday, daylightsavings))
-            return(fp)
+            return fp
 
 def log_regex_url(matchobj):
-    return '<a href="' + matchobj.group(0) + '">' + matchobj.group(0) + '</a>'
+    return '<a href="%s">%s</a>' % (matchobj.group(0), matchobj.group(0))
 
 def get_logw_state(gch):
     cid = get_client_id()

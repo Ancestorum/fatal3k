@@ -25,6 +25,7 @@ import queue
 import heapq
 import threading
 from math import gcd
+from math import trunc
 from functools import reduce
 
 from threading import Event
@@ -638,7 +639,7 @@ class _fCycleTasks(object):
                         if inth and self._thrd:
                             cid = get_client_id()
                             thrc = inc_fatal_var('info', 'thr')
-                            st_time = time.strftime('%H.%M.%S', time.localtime(time.time()))
+                            st_time = time.strftime('%H.%M.%S', time.localtime(trunc(time.time())))
                             thr_name = '%s.%s%d.%s' % ('%s/task_manager' % (cid), func.__name__, thrc, st_time)
 
                             fthr = fThread(None, func, thr_name, args)
@@ -647,7 +648,7 @@ class _fCycleTasks(object):
                         else:
                             func(*args)
                         
-                        curt = time.time()
+                        curt = trunc(time.time())
                         self._tasks[tsk]['last'] = curt
                         self._tasks[tsk]['next'] = curt + ival
                         self._tasks[tsk]['strd'] += 1
@@ -696,7 +697,7 @@ class _fCycleTasks(object):
                 self._tasks[tskn] = dict(self._ntsks[tskn])
 
                 if not self._resume:
-                    self._tasks[tskn]['last'] = time.time()
+                    self._tasks[tskn]['last'] = trunc(time.time())
                     self._resume = False
              
             if self._nivls:
@@ -716,8 +717,10 @@ class _fCycleTasks(object):
 
                 tskn = '%s%d' % (func_name, self._tid)
             
+            crtm = trunc(time.time())
+            
             self._nivls.append(ival)
-            self._ntsks[tskn] = {'func': func, 'ival': int(ival), 'args': args, 'count': 0, 'remns': int(ival), 'once': once, 'last': time.time(), 'next': time.time()+int(ival), 'strd': 0, 'inthr': inthr}
+            self._ntsks[tskn] = {'func': func, 'ival': int(ival), 'args': args, 'count': 0, 'remns': int(ival), 'once': once, 'last': crtm, 'next': time.time()+int(ival), 'strd': 0, 'inthr': inthr}
          
             self._shift_times()
          
@@ -791,7 +794,7 @@ class _fCycleTasks(object):
 
             for tsk in tskl:
                 self._tasks[tsk]['count'] = 0
-                self._tasks[tsk]['last'] = time.time()
+                self._tasks[tsk]['last'] = trunc(time.time())
             
             if self._ivals:
                 self._miv = self._calc_gcd(self._ivals)
