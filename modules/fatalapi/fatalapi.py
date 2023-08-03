@@ -213,11 +213,24 @@ def write_file(filename, data):
 def _app_file(filename, data):
     try:
         fp = open(filename, 'a', encoding='utf-8')
+
         fp.write(data)
         fp.close()
     except Exception:
         log_exc_error()
-        pass
+
+def log_null_cmdr(data, file='syslogs/ncmdr.log'):
+    stm = time.time()
+    
+    sstm = str(stm)
+    sptl = sstm.split('.', 1)
+    stim = sptl[1]
+    stim = stim[:3]
+
+    stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S.', time.localtime(stm))
+    stz_time = '%s%s]: '% (stz_time, stim) 
+    _app_file(file, '\n%s%s\n' % (stz_time, data))
+    return '%s%s\n' % (stz_time, data)
 
 def log_exc_error(file='syslogs/error.log'):
     exc_err = traceback.format_exc()
@@ -1186,7 +1199,7 @@ def rmv_tgs_esc(text):
     
     return noescape
     
-def timeElapsed(time):
+def timeElapsed(time, nz=False):
     minutes, seconds = divmod(time, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
@@ -1201,7 +1214,10 @@ def timeElapsed(time):
         
     if time >= 86400:
         rep = l('%s day(s) %s') % (int(round(days)), rep)
-        
+    
+    if nz:
+        repl = rep.split(' 0 ', 1)
+        return repl[0].strip()
     return rep
 
 def safe_split(parameters, spl=':'):
@@ -2506,6 +2522,7 @@ def reply(ltype, source, body):
         return body    
     elif ltype == 'null':
         set_fatal_var(cid, source[0], 'last_cmd_result', body)
+        log_null_cmdr(body)
         return body
 
 def get_stripped(jid):

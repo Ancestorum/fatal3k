@@ -60,7 +60,7 @@ def get_tg_usrn(usrid):
     cid = get_client_id()
     
     if type(usrid) != int:
-        return False 
+        return False
 
     sql = "SELECT usrn FROM tguserids WHERE id='%s';" % (usrid)
     qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)

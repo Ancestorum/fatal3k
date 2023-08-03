@@ -56,16 +56,33 @@ cl_warn = cl_magenta + cl_blink
 
 def _app_file(filename, data):
     try:
-        fp = open(filename, 'a', encoding='utf-8')
+        if os.path.getsize(filename) >= 3145728:
+            fp = open(filename, 'w', encoding='utf-8')
+        else:
+            fp = open(filename, 'a', encoding='utf-8')
+
         fp.write(data)
         fp.close()
     except Exception:
         pass
 
 def log_task(taskout, file='syslogs/tasks.log'):
-    stz_time = time.strftime('[%H:%M:%S]: ', time.localtime(time.time()))
+    stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S]: ', time.localtime(time.time()))
     _app_file(file, '\n%s%s\n' % (stz_time, taskout))
     return '%s%s\n' % (stz_time, taskout)
+    
+def log_thread(thro, file='syslogs/threads.log'):
+    stm = time.time()
+    
+    sstm = str(stm)
+    sptl = sstm.split('.', 1)
+    stim = sptl[1]
+    stim = stim[:3]
+
+    stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S.', time.localtime(stm))
+    stz_time = '%s%s]: '% (stz_time, stim) 
+    _app_file(file, '\n%s%s\n' % (stz_time, thro))
+    return '%s%s\n' % (stz_time, thro)
 
 def _md5hash(plbody):
     md5s = hashlib.md5()
@@ -289,6 +306,14 @@ def get_task_ival(tskn):
     
     if tsko:
         return tsko.getTaskIval(tskn)
+        
+def get_task_strd(tskn):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.getTaskStrd(tskn)
 
 def rmv_all_tasks():
     cid = get_client_id()
@@ -505,6 +530,7 @@ class fThread(threading.Thread):
         self.run = self.__run
         self.strtd = time.time()
         threading.Thread.start(self)
+        log_thread(self.name)
         
     def __run(self):
         sys.settrace(self.globaltrace)
@@ -626,10 +652,10 @@ class _fCycleTasks(object):
 
                 nela = self._tasks[tsk]['next']
                 
+                curt = trunc(time.time())
+                
                 try:
-                    #if count >= ival - shft:
-                    #if nela <= time.time(): 
-                    if nela <= time.time():
+                    if nela <= curt:
                         self._tasks[tsk]['count'] = 0
                         self._tasks[tsk]['remns'] = ival
 
@@ -755,6 +781,11 @@ class _fCycleTasks(object):
             return self._ntsks[tskn]['ival']
         elif tskn in self._tasks:
             return self._tasks[tskn]['ival']
+        return 0
+        
+    def getTaskStrd(self, tskn):
+        if tskn in self._tasks:
+            return self._tasks[tskn]['strd']
         return 0
 
     def rmvTask(self, tskn):

@@ -121,8 +121,50 @@ def check_timerid(gch, timerid):
     if qres:
         return False
     return True
+ 
+def set_rem_mod(gch, mod, timerid):
+    cid = get_client_id()
+
+    upd_sql = '''UPDATE reminds SET  "mod"='%s' WHERE timerid='%s';''' % (mod, timerid)
     
-def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False):
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    
+    return rep
+    
+def get_rem_mod(gch, timerid):
+    cid = get_client_id()
+
+    upd_sql = '''SELECT mod FROM reminds WHERE timerid='%s';''' % (timerid)
+    
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    
+    if rep:
+        return rep[0][0]
+    return 0
+ 
+def set_run_cnt(gch, cnt, timerid):
+    cid = get_client_id()
+
+    upd_sql = '''UPDATE reminds SET  "cnt"='%s' WHERE timerid='%s';''' % (cnt, timerid)
+    
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    
+    return rep
+    
+def get_run_cnt(gch, timerid):
+    cid = get_client_id()
+
+    upd_sql = '''SELECT cnt FROM reminds WHERE timerid='%s';''' % (timerid)
+    
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    
+    if rep:
+        return rep[0][0]
+    return 0
+ 
+def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod='0'):
+    cid = get_client_id()
+    
     rsecs = trunc(dts - cts)
     
     if not nick:
@@ -136,6 +178,8 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False):
         type = 'private'
     
     if is_gch_user(groupchat, nick) or is_groupchat(jid):
+        rcnt = 0
+        
         if not cycle:
             del_remind(groupchat, jid, mess, timerid)
         else:
@@ -146,8 +190,10 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False):
             dts = trunc(ndts)
             
             if is_rem_exists(groupchat, timerid):
+                imod = get_rem_mod(groupchat, timerid)
+                rcnt = get_task_strd('cycle_%s' % (timerid))
                 del_remind(groupchat, jid, mess, timerid)
-                save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle)
+                save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle, imod)
         
         strm = mess.strip()
         splm = strm.split(' ', 1)
@@ -163,17 +209,50 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False):
         if rcmd:
             pcmd = rcmd
 
+        fcmds = ['remind', 'ctask']
+
         if is_var_set('commands', pcmd):
             cmdacc = get_fatal_var('commands', pcmd, 'access')
             ulvl = user_level(source, groupchat)
 
-            if ulvl >= cmdacc:
+            if ulvl >= cmdacc and not pcmd in fcmds:
                 cmdhnd = get_fatal_var('command_handlers', pcmd)
-                cmdhnd(type, source, pars)
+                
+                if not cycle:
+                    thr_name = 'remind_%s' % (timerid)
+                else:
+                    thr_name = 'cycle_%s' % (timerid)
+                    
+                    if mod in ['Q', 'q']:
+                        call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, 'null', source, pars)
+                    elif mod.isdigit():
+                        if int(mod) > 0:
+                            imod = int(get_rem_mod(groupchat, timerid)) 
+                            imod -= 1
+                            rcnt += 1
+                            
+                            set_rem_mod(groupchat, imod, timerid)
+                            
+                            call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                            
+                            if not imod:
+                                del_remind(groupchat, jid, mess, timerid)
+                                rmv_fatal_task(thr_name)
+                        else:
+                            call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                    else:
+                        call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                    
+                    rcnt = get_task_strd(thr_name)
+                    set_run_cnt(groupchat, rcnt, timerid)
+                    
                 return
 
-        atime = time.strftime('%H:%M:%S', time.localtime(cts))
-
+        if not cycle:
+            atime = time.strftime('%H:%M:%S', time.localtime(dts))
+        else:
+            atime = time.strftime('%H:%M:%S', time.localtime(cts))
+           
         if type == 'public':
             if not cycle:
                 rep = l('Public remind at %s after %s:\n\n%s') % (atime, timeElapsed(rsecs), mess)
@@ -240,11 +319,11 @@ def get_rem_nick(gch, jid):
         
     return nick
  
-def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=False):
+def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=False, mod=0):
     cid = get_client_id()
     mess = mess.replace(r'"', r'&quot;')
-    sql = '''INSERT INTO reminds (nick, jid, rtime, ctms, dsts, mess, status, timerid, ctask) 
-              VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');''' % (nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle))
+    sql = '''INSERT INTO reminds (nick, jid, rtime, ctms, dsts, mess, status, timerid, ctask, mod) 
+              VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');''' % (nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle), mod)
     
     rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
     
@@ -277,16 +356,13 @@ def recover_remind(gch, rem_handler, recover, reminds):
         
         parameters = rem2 + ' ' + rem[5]
         
-        rem_handler(type, source, parameters, recover, rem[1], rem[3], rem[7])
+        rem_handler(type, source, parameters, recover, rem[1], rem[3], rem[7], rem[8], rem[9])
 
 def show_reminds(gch, jid, reminds, pref='', suff='', cycle=False):
     cid = get_client_id()
     
-    if not cycle:
-        freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run' and not int(rel[8])]
-    else:
-        freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run' and int(rel[8])]
-      
+    freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run']
+    
     nick = ''
     
     if is_groupchat(jid):
@@ -304,6 +380,7 @@ def show_reminds(gch, jid, reminds, pref='', suff='', cycle=False):
         else:
             sh_freml = [rel for rel in freml if rel[1] == get_stripped(gch_dic[nick]['rjid'])]
     except Exception:
+        log_exc_error()
         try:
             if is_groupchat(jid):
                 sh_freml = [rel for rel in freml if rel[1] == jid]
@@ -312,16 +389,20 @@ def show_reminds(gch, jid, reminds, pref='', suff='', cycle=False):
                 gch_dic = dict(get_dict_fatal_var(cid, 'gchrosters', gch))
                 sh_freml = [rel for rel in freml if rel[1] == get_stripped(gch_dic[nick]['rjid'])]
         except Exception:
+            log_exc_error()
             return []
     
     if sh_freml:
         rng = list(range(len(sh_freml)))
         
         if suff: 
-            nremli = ['%s) %s%s%s:\n%s' % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(int(sh_freml[li][4]))), suff + timeElapsed(int(sh_freml[li][4]) - trunc(time.time())), sh_freml[li][5]) for li in rng]
+            if not cycle:
+                nremli = [l('%s) %s%s%s:\n%s') % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(int(sh_freml[li][4]))), suff + timeElapsed(int(sh_freml[li][4]) - trunc(time.time())), sh_freml[li][5]) for li in rng]
+            else:
+                nremli = [l('%s) %s%s (each %s)%s:\n%s') % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(int(sh_freml[li][4]))), timeElapsed(int(sh_freml[li][2])*60, True), suff + timeElapsed(int(sh_freml[li][4]) - trunc(time.time())), sh_freml[li][5]) for li in rng]
         else:
             nremli = [l('%s) %s%s, %s ago:\n%s') % (li + 1, pref, time.strftime('%H:%M:%S', time.localtime(int(sh_freml[li][4]))), timeElapsed(trunc(time.time()) - int(sh_freml[li][4])), sh_freml[li][5]) for li in rng]
-        
+    
         return nremli
     else:
         return []
@@ -555,6 +636,7 @@ def get_info_state(gch):
                 ctms VARCHAR(20) NOT NULL, dsts VARCHAR(20) NOT NULL, 
                 mess VARCHAR NOT NULL, status VARCHAR(10) NOT NULL, 
                 timerid VARCHAR(20) NOT NULL, ctask VARCHAR(1) NOT NULL, 
+                mod VARCHAR(4) NOT NULL, cnt VARCHAR NOT NULL DEFAULT 0,
                 UNIQUE (timerid));'''
         sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
         
@@ -1221,12 +1303,30 @@ def handler_ctask(type, source, parameters):
             handler_remind(type, source, parameters, cycle=True)
         elif len(spli) > 1 and spli[0] == '-':
             handler_remind(type, source, parameters, cycle=True)
+        elif len(spli) >= 3 and spli[0] != '-' and spli.count(':') == 1:
+            if spli[-1] != ':' and not spli[-1].isdigit():
+                sppr = spli.split(':', 1)
+                
+                npar = ' '.join([sppr[0], spar[1]])
+                
+                if sppr[1] in ['q', 'Q']:
+                    handler_remind(type, source, npar, cycle=True, mod=sppr[1])
+                else:
+                    return reply(type, source, l('Invalid syntax!'))
+            elif spli[-1] != ':' and spli[-1].isdigit():
+                sppr = spli.split(':', 1)
+                
+                npar = ' '.join([sppr[0], spar[1]])
+            
+                handler_remind(type, source, npar, cycle=True, mod=sppr[1])
+            else:
+                return reply(type, source, l('Invalid syntax!'))
         else:
             return reply(type, source, l('Invalid syntax!'))
     else:
         handler_remind(type, source, parameters, cycle=True)
 
-def handler_remind(type, source, parameters, recover=False, jid='', rcts='', timerid='', cycle=False):
+def handler_remind(type, source, parameters, recover=False, jid='', rcts='', timerid='', cycle=False, mod='0'):
     groupchat = source[1]
     nick = source[2]
     
@@ -1294,7 +1394,7 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                 secs = int(rtimes) * 60
                 cts = trunc(time.time())
                 dts = trunc(cts + secs)
-            
+                
             mess = spltdp[1]
             
             if secs > 0:
@@ -1320,10 +1420,10 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     jid = groupchat
                 
                 if not recover:
-                    save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle)
+                    save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle, mod)
                 
                 if cycle:
-                    add_fatal_task('cycle_%s' % (timerid), rem_timer, (groupchat, cts, dts, nick, jid, mess, timerid, cycle), secs, False)
+                    add_fatal_task('cycle_%s' % (timerid), rem_timer, (groupchat, cts, dts, nick, jid, mess, timerid, cycle, mod), secs, False)
                 else:
                     add_fatal_task('remind_%s' % (timerid), rem_timer, (groupchat, cts, dts, nick, jid, mess, timerid), secs, True)
                 
@@ -1450,11 +1550,18 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
         prems = check_reminds(reminds, groupchat)
         
         if not cycle:
-            nrepl = show_reminds(groupchat, jid, rems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
-            nrepp = show_reminds(groupchat, groupchat, prems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
+            nrems = [rel for rel in rems if rel[6] == 'run' and not int(rel[8])]
+            nprems = [rel for rel in prems if rel[6] == 'run' and not int(rel[8])]
         else:
-            nrepl = show_reminds(groupchat, jid, rems, pref=l('Next run at') + ' ', suff=l(', remain') + ' ', cycle=True)
-            nrepp = show_reminds(groupchat, groupchat, prems, pref=l('Next run at') + ' ', suff=l(', remain') + ' ', cycle=True)
+            nrems = [rel for rel in rems if rel[6] == 'run' and int(rel[8])]
+            nprems = [rel for rel in prems if rel[6] == 'run' and int(rel[8])]
+        
+        if not cycle:
+            nrepl = show_reminds(groupchat, jid, nrems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
+            nrepp = show_reminds(groupchat, groupchat, nprems, pref=l('Assigned at') + ' ', suff=l(', remain') + ' ')
+        else:
+            nrepl = show_reminds(groupchat, jid, nrems, pref=l('Next run at') + ' ', suff=l(', remain') + ' ', cycle=True)
+            nrepp = show_reminds(groupchat, groupchat, nprems, pref=l('Next run at') + ' ', suff=l(', remain') + ' ', cycle=True)
         
         if type == 'public':
             if nrepp: 
@@ -1499,7 +1606,7 @@ register_command_handler(handler_admins, 'admins', 20)
 register_command_handler(handler_owners, 'owners', 20)
 register_command_handler(handler_outcasts, 'banned', 20)
 register_command_handler(handler_remind, 'remind', 11)
-register_command_handler(handler_ctask, 'ctask', 11)
+register_command_handler(handler_ctask, 'ctask', 20)
 register_command_handler(handler_dmess_control, 'dmess', 20)
 register_command_handler(handler_tell, 'tell', 11)
 register_command_handler(handler_thr_show, 'thr_show', 100)
