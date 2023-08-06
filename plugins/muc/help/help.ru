@@ -13,6 +13,15 @@ ban.exam = %prefix%ban spam@jabber.aq
 ban.exam = %prefix%ban spam@jabber.aq: Пшел!
 ban.exam = %prefix%ban jabber.aq
 
+gban.ccat = admin, all, *, muc
+gban.desc = Глобальный бан. Делает то же самое, что и %prefix%ban, но во всех конференциях, где есть бот.
+gban.synt = %prefix%gban <nick>|<jid> [:<reason>]
+gban.exam = %prefix%gban guy
+gban.exam = %prefix%gban guy: Тебе тут не место!
+gban.exam = %prefix%gban spam@jabber.aq
+gban.exam = %prefix%gban spam@jabber.aq: Пшел!
+gban.exam = %prefix%gban jabber.aq
+
 visitor.ccat = admin, all, *, muc
 visitor.desc = Забрать у дебошира право говорить!
 visitor.synt = %prefix%visitor <nick>

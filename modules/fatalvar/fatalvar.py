@@ -98,6 +98,9 @@ def _eval_md5(path):
     except Exception:
         return ''
 
+def cid():
+    return get_client_id()
+
 def get_client_id():
     curr_thr = threading.currentThread()
     thr_name = curr_thr.getName()
@@ -274,6 +277,14 @@ def list_fatal_tasks():
     
     if tsko:
         return tsko.lstTasks()
+        
+def get_task_miv():
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.getTaskMiv()
 
 def get_task_last(tskn):
     cid = get_client_id()
@@ -291,6 +302,22 @@ def set_task_last(tskn, last, resume=True):
     if tsko:
         tsko.setTaskLast(tskn, last, resume)
 
+def set_task_remns(tskn, remns):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        tsko.setTaskRemns(tskn, remns)
+
+def get_task_remns(tskn):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.getTaskRemns(tskn)
+
 def set_task_count(tskn, count=0):
     cid = get_client_id()
     
@@ -306,6 +333,22 @@ def get_task_ival(tskn):
     
     if tsko:
         return tsko.getTaskIval(tskn)
+ 
+def get_task_next(tskn):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        return tsko.getTaskNext(tskn)
+ 
+def set_task_next(tskn, tnxt):
+    cid = get_client_id()
+    
+    tsko = get_fatal_var(cid, 'scheduler')
+    
+    if tsko:
+        tsko.setTaskNext(tskn, tnxt)
         
 def get_task_strd(tskn):
     cid = get_client_id()
@@ -579,7 +622,9 @@ class _fCycleTasks(object):
             try:
                 tskl = tuple(self._tasks)
                 
-                tmel = round(time.time()-get_fatal_var(cid, 'task_manager_event', 'start'))
+                curt = trunc(time.time())
+                
+                tmel = round(curt-get_fatal_var(cid, 'task_manager_event', 'start'))
                 
                 for tsk in tskl:
                     count = self._tasks[tsk]['count']
@@ -623,22 +668,6 @@ class _fCycleTasks(object):
             if self._just_started:
                 self._miv = self._calc_gcd(self._ivals)
                 self._just_started = False
-            
-            if is_var_set(get_client_id(), 'tskmgr_debug'):
-                rtll = []
-                ntll = []
-                
-                for tsk in tskl:
-                    ntll.append(tsk)
-                    rtll.append(self._tasks[tsk]['remns'])
-
-                print('>> '+'\n>> '.join(ntll))
-                print(str(rtll)+': '+str(self._calc_gcd(rtll))+'/'+str(self._miv)+'\n')
-                
-                rtll = []
-                ntll = []
-            
-            #self._recalc_gcd()
             
             for tsk in tskl:
                 func = self._tasks[tsk]['func']
@@ -685,23 +714,6 @@ class _fCycleTasks(object):
                 except Exception:
                     self._fails += 1
                 
-                if is_var_set(get_client_id(), 'tskmgr_debug2'):
-                    if tsk == 'client_keep_alive_check' or tsk.count('remind') or tsk.count('borc'):
-                        ttstr = time.strftime('%H:%M:%S', time.localtime(time.time()))
-                        tlstr = time.strftime('%H:%M:%S', time.localtime(self._tasks[tsk]['last']))
-                        nestr = time.strftime('%H:%M:%S', time.localtime(nela))
-                        
-                        print('[%s]' % (ttstr))
-                        print('name: %s' % (tsk))
-                        print('mivl: %s' % (self._miv))
-                        print('cunt: %s' % (count))
-                        print('ival: %s' % (ival))
-                        print('rmns: %s' % (rmns))
-                        print('last: %s' % (tlstr))
-                        print('next: %s\n' % (nestr))
-                        #print('thid: %s' % (self._tid))
-                        #print('fail: %s\n' % (self._fails))
-                    
             wait_fatal_event('task_manager_event', self._miv)
                           
             if self._rtsks:
@@ -746,7 +758,7 @@ class _fCycleTasks(object):
             crtm = trunc(time.time())
             
             self._nivls.append(ival)
-            self._ntsks[tskn] = {'func': func, 'ival': int(ival), 'args': args, 'count': 0, 'remns': int(ival), 'once': once, 'last': crtm, 'next': time.time()+int(ival), 'strd': 0, 'inthr': inthr}
+            self._ntsks[tskn] = {'func': func, 'ival': ival, 'args': args, 'count': 0, 'remns': ival, 'once': once, 'last': crtm, 'next': crtm+ival, 'strd': 0, 'inthr': inthr}
          
             self._shift_times()
          
@@ -775,6 +787,30 @@ class _fCycleTasks(object):
             self._ntsks[tskn]['count'] = count
         if tskn in self._tasks:
             self._tasks[tskn]['count'] = count
+            
+    def setTaskNext(self, tskn, tnxt):
+        if tskn in self._ntsks:
+            self._ntsks[tskn]['next'] = tnxt
+        if tskn in self._tasks:
+            self._tasks[tskn]['next'] = tnxt
+
+    def setTaskRemns(self, tskn, trmn):
+        if tskn in self._ntsks:
+            self._ntsks[tskn]['remns'] = trmn
+        if tskn in self._tasks:
+            self._tasks[tskn]['remns'] = trmn
+            
+    def getTaskRemns(self, tskn):
+        if tskn in self._ntsks:
+            return self._ntsks[tskn]['remns']
+        if tskn in self._tasks:
+            return self._tasks[tskn]['remns']
+
+    def getTaskNext(self, tskn):
+        if tskn in self._ntsks:
+            return self._ntsks[tskn]['next']
+        if tskn in self._tasks:
+            return self._tasks[tskn]['next']
 
     def getTaskIval(self, tskn):
         if tskn in self._ntsks:
@@ -787,6 +823,9 @@ class _fCycleTasks(object):
         if tskn in self._tasks:
             return self._tasks[tskn]['strd']
         return 0
+        
+    def getTaskMiv(self):
+        return self._miv
 
     def rmvTask(self, tskn):
         if tskn in self._tasks:

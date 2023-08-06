@@ -1198,6 +1198,21 @@ def handler_kick(type, source, parameters):
         muc_set_role(kick, type, source, parameters)
     else:
         return reply(type, source, l('Invalid syntax!'))
+
+def handler_global_ban(type, source, parameters):
+    cid = get_client_id()
+    
+    gchs = list(get_fatal_var(cid, 'gchrosters'))
+    
+    if parameters:
+        for gch in gchs:
+            nsrc = [gch, gch, '']
+            
+            handler_ban('null', nsrc, parameters)
+            
+        return reply(type, source, l('Done!'))
+    else:
+        return reply(type, source, l('Invalid syntax!'))
     
 def handler_ban(type, source, parameters):
     groupchat = source[1]
@@ -1300,6 +1315,7 @@ def handler_unban(type, source, parameters):
     
 register_command_handler(handler_kick, 'kick', 16)
 register_command_handler(handler_ban, 'ban', 20)
+register_command_handler(handler_global_ban, 'gban', 100)
 register_command_handler(handler_visitor, 'visitor', 16)
 register_command_handler(handler_participant, 'participant', 16)
 register_command_handler(handler_unban, 'unban', 20)

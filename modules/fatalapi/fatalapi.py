@@ -1082,20 +1082,29 @@ def sqlquery(dbpath, query):
         try:
             connection = db.connect(dbpath)
             cursor = connection.cursor()
-            cursor.execute(query)
+            
+            if query.count(';') > 1:
+                cursor.executescript(query)
+            else:
+                cursor.execute(query)
+            
             result = cursor.fetchall()
             connection.commit()
             cursor.close()
             connection.close()
             
             return result
-        except Exception:
+        except db.Error as e:
+            log_error('SQLite3 error ---> %s' % (e.args[0]))
+            
             if cursor:
                cursor.close()
                 
             if connection:
                 connection.commit()
                 connection.close()
+        except Exception:
+            log_exc_error()
     return ''
         
 def core_md5(path):
@@ -3327,7 +3336,8 @@ def reconnect(jid, password, resource, port=5222, tlssl=1):
         
         rmv_fatal_var(jid, 'gchrosters')
         
-        rmv_all_tasks()
+        set_fatal_var(jid, 'reconnect', 1)
+        #rmv_all_tasks()
         
         time.sleep(5)
 
@@ -3400,7 +3410,6 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     connect_server = get_cfg_param(jid, server)
 
     proxy = get_fatal_var('fproxy')
-    #use_tls_ssl = get_int_cfg_param('use_tls_ssl')
     certificate = get_cfg_param('cert')
     
     if tlssl:
@@ -3520,8 +3529,9 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     
     set_init_status()
     
-    tname = make_thr_name(jid, 'connect_client', 'task_manager')
-    start_scheduler(tname)
+    if not is_var_set(jid, 'reconnect'):
+        tname = make_thr_name(jid, 'connect_client', 'task_manager')
+        start_scheduler(tname)
 
     if is_db_exists('dynamic/%s/chatrooms.db' % (jid)):
         groupchats = get_chatrooms_list()
@@ -3586,7 +3596,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     threading.stack_size(stk_size)
     
     set_fatal_var(jid, 'main_xmpp_stanza_pc', mn_xmpp_thr)
-
+    set_fatal_var(jid, 'reconnect', 0)
     send_client_state('suc')
 
 def get_curr_thr_name():
