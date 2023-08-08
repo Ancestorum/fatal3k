@@ -229,7 +229,7 @@ def log_null_cmdr(data, file='syslogs/ncmdr.log'):
 
     stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S.', time.localtime(stm))
     stz_time = '%s%s]: '% (stz_time, stim) 
-    _app_file(file, '\n%s%s\n' % (stz_time, data))
+    _app_file(file, '%s%s\n' % (stz_time, data))
     return '%s%s\n' % (stz_time, data)
 
 def log_exc_error(file='syslogs/error.log'):
@@ -729,6 +729,7 @@ def start_daemon(pidfile, wfunc, stdout='/dev/null', stderr='/dev/null'):
     drun.worker = wfunc
     drun.stderr = stderr
     drun.stdout = stdout
+    set_fatal_var('daemon', drun)
     drun.start()
 
 def start_thr_disp():
@@ -928,8 +929,13 @@ def is_cycle_overload(cparam='cspeed'):
     return False
 
 def restart_bot():
-    rmv_pid_file()
-    os.execl(sys.executable, sys.executable, sys.argv[0])
+    drun = get_fatal_var('daemon') 
+    
+    if not drun:
+        rmv_pid_file()
+        os.execl(sys.executable, sys.executable, *sys.argv)
+    else:
+        drun.restart()
 
 def get_last_rev(url):
     try:
@@ -1095,7 +1101,7 @@ def sqlquery(dbpath, query):
             
             return result
         except db.Error as e:
-            log_error('SQLite3 error ---> %s' % (e.args[0]))
+            log_error('SQLite3 error (%s) ---> %s' % (dbpath, e.args[0]))
             
             if cursor:
                cursor.close()

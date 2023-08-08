@@ -221,9 +221,9 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod
         if not cycle:
             del_remind(groupchat, jid, mess, timerid)
         else:
-            rtimes = round((dts - cts) / 60)
-            ncts = get_task_last('cycle_%s' % (timerid)) 
-            ndts = get_task_last('cycle_%s' % (timerid)) + (dts - cts)
+            rtimes = int(get_rem_rtime(groupchat, timerid))
+            ncts = int(get_rem_cts(groupchat, timerid)) + (rtimes * 60)
+            ndts = ncts + (rtimes * 60)
             cts = trunc(ncts)
             dts = trunc(ndts)
             
@@ -231,6 +231,7 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod
                 imod = get_rem_mod(groupchat, timerid)
                 rcnt = get_task_strd('cycle_%s' % (timerid))
                 del_remind(groupchat, jid, mess, timerid)
+                set_task_next('cycle_%s' % (timerid), dts)
                 save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle, imod)
         
         strm = mess.strip()
@@ -258,6 +259,7 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod
                 
                 if not cycle:
                     thr_name = 'remind_%s' % (timerid)
+                    call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
                 else:
                     thr_name = 'cycle_%s' % (timerid)
                     
@@ -1368,21 +1370,27 @@ def handler_thr_dump(type, source, parameters):
 
 def handler_tasks(type, source, parameters):
     tlst = enum_fatal_tasks()
+    curt = trunc(time.time())
     tols = []
 
     for li in tlst:
         tla = get_task_last(li)
         tnx = get_task_next(li)
         tiv = get_task_ival(li)
+        tcn = get_task_count(li)
+        trm = get_task_remns(li)
         
         tla = tla - tiv
         
+        nnx = get_task_nnxt(li)
+        
+        nnx = time.strftime('%H:%M:%S', time.localtime(tnx + nnx))        
         tla = time.strftime('%H:%M:%S', time.localtime(tla))
         tnx = time.strftime('%H:%M:%S', time.localtime(tnx))
         
         trm = get_task_remns(li)
         
-        tols.append('%s: %s, %s, %s, %s' % (li, tiv, trm, tla, tnx))
+        tols.append('%s: %s, %s, %s, %s, %s (%s)' % (li, tiv, tcn, trm, tla, tnx, nnx))
         
     if parameters:
         tols = [li for li in tols if li.count(parameters)]
@@ -1391,8 +1399,15 @@ def handler_tasks(type, source, parameters):
     
     miv = get_task_miv()
     
+    evst = get_fatal_var(cid(), 'task_manager_event', 'start')
+    
+    if evst:
+        evrm = curt - evst
+    else:
+        evrm = 0
+    
     if tols:
-        return reply(type, source, l('List of current tasks (total: %s; miv: %s):\n\n%s') % (len(tols), miv, '\n'.join(tols)))
+        return reply(type, source, l('List of current tasks (total: %s; miv: %s; evel: %s):\n\n%s') % (len(tols), miv, evrm, '\n'.join(tols)))
     return reply(type, source, l('Tasks not found!'))
 
 def handler_ctask(type, source, parameters):
