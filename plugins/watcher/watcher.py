@@ -55,6 +55,9 @@ def handler_watcher_presence(prs):
         wgchs = list(get_dict_fatal_var(cid, 'watchers'))
         
         for wjid in wgchs:
+            if wjid == 'telegram':
+                return
+                
             if not is_watcher_here(groupchat, wjid):
                 if is_var_set(cid, 'watchers', wjid, 'gchs', groupchat):
                     sgch = groupchat.split('@', 1)[0]
@@ -68,6 +71,9 @@ def handler_watcher_leave(groupchat, nick, reason, code):
     wgchs = list(get_dict_fatal_var(cid, 'watchers'))
     
     for wjid in wgchs:
+        if wjid == 'telegram':
+            return
+            
         if not is_watcher_here(groupchat, wjid) and is_ruser_prsnt(wjid):
             if is_var_set(cid, 'watchers', wjid, 'gchs', groupchat):
                 sgch = groupchat.split('@', 1)[0]
@@ -98,6 +104,9 @@ def handler_watcher_join(groupchat, nick, aff, role):
     wrole = l(role)
     
     for wjid in wgchs:
+        if wjid == 'telegram':
+            return
+        
         if not is_watcher_here(groupchat, wjid):
             if is_var_set(cid, 'watchers', wjid, 'gchs', groupchat):
                 sgch = groupchat.split('@', 1)[0]

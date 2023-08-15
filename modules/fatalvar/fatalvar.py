@@ -69,11 +69,6 @@ def _app_file(filename, data):
     except Exception:
         pass
 
-def log_task(taskout, file='syslogs/tasks.log'):
-    stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S]: ', time.localtime(time.time()))
-    _app_file(file, '\n%s%s\n' % (stz_time, taskout))
-    return '%s%s\n' % (stz_time, taskout)
-    
 def log_thread(thro, file='syslogs/threads.log'):
     stm = time.time()
     
@@ -664,7 +659,6 @@ class _fCycleTasks(object):
                 pass
 
     def _calc_gcd(self, numl):
-        #return 1
         if numl:
             x = reduce(gcd, numl)
             return x
@@ -727,6 +721,8 @@ class _fCycleTasks(object):
                 strd = self._tasks[tsk]['strd']
                 inth = self._tasks[tsk]['inthr']
                 rmns = self._tasks[tsk]['remns']
+                tla = self._tasks[tsk]['last']
+                nnx = self._tasks[tsk]['nnxt']
 
                 nela = trunc(self._tasks[tsk]['next'])
                 
@@ -740,6 +736,10 @@ class _fCycleTasks(object):
                         if once:
                             self.rmvTask(tsk)
                         
+                        tla = time.strftime('%H:%M:%S', time.localtime(tla))
+                        tnx = time.strftime('%H:%M:%S', time.localtime(nela))
+                        nnx = time.strftime('%H:%M:%S', time.localtime(nela + nnx))        
+                        
                         if inth and self._thrd:
                             cid = get_client_id()
                             thrc = inc_fatal_var('info', 'thr')
@@ -751,6 +751,8 @@ class _fCycleTasks(object):
                             fthr.start()
                         else:
                             func(*args)
+                            
+                        log_thread('%s (%s, %s, %s, %s, %s, %s)' % (tsk, ival, count, rmns, tla, tnx, nnx), 'syslogs/tasks.log')
                         
                         self._tasks[tsk]['last'] = curt
                         self._tasks[tsk]['next'] = curt + ival
