@@ -75,13 +75,19 @@ def handler_python_ssh(type, source, parameters):
     handler_python_sh(type, source, parameters)
 
 def handler_python_eval(type, source, parameters):
+    cid = get_client_id()
+    gch = source[1]
+    
     try:
         return_value = '%s' % (eval(parameters))
     except:
         return_value = '%s - %s.' % (sys.exc_info()[0], sys.exc_info()[1])
-    reply(type, source, return_value.strip())
+    return reply(type, source, return_value.strip())
 
 def handler_python_exec(type, source, parameters):
+    cid = get_client_id()
+    gch = source[1]
+    
     if '\n' in parameters and parameters[-1] != '\n':
         parameters += '\n'
     try:

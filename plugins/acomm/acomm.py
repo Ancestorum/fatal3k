@@ -109,9 +109,10 @@ def handler_acomm_body(type, source, body):
     
     groupchat = source[1]
     snick = source[2]
+    bnick = get_bot_nick(groupchat)
     sjid = get_true_jid(source)
 
-    if not is_groupchat(groupchat) or sjid == cid:
+    if not is_groupchat(groupchat) or sjid == cid or snick == bnick:
         return
     
     if type == 'public':
@@ -143,9 +144,10 @@ def handler_acomm_status(prs):
     
     groupchat = get_stripped(prs.getFrom())
     snick = get_resource(prs.getFrom())
+    bnick = get_bot_nick(groupchat)
     sjid = get_true_jid(groupchat + '/' + snick)
 
-    if not is_groupchat(groupchat) or sjid == cid:
+    if not is_groupchat(groupchat) or sjid == cid or snick == bnick:
         return
     
     status = prs.getStatus()
@@ -208,11 +210,12 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
     cid = get_client_id()
     
     snick = nick
+    bnick = get_bot_nick(groupchat)
     sjid = get_true_jid(groupchat + '/' + snick)
 
     fjid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
 
-    if sjid == cid:
+    if sjid == cid or snick == bnick:
         return
 
     jpts = list(get_dict_fatal_var(cid, 'comp_acomm_exp', groupchat, 'jid'))
@@ -382,6 +385,26 @@ def handler_acomm_control(type, source, parameters):
             else:
                 return reply(type, source, l('List of auto-command rules is empty!'))
                 
+def handler_random_nick(type, source, parameters):
+    cid = get_client_id()
+    
+    groupchat = source[1]
+       
+    if not is_groupchat(groupchat):
+        return reply(type, source, l('This command can be used only in groupchat!'))
+
+    bnick = get_bot_nick(groupchat) 
+        
+    nickl = get_list_fatal_var(cid, 'gchrosters', groupchat)
+    
+    nickl = [li for li in nickl if li != bnick] 
+    
+    rnm = random.randrange(0, len(nickl)) 
+    
+    if type == 'public':
+        return msg(groupchat, nickl[rnm])
+    return reply(type, source, nickl[rnm])    
+                
 def init_acomm_db(gch):
     cid = get_client_id()
     
@@ -400,3 +423,4 @@ register_join_handler(handler_acomm_join_jn)
 register_message_handler(handler_acomm_body)
 
 register_command_handler(handler_acomm_control, 'acomm', 20)
+register_command_handler(handler_random_nick, 'rnick', 20)

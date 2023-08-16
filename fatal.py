@@ -90,7 +90,7 @@ def main():
 
         sprint('\Starting time: %s\n' % (sttm))
         
-        if is_param_set('reload_code'):
+        if is_param_seti('reload_code'):
             cr_md5 = core_md5('fatal.py')
             cfg_md5 = core_md5('fatal.conf')
             add_fatal_var('core_md5', cr_md5)

@@ -109,6 +109,11 @@ debug_mode = 0
 #-------------------------------------------------------------------
 reload_code = 0
 
+# Whether to write or not syslogs for threads and tasks
+#-------------------------------------------------------------------------
+log_thrs = 0
+log_tsks = 0
+
 # Only for advanced operating system users
 # If you don't know what does it mean please don't touch
 # Allow to specify count of simultaneously runned threads

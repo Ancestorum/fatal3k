@@ -1420,7 +1420,7 @@ def fatal_console():
             if readline:
                 readline.write_history_file('.fatalhst')
     except EOFError:
-        if is_param_set('show_console'):
+        if is_param_seti('show_console'):
             dec_fatal_var('info', 'opnum')
 
             if not is_var_set('is_console_hide'):
@@ -1673,6 +1673,62 @@ def _get_pl_body(plfile):
         return plbody
     else:
         return ''
+
+def rep_nested_cmds(type, source, params):
+    if not (params.count('%') % 2) and params.count('%'):
+        frex = '%{1,1}[a-zа-я]{1,}%{1,1}'
+        srex = '%{1,1}[a-zа-я]{1,}:{2,2}[a-zA-zа-яА-я0-9]{1,}.*[^%]%{1,1}'
+        trex = '%{1,1}[a-zа-я]{1,}[a-zA-ZА-Яа-я]{1,}\w.[^%]{0,}%{1,1}'
+        
+        fcmds = re.findall(frex, params)
+        
+        if not fcmds:
+            fcmds = re.findall(srex, params)
+        
+        cmdl = get_list_fatal_var('command_handlers')
+        
+        if fcmds:
+            if fcmds[0].count('%') >= 4:
+                fcmds = re.findall(trex, params)
+        
+        if fcmds:
+            fcmd = fcmds[0]
+            
+            if fcmd.count('::'):
+                spc = fcmd.replace('%', '')
+                spc = safe_split(spc, '::')
+                
+                com = spc[0]
+                par = spc[1]
+                
+                if com in cmdl:
+                    if check_access(source, com):
+                        cmd_hnd = get_fatal_var('command_handlers', com)
+                        res = str(cmd_hnd(type, source, par))
+                    
+                        params = params.replace(fcmd, res)
+                    else:
+                        return params
+                else:
+                    return params
+            else:
+                spc = fcmd.replace('%', '')
+                com = spc
+                
+                if com in cmdl:
+                    if check_access(source, com):
+                        cmd_hnd = get_fatal_var('command_handlers', com)
+                        res = str(cmd_hnd(type, source, ''))
+                        
+                        params = params.replace(fcmd, res)
+                    else:
+                        return params
+                else:
+                    return params
+                
+            return rep_nested_cmds(type, source, params)
+    
+    return params
 
 #-------------------------------- Handlers routines ---------------------------------------
 
@@ -1939,6 +1995,8 @@ def call_command_handlers(command, type, source, parameters, callee):
     if cblock:
         if not is_bot_admin(jid):
             return
+
+    parameters = rep_nested_cmds('null', source, parameters)
 
     if real_access < 0:
         real_access = int(get_cmd_access(command))
@@ -2684,6 +2742,18 @@ def has_access(source, level, gch):
         return 1
     return 0
 
+def check_access(source, command):
+    real_access = int(get_cmd_access(command))
+
+    gch = source[1]
+    
+    if real_access < 0:
+        real_access = get_int_fatal_var('commands', command, 'access')
+
+    if has_access(source, real_access, gch):
+        return True
+    return False
+
 def gch_exists(gch):
     cid = get_client_id()
     
@@ -3121,7 +3191,7 @@ def presenceHnd(conn, prs):
     inc_fatal_var(cid, 'info', 'prs')
     rostero = get_fatal_var(cid, 'roster')
 
-    if is_param_set('auto_subscribe') or get_int_fatal_var(cid, 'manual_subscribe'):
+    if is_param_seti('auto_subscribe') or get_int_fatal_var(cid, 'manual_subscribe'):
         if ptype == 'subscribe' and rostero:
             rostero.Authorize(fromjid)
             
@@ -3361,7 +3431,7 @@ def reconnect(jid, password, resource, port=5222, tlssl=1):
 def dcHnd():
     cid = get_client_id()
     
-    if not is_var_set(cid, 'disconnected') and is_param_set('auto_reconnect'):
+    if not is_var_set(cid, 'disconnected') and is_param_seti('auto_reconnect'):
         sprint('\nDisconnected.\n\Reconnecting...')
         
         dec_fatal_var('connected_count') 
@@ -3376,7 +3446,7 @@ def dcHnd():
     else:
         sprint('\nClient %s disconnected.' % (cid))
         
-        if not is_param_set('keep_alive'):
+        if not is_param_seti('keep_alive'):
             if get_int_fatal_var('clients') == 1:
                 sprint(log_error('Exit!'))
                 os._exit(1)
@@ -3433,7 +3503,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
             
             call_in_sep_thr(jid + '/start', reconnect, jid, password, resource, port, tlssl)
             
-            if not is_param_set('reconnect_forever'):
+            if not is_param_seti('reconnect_forever'):
                 dec_fatal_var(jid, 'reconnects')
             
             inc_fatal_var(jid, 'wait_for_try', 3)

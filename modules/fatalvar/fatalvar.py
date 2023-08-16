@@ -424,6 +424,13 @@ def is_param_set(param):
         return True
     return False
 
+def is_param_seti(param):
+    param = _fatalConfig.getIntParam(param, 0)
+
+    if param:
+        return True
+    return False
+
 def rel_fatal_config():
     return _fatalConfig.Load('fatal.conf')
 
@@ -486,7 +493,7 @@ def get_list_fatal_var(*args):
     
     if not vval:
         return ['']
-    return vval
+    return list(vval)
     
 def set_fatal_var(*args):
     _fatalVars.setVar(*args)
@@ -595,7 +602,9 @@ class fThread(threading.Thread):
         self.run = self.__run
         self.strtd = time.time()
         threading.Thread.start(self)
-        log_thread(self.name)
+        
+        if is_param_seti('log_thrs'):
+            log_thread(self.name)
         
     def __run(self):
         sys.settrace(self.globaltrace)
@@ -736,9 +745,10 @@ class _fCycleTasks(object):
                         if once:
                             self.rmvTask(tsk)
                         
-                        tla = time.strftime('%H:%M:%S', time.localtime(tla))
-                        tnx = time.strftime('%H:%M:%S', time.localtime(nela))
-                        nnx = time.strftime('%H:%M:%S', time.localtime(nela + nnx))        
+                        if is_param_seti('log_tsks'):
+                            tla = time.strftime('%H:%M:%S', time.localtime(tla))
+                            tnx = time.strftime('%H:%M:%S', time.localtime(nela))
+                            nnx = time.strftime('%H:%M:%S', time.localtime(nela + nnx))        
                         
                         if inth and self._thrd:
                             cid = get_client_id()
@@ -751,8 +761,9 @@ class _fCycleTasks(object):
                             fthr.start()
                         else:
                             func(*args)
-                            
-                        log_thread('%s (%s, %s, %s, %s, %s, %s)' % (tsk, ival, count, rmns, tla, tnx, nnx), 'syslogs/tasks.log')
+                        
+                        if is_param_seti('log_tsks'):
+                            log_thread('%s (%s, %s, %s, %s, %s, %s)' % (tsk, ival, count, rmns, tla, tnx, nnx), 'syslogs/tasks.log')
                         
                         self._tasks[tsk]['last'] = curt
                         self._tasks[tsk]['next'] = curt + ival
