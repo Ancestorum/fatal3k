@@ -1677,8 +1677,8 @@ def _get_pl_body(plfile):
 def rep_nested_cmds(type, source, params):
     if not (params.count('%') % 2) and params.count('%'):
         frex = '%{1,1}[a-zа-я]{1,}%{1,1}'
-        srex = '%{1,1}[a-zа-я]{1,}:{2,2}[a-zA-zа-яА-я0-9]{1,}.*[^%]%{1,1}'
-        trex = '%{1,1}[a-zа-я]{1,}[a-zA-ZА-Яа-я]{1,}\w.[^%]{0,}%{1,1}'
+        srex = '%{1,1}[a-zа-я]{1,}:{2,2}[a-zA-zа-яА-я0-9\'"]{1,}.*[^%]%{1,1}'
+        trex = '%{1,1}[a-zа-я]{1,}[a-zA-ZА-Яа-я0-9\'"]{1,}\w.[^%]{0,}%{1,1}'
         
         fcmds = re.findall(frex, params)
         
@@ -1996,7 +1996,10 @@ def call_command_handlers(command, type, source, parameters, callee):
         if not is_bot_admin(jid):
             return
 
-    parameters = rep_nested_cmds('null', source, parameters)
+    cmdl = ['acomm', 'ctask', 'remind'] 
+
+    if not command in cmdl:
+        parameters = rep_nested_cmds('null', source, parameters)
 
     if real_access < 0:
         real_access = int(get_cmd_access(command))
