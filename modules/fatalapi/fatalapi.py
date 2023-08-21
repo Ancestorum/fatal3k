@@ -1702,7 +1702,7 @@ def rep_nested_cmds(type, source, params):
                 par = spc[1]
                 
                 if com in cmdl:
-                    if check_access(source, com):
+                    if check_access(type, source, com):
                         cmd_hnd = get_fatal_var('command_handlers', com)
                         res = str(cmd_hnd(type, source, par))
                     
@@ -1716,7 +1716,7 @@ def rep_nested_cmds(type, source, params):
                 com = spc
                 
                 if com in cmdl:
-                    if check_access(source, com):
+                    if check_access(type, source, com):
                         cmd_hnd = get_fatal_var('command_handlers', com)
                         res = str(cmd_hnd(type, source, ''))
                         
@@ -1996,21 +1996,15 @@ def call_command_handlers(command, type, source, parameters, callee):
         if not is_bot_admin(jid):
             return
 
-    cmdl = ['acomm', 'ctask', 'remind'] 
+    cmdl = ['acomm', 'ctask', 'remind', 'alias_add', 'galias_add'] 
 
     if not command in cmdl:
         parameters = rep_nested_cmds('null', source, parameters)
 
-    if real_access < 0:
-        real_access = int(get_cmd_access(command))
-
-    if real_access < 0:
-        real_access = get_int_fatal_var('commands', command, 'access')
-
     if is_var_set('command_handlers', command):
         cmd_hnd = get_fatal_var('command_handlers', command)
         
-        if has_access(source, real_access, gch_jid):
+        if check_access(type, source, command):
             if not is_bot_admin(jid):
                 log_cmd_run(callee, parameters, guser, jid)
             
@@ -2505,7 +2499,7 @@ def leave_groupchat(groupchat, status=''):
         rmv_gch_roster(groupchat)
         remove_chatroom(groupchat)
 
-def msg(target, body):
+def msg(target, body, chatid=0):
     if target == 'null':
         return body
     
@@ -2524,8 +2518,7 @@ def msg(target, body):
     if target == 'telegram':
         cid = get_client_id()
         tbot = get_fatal_var(cid, 'tgbot')
-        tgmsg = get_fatal_var(cid, 'last_tg_msg')
-        tbot.send_message(tgmsg.chat.id, body)
+        tbot.send_message(chatid, body)
         return
     
     if not isinstance(body, str):
@@ -2594,7 +2587,8 @@ def reply(ltype, source, body):
         msg('console', body)
         return body
     elif ltype == 'telegram':
-        msg('telegram', body)
+        chatid = int(source[0])
+        msg('telegram', body, chatid)
         return body    
     elif ltype == 'null':
         set_fatal_var(cid, source[0], 'last_cmd_result', body)
@@ -2745,7 +2739,47 @@ def has_access(source, level, gch):
         return 1
     return 0
 
-def check_access(source, command):
+def usrid_exists(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return False 
+
+    sql = "SELECT * FROM tguserids WHERE id='%s';" % (usrid)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return True
+    return False
+
+def get_tg_usr_acc(usrid):
+    cid = get_client_id()
+    
+    if type(usrid) != int:
+        return 0 
+    
+    if usrid_exists(usrid):
+        sql = "SELECT acc FROM tguserids WHERE \"id\"='%s';" % (usrid)
+    
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    
+    if qres:
+        return qres[0][0]
+    return 0
+
+def check_access(type, source, command):
+    usracc = -1
+    
+    if type == 'telegram':
+        usrid = int(source[1])
+        usracc = int(get_tg_usr_acc(usrid))
+    elif type == 'null':
+        usrid = source[1]
+
+        if usrid.isdigit():
+            usrid = int(usrid)
+            usracc = int(get_tg_usr_acc(usrid))
+    
     real_access = int(get_cmd_access(command))
 
     gch = source[1]
@@ -2753,7 +2787,7 @@ def check_access(source, command):
     if real_access < 0:
         real_access = get_int_fatal_var('commands', command, 'access')
 
-    if has_access(source, real_access, gch):
+    if has_access(source, real_access, gch) or (usracc >= real_access):
         return True
     return False
 

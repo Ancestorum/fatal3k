@@ -259,12 +259,13 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod
                 
                 if not cycle:
                     thr_name = 'remind_%s' % (timerid)
-                    call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                    
+                    call_in_sep_thr('%s/%s' % (cid, thr_name), call_command_handlers, pcmd, type, source, pars, pcmd)
                 else:
                     thr_name = 'cycle_%s' % (timerid)
                     
                     if mod in ['Q', 'q']:
-                        call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, 'null', source, pars)
+                        call_in_sep_thr('%s/%s' % (cid, thr_name), call_command_handlers, pcmd, 'null', source, pars, pcmd)
                     elif mod.isdigit():
                         if int(mod) > 0:
                             imod = int(get_rem_mod(groupchat, timerid)) 
@@ -273,15 +274,15 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod
                             
                             set_rem_mod(groupchat, imod, timerid)
                             
-                            call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                            call_in_sep_thr('%s/%s' % (cid, thr_name), call_command_handlers, pcmd, type, source, pars, pcmd)
                             
                             if not imod:
                                 del_remind(groupchat, jid, mess, timerid)
                                 rmv_fatal_task(thr_name)
                         else:
-                            call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                            call_in_sep_thr('%s/%s' % (cid, thr_name), call_command_handlers, pcmd, type, source, pars, pcmd)
                     else:
-                        call_in_sep_thr('%s/%s' % (cid, thr_name), cmdhnd, type, source, pars)
+                        call_in_sep_thr('%s/%s' % (cid, thr_name), call_command_handlers, pcmd, type, source, pars, pcmd)
                     
                     rcnt = get_task_strd(thr_name)
                     set_run_cnt(groupchat, rcnt, timerid)
@@ -372,7 +373,7 @@ def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=
         return rep
     else:
         upd_sql = '''UPDATE reminds SET "nick"='%s', "jid"='%s', "rtime"='%s', 
-                         "ctms"='%s', "dsts"='%s', "status"='%s', "timerid"='%s' WHERE mess='%s';''' % (nick, jid, rtime, ctms, dsts, status, mess, timerid)
+                         "ctms"='%s', "dsts"='%s', "status"='%s', "timerid"='%s' WHERE mess='%s';''' % (nick, jid, rtime, ctms, dsts, status, timerid, mess)
         
         rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
         
@@ -473,11 +474,12 @@ def repair_ctasks(gch, rems):
     for rem in rems:
         rem = list(rem)
         rem8 = int(rem[8])
-        rem2 = int(rem[2])
-        rem4 = int(rem[4])
-        rem7 = rem[7]
         
         if rem8:
+            rem2 = int(rem[2])
+            rem4 = int(rem[4])
+            rem7 = rem[7]
+            
             if rem4 < curt:
                 rem[3] = str(curt)
                 rem[4] = str(curt + (rem2 * 60))
@@ -488,6 +490,8 @@ def repair_ctasks(gch, rems):
                 nrems.append(rem)
             else:
                 nrems.append(rem)
+        else:
+            nrems.append(rem)
                 
     return nrems
     
@@ -1245,10 +1249,7 @@ def handler_getrealjid(type, source, parameters):
 
     rep = l('Real jid of %s: %s') % (nick, truejid)        
             
-    if type == 'console':
-        return reply(type, source, rep)
-    else:
-        return reply('private', source, rep)
+    return reply(type, source, rep)
         
 def handler_total_in_muc(type, source, parameters):
     cid = get_client_id()

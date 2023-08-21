@@ -99,21 +99,6 @@ def set_tg_usrid(usrid, fnme, usrn=''):
         return True
     return False
 
-def get_tg_usr_acc(usrid):
-    cid = get_client_id()
-    
-    if type(usrid) != int:
-        return False 
-    
-    if usrid_exists(usrid):
-        sql = "SELECT acc FROM tguserids WHERE \"id\"='%s';" % (usrid)
-    
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
-    
-    if qres:
-        return qres[0][0]
-    return False
-
 def set_tg_usr_acc(usrid, acc):
     cid = get_client_id()
     
@@ -126,19 +111,6 @@ def set_tg_usr_acc(usrid, acc):
     qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
     
     return qres
-
-def usrid_exists(usrid):
-    cid = get_client_id()
-    
-    if type(usrid) != int:
-        return False 
-
-    sql = "SELECT * FROM tguserids WHERE id='%s';" % (usrid)
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
-    
-    if qres:
-        return True
-    return False
 
 def chid_exists(chid):
     cid = get_client_id()
@@ -279,6 +251,7 @@ def command_messages(message):
     fbdn_cmds = ['access']
     
     mchat = message.chat.type
+    chatid = message.chat.id
     usrid = message.from_user.id
     fname = message.from_user.first_name
     usern = message.from_user.username 
@@ -318,17 +291,16 @@ def command_messages(message):
         real_access = get_int_fatal_var('commands', wprname, 'access')
         usracc = int(get_tg_usr_acc(usrid))
         
-        if usracc >= real_access:
+        cmdl = get_list_fatal_var('command_handlers')
+        
+        if wprname in cmdl:
             cparams = message.text.replace(cmdname, '') 
                            
-            comm_hnd = get_fatal_var('command_handlers', wprname)
-
-            if comm_hnd:
-                comm_hnd('telegram', ['', '', ''], cparams.strip())
-            else:
-                tbot.reply_to(message, l('Unknown command!'))
+            source = [str(chatid), str(usrid), fname]
+            
+            call_command_handlers(wprname, 'telegram', source, cparams.strip(), wprname)
         else:
-            tbot.reply_to(message, l('Too few rights!'))   
+            tbot.reply_to(message, l('Unknown command!'))
     else:
         if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
             set_fatal_var(cid, 'tgm_grp_chid', message.chat.id)
@@ -346,7 +318,7 @@ def tgm_polling_proc():
     tbot = get_fatal_var(cid, 'tgbot')
     
     try:
-        tbot.infinity_polling(interval=0, timeout=3)
+        tbot.infinity_polling()
     except Exception:
         log_exc_error()     
 

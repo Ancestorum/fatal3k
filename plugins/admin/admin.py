@@ -450,6 +450,8 @@ def handler_admin_echo(type, source, parameters):
             return msg('console', parameters.strip())
         elif type == 'public':
             return reply(type, source, parameters.strip())
+        elif type == 'telegram':
+            return reply(type, source, parameters.strip())
         else:
             return msg('null', parameters.strip())
     else:

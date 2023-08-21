@@ -35,7 +35,7 @@ def escrep(text):
                 .replace('</div>', '')
 
 def parse_html(resp, ind=1, pin=0, cls=False):
-    bsp = BeautifulSoup(resp)
+    bsp = BeautifulSoup(resp, 'html.parser')
     
     fnd = bsp('div', 'q')
     q1 = fnd[pin]

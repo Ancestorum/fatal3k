@@ -725,7 +725,7 @@ def handler_help_commands(type, source, parameters):
             if not cname:
                 pcname = cprfx + cat
             
-            if has_access(source, racc, groupchat) or type == 'console':
+            if has_access(source, racc, groupchat) or type in ['console', 'telegram']:
                 if is_var_set(cid, 'commoff', groupchat):
                     if is_var_set(cid, 'commoff', groupchat, cat):
                         dsbl.append(pcname)
@@ -747,7 +747,7 @@ def handler_help_commands(type, source, parameters):
                 dsbl.sort()
                 answ += l('\n\nFollowing commands are turned off in this groupchat (total: %s):\n\n%s.') % (len(dsbl), ', '.join(dsbl))
                 
-            if type == 'console':
+            if type in ['console', 'telegram']:
                 return reply(type, source, answ)
             else:
                 return reply('private', source, answ)
@@ -769,7 +769,7 @@ def handler_help_commands(type, source, parameters):
             
         rep = l('List of categories (total: %s):\n\n%s.\n\nTo view list of commands in category type "%s%s <category>" without quotes, for example "%s%s *"') % (qcats, cats, cprfx, comm_comm, cprfx, comm_comm)
 
-        if type == 'console':
+        if type in ['console', 'telegram']:
             return reply(type, source, rep)
         else:
             return reply('private', source, rep)
