@@ -15,6 +15,10 @@ resource = res, res2, res3
 bot_api_token = 
 tgm_chat_id = 
 tgbot_admin_id = 
+tgpost_url = http://site.tld/upload.php
+tgpost_user = user
+tgpost_pass = password
+tgurl_prefix = http://site.tld/files/
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------

@@ -2,3 +2,4 @@ Some of requested operations in your shell-statement are not allowed by administ
 Syntax error! = Синтаксическая ошибка!
 Invalid operation! = Недопустимая операция!
 Shell output result (in: %s sec.):\n\n%s = Результат выполнения команды (за: %s сек.):\n\n%s
+Shell output result (in: %s sec.)! = Результат выполнения команды (за: %s сек.)!

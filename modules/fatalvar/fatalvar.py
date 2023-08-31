@@ -260,6 +260,15 @@ def enum_fatal_tasks():
     if tsko:
         return tsko.Enumerate()
 
+def is_thr_exists(thr_name):
+    thrl = threading.enumerate()
+    
+    thrl = [li for li in thrl if li.name.count(thr_name)]
+    
+    if thrl:
+        return True
+    return False
+
 def is_task_exists(tskn):
     cid = get_client_id()
     

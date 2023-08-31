@@ -116,7 +116,11 @@ def handler_python_sh(type, source, parameters):
     
     stop = time.time()
     
-    return reply(type, source, l('Shell output result (in: %s sec.):\n\n%s') % (round(stop-start, 3), return_value.strip()))
+    return_value = return_value.strip()
+    
+    if return_value:
+        return reply(type, source, l('Shell output result (in: %s sec.):\n\n%s') % (round(stop-start, 3), return_value))
+    return reply(type, source, l('Shell output result (in: %s sec.)!') % (round(stop-start, 3)))
     
 def handler_python_calc(type, source, parameters):
     parameters = parameters.strip()

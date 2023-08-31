@@ -144,12 +144,9 @@ def handler_watcher_mess(type, source, body):
                 
                 if (wjid == 'telegram') and (type != 'private'):
                     if bnick != nick:
-                        if is_var_set(cid, 'tgm_grp_chid'):                        
-                            tgmsg = get_fatal_var(cid, 'last_tg_msg')
-                            gchid = get_fatal_var(cid, 'tgm_grp_chid')
-                            tgmsg.chat.id = gchid
+                        chatid = get_fatal_var(cid, 'watchers', wjid, 'chatid')
                         
-                        return msg(wjid, rep)
+                        return msg(wjid, rep, chatid)
                 else:
                     if type != 'private':
                         return msg(wjid, rep)
@@ -206,12 +203,18 @@ def handler_watcher(type, source, parameters):
             if not check_jid(wgch):
                 return reply(type, source, l('Invalid syntax!'))
             
+            chatid = 0
+            
             if type == 'telegram':
-                jid = type            
+                jid = type
+                chatid = source[0]
             
             if not is_var_set(cid, 'watchers', jid):
                 set_fatal_var(cid, 'watchers', jid, 'gchs', [])
-            
+                
+                if chatid:
+                    set_fatal_var(cid, 'watchers', jid, 'chatid', chatid)
+                
             if not is_var_set(cid, 'watchers', jid, 'gchs', wgch):
                 if is_groupchat(wgch):
                     gchs = get_fatal_var(cid, 'watchers', jid, 'gchs')
