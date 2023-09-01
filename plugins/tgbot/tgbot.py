@@ -326,7 +326,7 @@ def handle_photo_content(message):
     
     call_in_sep_thr(thrn, save_and_upload, file_url)
     
-    time.sleep(0.1)
+    time.sleep(0.3)
     
     if message.chat.type == 'private':
         tbot.delete_message(chatid, messid)
@@ -422,7 +422,7 @@ def handle_video_content(message):
     
     call_in_sep_thr(thrn, save_and_upload, file_url)
     
-    time.sleep(0.1)
+    time.sleep(0.3)
     
     if message.chat.type == 'private':
         tbot.delete_message(chatid, messid)
