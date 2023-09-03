@@ -18,6 +18,7 @@
 from fatalapi import *
 
 import telebot
+import emoji
 import requests
 from urllib import request
 from hashlib import md5, sha256
@@ -405,6 +406,9 @@ def handle_video_content(message):
     fname = message.from_user.first_name
     usern = message.from_user.username
 
+    if caption:
+        caption = emoji.demojize(caption)
+
     if not is_var_set(cid, 'tgm_msg_buf'):
         set_fatal_var(cid, 'tgm_msg_buf', [])
 
@@ -522,6 +526,68 @@ def handle_audio_content(message):
             else:
                 tbot.send_message(chatid, l('Unknown error!'))
 
+def handle_sticker_content(message):
+    if (time.time() - message.date) > 8:
+        return
+
+    cid = get_client_id()
+    
+    tbot = get_fatal_var(cid, 'tgbot')
+    chatid = message.chat.id
+    messid = message.message_id
+    fname = message.from_user.first_name
+    usern = message.from_user.username
+    
+    sticker_id = message.sticker.file_id
+    
+    file_url = tbot.get_file_url(sticker_id)
+    
+    if message.chat.type == 'private':
+        resp, filename = save_and_upload(file_url)    
+        
+        if not resp:
+            tbot.send_message(chatid, l('Unknown error!'))
+            return
+
+        if resp.text == 'ok': 
+            tbot.delete_message(chatid, messid)
+            purl = get_cfg_param('tgurl_prefix')
+            tbot.send_message(chatid, '%s%s' %(purl, filename))
+        else:
+            if resp.text: 
+                tbot.send_message(chatid, resp.text)
+            else:
+                tbot.send_message(chatid, l('Unknown error!'))
+    else:
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
+            fext = file_url.split('.')[-1]
+            filename = ''
+
+            if fext != 'tgs':
+                resp, filename = save_and_upload(file_url)
+                
+                purl = get_cfg_param('tgurl_prefix')
+                
+                if filename:
+                    filename = '%s%s' %(purl, filename)            
+            else:
+                filename = message.sticker.emoji
+                
+                if filename:
+                    filename = emoji.demojize(filename)
+            
+            if filename:
+                if usern and fname != usern:
+                    rep = '[%s]<%s (@%s)> %s' % (message.chat.title, fname, usern, filename)
+                else:
+                    rep = '[%s]<%s> %s' % (message.chat.title, fname, filename)
+                
+                if is_var_set(cid, 'watchers', 'telegram', 'gchs'):
+                    wgchs = list(get_dict_fatal_var(cid, 'watchers', 'telegram', 'gchs'))
+                    
+                    for wgch in wgchs:
+                        msg(wgch, rep)    
+
 def command_messages(message):
     if (time.time() - message.date) > 8:
         return
@@ -587,10 +653,12 @@ def command_messages(message):
                         url = ment.url
                         break
             
+            mtxt = emoji.demojize(message.text)
+            
             if usern and fname != usern:
-                rep = '[%s]<%s (@%s)> %s' % (message.chat.title, fname, usern, message.text)
+                rep = '[%s]<%s (@%s)> %s' % (message.chat.title, fname, usern, mtxt)
             else:
-                rep = '[%s]<%s> %s' % (message.chat.title, fname, message.text)
+                rep = '[%s]<%s> %s' % (message.chat.title, fname, mtxt)
             
             if url:
                 rep += '\n\n%s' % (url)
@@ -611,7 +679,10 @@ def msg_worker(message, public=False):
     chat_title = message.chat.title
     mult = ''
     cr = ''
-        
+    
+    if caption:
+        caption = emoji.demojize(caption)
+    
     while True:
         time.sleep(0.3)
     
@@ -636,7 +707,7 @@ def msg_worker(message, public=False):
             ltime = round(time.time(), 2)
             mtime = round(get_fatal_var(cid, 'tgm_mtime'), 2)
             
-            if ltime - mtime > 1:
+            if ltime - mtime > 2:
                 for msg in tgmb:
                     rmsg += msg[-1] + '\n' 
             
@@ -713,6 +784,7 @@ def init_tgm_bot():
     tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
     tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
     tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
+    tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
         
 def create_tg_tables():
     cid = get_client_id()
