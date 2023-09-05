@@ -35,13 +35,9 @@ class fDaemon:
         self.pidfile = pidfile
         self.worker = wfunc
         self.wfargs = wfargs
+        self._is_restart = False
     
     def daemonize(self):
-        """
-        do the UNIX double-fork magic, see Stevens' "Advanced 
-        Programming in the UNIX Environment" for details (ISBN 0201563177)
-        http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
-        """
         try: 
             pid = os.fork() 
             if pid > 0:
@@ -56,6 +52,7 @@ class fDaemon:
         os.umask(0) 
     
         # do second fork
+        
         try: 
             pid = os.fork() 
             if pid > 0:
@@ -68,6 +65,7 @@ class fDaemon:
         # redirect standard file descriptors
         sys.stdout.flush()
         sys.stderr.flush()
+        
         si = open(self.stdin, 'r')
         so = open(self.stdout, 'a+')
         se = open(self.stderr, 'a+')
@@ -134,8 +132,33 @@ class fDaemon:
         """
         Restart the daemon
         """
+        try: 
+            pid = os.fork() 
+            
+            if pid > 0:
+                # exit first parent
+                sys.exit(0)
+        except OSError as e: 
+            sys.stderr.write('Error: Fork #1 failed: %d (%s)!\n' % (e.errno, e.strerror))
+            sys.exit(1)
+        
+        os.setsid() 
+        os.umask(0) 
+        
+        try: 
+            pid = os.fork() 
+            if pid > 0:
+                # exit from second parent
+                sys.exit(0) 
+        except OSError as e: 
+            sys.stderr.write('Error: Fork #2 failed: %d (%s)!\n' % (e.errno, e.strerror))
+            sys.exit(1) 
+        
         self.stop()
-        self.start()
+        
+        pid = str(os.getpid())
+        self.create_pid_file(pid)
+        self.run()
 
     def run(self):
         """

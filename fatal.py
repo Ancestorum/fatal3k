@@ -275,6 +275,8 @@ if __name__ == "__main__":
     
     create_fatal_mmap()
     
+    set_fatal_var('main_proc', main)
+    
     if dmnrun:
         pidfile = '%s/fatal.pid' % (fataldir)
         stderr = '%s/syslogs/error.log' % (fataldir)

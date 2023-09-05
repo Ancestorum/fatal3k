@@ -339,6 +339,22 @@ def interrupt(clmess='\nInterrupt (Ctrl+C)', prmess='Got Ctrl+C --> Shutdown!'):
     rmv_pid_file()
     os._exit(0)
 
+def interrupt_dmn():
+    prs = xmpp.Presence(typ='unavailable')
+    prs.setStatus('Restarting...')
+    
+    cids = dict(get_dict_fatal_var('clconns'))
+    
+    for cid in cids:
+        jconn = cids[cid]
+        
+        set_fatal_var(cid, 'disconnected', True)
+        
+        try:
+            jconn.send(prs)
+        except Exception:
+            pass        
+
 #---------------------------- Decorator routines -----------------------------
 
 def print_exception(func):
@@ -929,12 +945,16 @@ def is_cycle_overload(cparam='cspeed'):
     return False
 
 def restart_bot():
+    cid = get_client_id()
+
     drun = get_fatal_var('daemon') 
     
     if not drun:
         rmv_pid_file()
         os.execl(sys.executable, sys.executable, *sys.argv)
     else:
+        interrupt_dmn()
+        rmv_fatal_var(cid, 'tgbot')
         drun.restart()
 
 def get_last_rev(url):

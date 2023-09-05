@@ -779,12 +779,12 @@ def init_tgm_bot():
         
         call_in_sep_thr(cid + '/init_tgm_bot', tgm_polling_proc)
         
-    tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
-    tbot.register_message_handler(command_messages, content_types=['text'])
-    tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
-    tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
-    tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
-    tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
+        tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
+        tbot.register_message_handler(command_messages, content_types=['text'])
+        tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
+        tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
+        tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
+        tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
         
 def create_tg_tables():
     cid = get_client_id()
