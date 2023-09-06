@@ -59,7 +59,15 @@ def handler_access_login(type, source, parameters):
 
 def handler_access_logout(type, source, parameters):
     jid = get_true_jid(source)
+    
+    adml = get_lst_cfg_param('admins')
+    
+    if adml:
+        if adml[0] == jid:
+            return reply(type, source, l('Superadmin can not be logout!'))
+    
     set_user_access(jid)
+    
     return reply(type, source, l('Logout!'))
 
 def handler_access_view_access(type, source, parameters):

@@ -22,6 +22,11 @@ import emoji
 import requests
 from urllib import request
 from hashlib import md5, sha256
+
+def get_md5(rst):
+    md5str = md5(rst.encode())
+    md5str = md5str.hexdigest()
+    return md5str
              
 def get_tg_chid(gtitle):
     cid = get_client_id()
@@ -362,7 +367,7 @@ def handle_photo_content(message):
             if not is_thr_exists(thrn):
                 call_in_sep_thr(thrn, msg_worker, message)
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
             pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
             
             filename = pupf[-1]
@@ -371,6 +376,9 @@ def handle_photo_content(message):
             purl = get_cfg_param('tgurl_prefix')
             rmsg = '%s%s' %(purl, filename)
             ndt = message.date
+            
+            fprm = get_md5(file_url)
+            set_param(fprm, filename)
             
             tgmb = get_fatal_var(cid, 'tgm_msg_buf')
             
@@ -461,7 +469,7 @@ def handle_video_content(message):
             if not is_thr_exists(thrn):
                 call_in_sep_thr(thrn, msg_worker, message)
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
             pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
             
             filename = pupf[-1]
@@ -470,6 +478,9 @@ def handle_video_content(message):
             purl = get_cfg_param('tgurl_prefix')
             rmsg = '%s%s' %(purl, filename)
             ndt = message.date
+            
+            fprm = get_md5(file_url)
+            set_param(fprm, filename)
             
             tgmb = get_fatal_var(cid, 'tgm_msg_buf')
             
@@ -559,7 +570,7 @@ def handle_sticker_content(message):
             else:
                 tbot.send_message(chatid, l('Unknown error!'))
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
             fext = file_url.split('.')[-1]
             filename = ''
 
@@ -582,8 +593,8 @@ def handle_sticker_content(message):
                 else:
                     rep = '[%s]<%s> %s' % (message.chat.title, fname, filename)
                 
-                if is_var_set(cid, 'watchers', 'telegram', 'gchs'):
-                    wgchs = list(get_dict_fatal_var(cid, 'watchers', 'telegram', 'gchs'))
+                if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
+                    wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
                     
                     for wgch in wgchs:
                         msg(wgch, rep)    
@@ -644,9 +655,111 @@ def command_messages(message):
         else:
             tbot.reply_to(message, l('Unknown command!'))
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', 'telegram')):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
             url = ''
             
+            from_usr = ''
+            rto = ''
+            ffn = ''
+            fln = ''
+            fus = ''
+            
+            if message.forward_from:
+                ffn = message.forward_from.first_name
+                
+                if message.forward_from.last_name:
+                    fln = ' ' + message.forward_from.last_name
+                    
+                if message.forward_from.username:
+                    fus = message.forward_from.username
+                
+                if fus and ffn != fus:
+                    from_usr = l('Forward from %s%s (@%s):') % (ffn, fln, fus)
+                else:
+                    from_usr = l('Forward from %s%s:') % (ffn, fln)
+                
+                from_usr += '\n\n'
+           
+            if message.reply_to_message:
+                rtl = ''
+                rtu = ''
+                
+                rtm = message.reply_to_message
+                rtf = rtm.from_user.first_name
+                
+                if rtm.from_user.last_name:
+                    rtl = ' ' + rtm.from_user.last_name + ': '
+                
+                if rtm.from_user.username:               
+                    rtu = rtm.from_user.username
+                
+                if rtm.forward_from:
+                    fwf = rtm.forward_from
+                    
+                    rtf = ''
+                    rtl = ''
+                    rtu = ''
+                    
+                    rtf = fwf.first_name
+                    
+                    if fwf.last_name:
+                        rtl = ' ' + fwf.last_name
+                        
+                    if fwf.username:
+                        rtu = fwf.username
+                
+                if rtm.text:
+                    rtx = rtm.text
+                elif rtm.caption:
+                    rtx = rtm.caption
+                else:
+                    rtx = ''
+                
+                if rtm.forward_from_chat:
+                    rtf = rtm.forward_from_chat.title
+                    
+                    if not rtm.caption:
+                        rtl = ''
+                        
+                    rtu = ''
+                
+                fur = ''
+                
+                if rtm.photo:
+                    file_id = rtm.photo[-1].file_id
+                    file_url = tbot.get_file_url(file_id)
+                    fprm = get_md5(file_url)
+                    fur = get_param(fprm)
+                elif rtm.video:
+                    file_id = rtm.video.file_id
+                    file_url = tbot.get_file_url(file_id)
+                    fprm = get_md5(file_url)
+                    fur = get_param(fprm)
+                
+                if fur:
+                    purl = get_cfg_param('tgurl_prefix')
+                    fur = '%s%s' %(purl, fur)
+                    rto = '\n\n>> %s' % (fur)
+                
+                if rtm.caption_entities:
+                    for cent in rtm.caption_entities:
+                        if cent.type == 'text_link':
+                            sti = cent.offset
+                            rtx = rtx[0:sti]
+                            rtx = rtx.strip()
+                            break
+                
+                rtx = emoji.demojize(rtx)
+                
+                if rtu and rtf != rtu:
+                    rtx = ': ' + rtx 
+                    rto += '\n\n>> %s%s (@%s)%s' % (rtf, rtl, rtu, rtx)
+                else:
+                    if rtx:
+                        rtx = ': ' + rtx 
+                    
+                    rto += '\n\n>> %s%s%s' % (rtf, rtl, rtx)
+           
             if message.entities:
                 for ment in message.entities:
                     if ment.type == 'text_link':
@@ -655,16 +768,21 @@ def command_messages(message):
             
             mtxt = emoji.demojize(message.text)
             
+            lname = ''
+            
+            if message.from_user.last_name:
+                lname = ' ' + message.from_user.last_name
+            
             if usern and fname != usern:
-                rep = '[%s]<%s (@%s)> %s' % (message.chat.title, fname, usern, mtxt)
+                rep = '[%s]<%s%s (@%s)> %s%s%s' % (message.chat.title, fname, lname, usern, from_usr, mtxt, rto)
             else:
-                rep = '[%s]<%s> %s' % (message.chat.title, fname, mtxt)
+                rep = '[%s]<%s%s> %s%s%s' % (message.chat.title, fname, lname, from_usr, mtxt, rto)
             
             if url:
                 rep += '\n\n%s' % (url)
             
-            if is_var_set(cid, 'watchers', 'telegram', 'gchs'):
-                wgchs = list(get_dict_fatal_var(cid, 'watchers', 'telegram', 'gchs'))
+            if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
+                wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
                 
                 for wgch in wgchs:
                     msg(wgch, rep)    
@@ -728,6 +846,15 @@ def msg_worker(message, public=False):
     if not public:
         return
 
+    if not is_var_set(cid, 'watchers', str(chatid)):
+        return
+
+    from_chat = ''
+    
+    if message.forward_from_chat:
+        from_chat = l('Forward from chat %s:') % (message.forward_from_chat.title)
+        from_chat += '\n\n'
+
     url = ''
     
     if message.caption_entities:
@@ -738,20 +865,20 @@ def msg_worker(message, public=False):
     
     if usern and fname != usern:
         if caption:
-            rep = '[%s]<%s (@%s)> %s%s\n%s%s' % (chat_title, fname, usern, mult, rep, cr, caption)
+            rep = '[%s]<%s (@%s)> %s%s%s\n%s%s' % (chat_title, fname, usern, mult, from_chat, rep, cr, caption)
         else:
-            rep = '[%s]<%s (@%s)> %s%s' % (chat_title, fname, usern, mult, rep)
+            rep = '[%s]<%s (@%s)> %s%s%s' % (chat_title, fname, usern, mult, from_chat, rep)
     else:
         if caption:
-            rep = '[%s]<%s> %s%s\n%s%s' % (chat_title, fname, mult, rep, cr, caption)
+            rep = '[%s]<%s> %s%s%s\n%s%s' % (chat_title, fname, mult, from_chat, rep, cr, caption)
         else:    
-            rep = '[%s]<%s> %s%s' % (chat_title, fname, mult, rep)
+            rep = '[%s]<%s> %s%s%s' % (chat_title, fname, mult, from_chat, rep)
     
     if url:
         rep += ' (%s)' % (url)
     
-    if is_var_set(cid, 'watchers', 'telegram', 'gchs'):
-        wgchs = list(get_dict_fatal_var(cid, 'watchers', 'telegram', 'gchs'))
+    if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
+        wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
                         
         for wgch in wgchs:
             fatalapi.msg(wgch, rep)    
@@ -764,6 +891,11 @@ def tgm_polling_proc():
         tbot.infinity_polling()
     except Exception:
         log_exc_error()     
+
+def listener(messages):
+    cid = get_client_id()
+    
+    set_fatal_var(cid, 'last_tg_msgs', messages)
 
 def init_tgm_bot():
     cid = get_client_id()
@@ -785,6 +917,8 @@ def init_tgm_bot():
         tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
         tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
         tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
+        
+        tbot.set_update_listener(listener)
         
 def create_tg_tables():
     cid = get_client_id()

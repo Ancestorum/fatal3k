@@ -542,7 +542,6 @@ def ddos_detect(conf, gch_jid, guser, jid):
                 
                 if count >= 5:                    
                     if get_int_cfg_param('privacy_lists', 1):
-                        rmv_jid_from_privacy(gch_jid)
                         add_jid_to_privacy(gch_jid, act='deny')
                         log_ddos_act(guser, jid, 'User has been blocked by privacy list!')
                     else:
@@ -3121,6 +3120,9 @@ def messageHnd(conn, msg):
             
             if ddos_detect(conf, gch_jid, guser, jid):
                 return
+            
+            if is_jid_deny(jid):
+                return
 
     if msg.timestamp:
         return
@@ -3982,6 +3984,18 @@ def setPrivacyHandler(conn, stanza):
     
     raise xmpp.NodeProcessed
 
+def is_jid_deny(jid, privacy='fatal-anti-flood'):
+    privl = get_privacy_list(privacy)
+    
+    if privl:
+        items = [li for li in privl.getChildren() if li['type'] == 'jid']
+        
+        for item in items:
+            if item['value'] == jid:
+                if item['action'] == 'deny':
+                    return True
+    return False
+
 def is_jid_in_privacy(jid, privacy='fatal-anti-flood', tup=False):
     privl = get_privacy_list(privacy)
     
@@ -4164,4 +4178,3 @@ def rmv_privacy_list(privacy='fatal-anti-flood'):
         if is_var_set(cid, 'privacy', privacy):
             features.delPrivacyList(jconn, privacy)
             rmv_fatal_var(cid, 'privacy', privacy)
-

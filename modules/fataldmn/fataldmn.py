@@ -37,7 +37,7 @@ class fDaemon:
         self.wfargs = wfargs
         self._is_restart = False
     
-    def daemonize(self):
+    def _fork_process(self):
         try: 
             pid = os.fork() 
             if pid > 0:
@@ -61,6 +61,9 @@ class fDaemon:
         except OSError as e: 
             sys.stderr.write('Error: Fork #2 failed: %d (%s)!\n' % (e.errno, e.strerror))
             sys.exit(1) 
+    
+    def daemonize(self):
+        self._fork_process()
         
         # redirect standard file descriptors
         sys.stdout.flush()
@@ -132,28 +135,7 @@ class fDaemon:
         """
         Restart the daemon
         """
-        try: 
-            pid = os.fork() 
-            
-            if pid > 0:
-                # exit first parent
-                sys.exit(0)
-        except OSError as e: 
-            sys.stderr.write('Error: Fork #1 failed: %d (%s)!\n' % (e.errno, e.strerror))
-            sys.exit(1)
-        
-        os.setsid() 
-        os.umask(0) 
-        
-        try: 
-            pid = os.fork() 
-            if pid > 0:
-                # exit from second parent
-                sys.exit(0) 
-        except OSError as e: 
-            sys.stderr.write('Error: Fork #2 failed: %d (%s)!\n' % (e.errno, e.strerror))
-            sys.exit(1) 
-        
+        self._fork_process()
         self.stop()
         
         pid = str(os.getpid())

@@ -142,11 +142,11 @@ def handler_watcher_mess(type, source, body):
                 
                 bnick = get_bot_nick(groupchat)
                 
-                if (wjid == 'telegram') and (type != 'private'):
+                if (type == 'telegram') and (type != 'private'):
                     if bnick != nick:
                         chatid = get_fatal_var(cid, 'watchers', wjid, 'chatid')
                         
-                        return msg(wjid, rep, chatid)
+                        return msg('telegram', rep, wjid)
                 else:
                     if type != 'private':
                         return msg(wjid, rep)
@@ -168,7 +168,12 @@ def handler_watcher(type, source, parameters):
         parameters = parameters.strip()
         
         if type == 'telegram':
-            jid = type
+            chatid = source[0]
+            
+            if not chatid.startswith('-'):
+                return reply(type, source, l('This command can be used only in groupchat!'))
+            
+            jid = chatid
         
         if parameters[0] == '-' and len(parameters) == 1:
             rmv_fatal_var(cid, 'watchers', jid)
@@ -206,14 +211,15 @@ def handler_watcher(type, source, parameters):
             chatid = 0
             
             if type == 'telegram':
-                jid = type
                 chatid = source[0]
+                
+                if not chatid.startswith('-'):
+                    return reply(type, source, l('This command can be used only in groupchat!'))
+                
+                jid = chatid
             
             if not is_var_set(cid, 'watchers', jid):
                 set_fatal_var(cid, 'watchers', jid, 'gchs', [])
-                
-                if chatid:
-                    set_fatal_var(cid, 'watchers', jid, 'chatid', chatid)
                 
             if not is_var_set(cid, 'watchers', jid, 'gchs', wgch):
                 if is_groupchat(wgch):
@@ -231,7 +237,12 @@ def handler_watcher(type, source, parameters):
                 return reply(type, source, l('Watcher has been already set!'))
     else:
         if type == 'telegram':
-            jid = type
+            chatid = source[0]
+            
+            if not chatid.startswith('-'):
+                return reply(type, source, l('This command can be used only in groupchat!'))
+            
+            jid = chatid
         
         if is_var_set(cid, 'watchers', jid):
             rep = l('Groupchats with watchers (total: %s):\n\n%s')
@@ -244,9 +255,14 @@ def handler_watcher(type, source, parameters):
         else:
             return reply(type, source, l('Watcher has not been set yet!'))
 
+def resume_watcher(gch):
+    pass
+
 register_join_handler(handler_watcher_join)
 register_leave_handler(handler_watcher_leave)
 register_presence_handler(handler_watcher_presence)
 register_message_handler(handler_watcher_mess)
+
+register_stage1_init(resume_watcher)
 
 register_command_handler(handler_watcher, 'watcher', 100)

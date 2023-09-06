@@ -235,8 +235,12 @@ def handler_redirect(type, source, parameters):
         return reply(type, source, l('Invalid syntax!'))
     
 def handler_set_nick(type, source, parameters):
+    groupchat = source[1]
+    
+    if not is_groupchat(groupchat):
+        return reply(type, source, l('This command can be used only in groupchat!'))
+
     if parameters:
-        groupchat = source[1]
         nick = parameters
         join_groupchat(groupchat, nick)
         return reply(type, source, l('Saved!'))
