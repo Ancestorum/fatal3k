@@ -22,158 +22,205 @@ import emoji
 import requests
 from urllib import request
 from hashlib import md5, sha256
+import json
 
-def get_md5(rst):
-    md5str = md5(rst.encode())
-    md5str = md5str.hexdigest()
-    return md5str
-             
-def get_tg_chid(gtitle):
-    cid = get_client_id()
+def rmv_emoji(text):
+    demt = emoji.demojize(text)
+    crex = ':{1,1}[a-z_]{1,}:{1,1}'
+    emfl = re.findall(crex, demt)
     
-    gtitle = gtitle.replace('&quot;', '"')
+    for eli in emfl:
+        demt = demt.replace(eli, '')
+    
+    if demt:    
+        return demt.strip()
+    return emoji.demojize(text)
 
-    sql = "SELECT id FROM tgchatids WHERE gname='%s';" % (gtitle)
-    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+def tgfile_exists(ufid):
+    sql = '''SELECT * FROM tgfiles WHERE ufid="%s";''' % (ufid)
+    qres = sqlquery(d('tgfiles.db'), sql)
+    
+    if qres:
+        return True
+    return False
+
+def rmv_exp_tg_files(days=10):
+    files = get_tg_files()
+    dis = days * 86400
+    curt = trunc(time.time())
+    dltd = 0
+    
+    if files:
+        for fl in files:
+            ufid = fl[0]
+            utime = fl[2]
+            
+            exd = utime + dis
+            
+            if curt >= exd:
+                if rmv_tg_file(ufid):
+                    dltd += 1
+    if dltd:
+        log_null_cmdr('Removed %s expired file(s)!' % (dltd), 'syslogs/output.log')
+
+def rmv_tg_file(ufid):
+    if tgfile_exists(ufid):
+        sql = '''DELETE FROM tgfiles WHERE ufid="%s";''' % (ufid)
+   
+        sqlquery(d('tgfiles.db'), sql)
+    
+        return True
+    return False
+    
+def set_tg_file(ufid, filename):
+    if not tgfile_exists(ufid):
+        sql = '''INSERT INTO tgfiles (ufid, flnm) VALUES ("%s", "%s");''' % (ufid, filename)
+    else:
+        sql = '''UPDATE tgfiles SET "flnm"="%s" WHERE "ufid"="%s";''' % (filename, ufid)
+    
+    qres = sqlquery(d('tgfiles.db'), sql)
+    
+    if qres != '':
+        return True
+    return False
+
+def get_tg_file(ufid):
+    sql = '''SELECT flnm FROM tgfiles WHERE ufid="%s";''' % (ufid)
+    
+    qres = sqlquery(d('tgfiles.db'), sql)
+    
+    if qres:
+        return qres[0][0]
+    return False
+
+def get_tg_files():
+    sql = '''SELECT ufid, flnm, utime FROM tgfiles;'''
+    
+    qres = sqlquery(d('tgfiles.db'), sql)
+    
+    if qres:
+        return qres
+    return False
+
+def get_tg_chid(gtitle):
+    sql = '''SELECT id FROM tgchatids WHERE gname="%s";''' % (gtitle)
+    qres = sqlquery(d('tgchatids.db'), sql)
     
     if qres:
         return qres[0][0]
     return False
 
 def get_tg_usrid(fnme):
-    cid = get_client_id()
-    
-    fnme = fnme.replace('&quot;', '"')
-
-    sql = "SELECT id FROM tguserids WHERE fname='%s';" % (fnme.strip())
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    sql = '''SELECT id FROM tguserids WHERE fname="%s";''' % (fnme.strip())
+    qres = sqlquery(d('tguserids.db'), sql)
     
     if qres:
         return qres[0][0]
     return False
 
 def get_tg_fnme(usrid):
-    cid = get_client_id()
-    
     if type(usrid) != int:
         return False 
 
-    sql = "SELECT fname FROM tguserids WHERE id='%s';" % (usrid)
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    sql = '''SELECT fname FROM tguserids WHERE id=%s;''' % (usrid)
+    qres = sqlquery(d('tguserids.db'), sql)
     
     if qres:
         return qres[0][0]
     return False
 
 def get_tg_usrn(usrid):
-    cid = get_client_id()
-    
     if type(usrid) != int:
         return False
 
-    sql = "SELECT usrn FROM tguserids WHERE id='%s';" % (usrid)
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    sql = '''SELECT usrn FROM tguserids WHERE id=%s;''' % (usrid)
+    qres = sqlquery(d('tguserids.db'), sql)
     
     if qres:
         return qres[0][0]
     return False
 
 def set_tg_usrid(usrid, fnme, usrn=''):
-    cid = get_client_id()
-    
     if type(usrid) != int:
         return False 
     
-    fnme = fnme.replace('"', '&quot;')
-    
-    if usrn:
-        usrn = usrn.replace('"', '&quot;')
-    else:
-        usrn = ''
-    
     if not usrid_exists(usrid):
         if usrn:
-            sql = "INSERT INTO tguserids (id, fname, usrn) VALUES ('%s', '%s', '%s');" % (usrid, fnme.strip(), usrn.strip())
+            sql = '''INSERT INTO tguserids (id, fname, usrn) VALUES (%s, "%s", "%s");''' % (usrid, fnme.strip(), usrn.strip())
         else:
-            sql = "INSERT INTO tguserids (id, fname) VALUES ('%s', '%s');" % (usrid, fnme.strip())
+            sql = '''INSERT INTO tguserids (id, fname) VALUES (%s, "%s");''' % (usrid, fnme.strip())
     else:
         if usrn:
-            sql = "UPDATE tguserids SET \"fname\"='%s', \"usrn\"='%s' WHERE \"id\"='%s';" % (fnme.strip(), usrn.strip(), usrid)
+            sql = '''UPDATE tguserids SET "fname"="%s", "usrn"="%s" WHERE "id"=%s;''' % (fnme.strip(), usrn.strip(), usrid)
         else:
-            sql = "UPDATE tguserids SET \"fname\"='%s' WHERE \"id\"='%s';" % (fnme.strip(), usrid)
+            sql = '''UPDATE tguserids SET "fname"="%s" WHERE "id"=%s;''' % (fnme.strip(), usrid)
     
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    qres = sqlquery(d('tguserids.db'), sql)
     
     if qres != '':
         return True
     return False
 
 def set_tg_usr_acc(usrid, acc):
-    cid = get_client_id()
-    
     if (type(usrid) != int) or (type(acc) != int):
         return False 
     
     if usrid_exists(usrid):
-        sql = "UPDATE tguserids SET \"acc\"='%s' WHERE \"id\"='%s';" % (acc, usrid)
+        sql = '''UPDATE tguserids SET acc=%s WHERE id=%s;''' % (acc, usrid)
     
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    qres = sqlquery(d('tguserids.db'), sql)
     
     return qres
 
 def chid_exists(chid):
-    cid = get_client_id()
-    
     if type(chid) != int:
         return False 
 
-    sql = "SELECT * FROM tgchatids WHERE id='%s';" % (chid)
-    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    sql = '''SELECT * FROM tgchatids WHERE id=%s;''' % (chid)
+    qres = sqlquery(d('tgchatids.db'), sql)
     
     if qres:
         return True
     return False
 
 def rmv_tg_usrid(usrid):
-    cid = get_client_id()
-    
     if type(usrid) != int:
         return False 
     
     if usrid_exists(usrid):
-        sql = 'DELETE FROM tgusrids WHERE id="%s";' % (usrid)
+        sql = '''DELETE FROM tgusrids WHERE id=%s;''' % (usrid)
+    else:
+        return False
    
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    qres = sqlquery(d('tguserids.db'), sql)
     
     return qres
 
 def rmv_tg_chid(chid):
-    cid = get_client_id()
-    
     if type(chid) != int:
         return False 
     
     if chid_exists(chid):
-        sql = 'DELETE FROM tgchatids WHERE id="%s";' % (chid)
+        sql = '''DELETE FROM tgchatids WHERE id=%s;''' % (chid)
+    else:
+        return False
    
-    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    qres = sqlquery(d('tgchatids.db'), sql)
     
     return qres
 
 def set_tg_chid(chid, gtitle):
-    cid = get_client_id()
-    
     if type(chid) != int:
         return False 
     
     gtitle = gtitle.replace('"', '&quot;')
     
     if not chid_exists(chid):
-        sql = "INSERT INTO tgchatids (id, gname) VALUES ('%s', '%s');" % (chid, gtitle.strip())
+        sql = '''INSERT INTO tgchatids (id, gname) VALUES (%s, "%s");''' % (chid, gtitle.strip())
     else:
-        sql = "UPDATE tgchatids SET \"gname\"='%s' WHERE \"id\"='%s';" % (gtitle.strip(), chid)
+        sql = '''UPDATE tgchatids SET "gname"="%s" WHERE id=%s;''' % (gtitle.strip(), chid)
     
-    qres = sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
+    qres = sqlquery(d('tgchatids.db'), sql)
     
     if qres != '':
         return True
@@ -321,16 +368,27 @@ def handle_photo_content(message):
     
     if message.document:
         file_id = message.document.file_id
+        file_uid = message.document.file_unique_id
     elif message.animation:
         file_id = message.animation.file_id
+        file_uid = message.animation.file_unique_id
     else:    
         file_id = message.photo[-1].file_id
+        file_uid = message.photo[-1].file_unique_id
     
     file_url = tbot.get_file_url(file_id)
     
-    thrn = '%s/save_and_upload' % (cid)
-    
-    call_in_sep_thr(thrn, save_and_upload, file_url)
+    if not tgfile_exists(file_uid):
+        thrn = '%s/save_and_upload' % (cid)
+        call_in_sep_thr(thrn, save_and_upload, file_url)
+    else:
+        filename = get_tg_file(file_uid)
+        
+        if not is_var_set(cid, 'tgm_pen_up_fls'):
+            set_fatal_var(cid, 'tgm_pen_up_fls', [filename])
+        else:
+            pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
+            pupf.append(filename)
     
     time.sleep(0.3)
     
@@ -345,6 +403,8 @@ def handle_photo_content(message):
         purl = get_cfg_param('tgurl_prefix')
         rmsg = '%s%s' %(purl, filename)
         ndt = message.date
+        
+        set_tg_file(file_uid, filename)
         
         tgmb = get_fatal_var(cid, 'tgm_msg_buf')
         
@@ -377,8 +437,7 @@ def handle_photo_content(message):
             rmsg = '%s%s' %(purl, filename)
             ndt = message.date
             
-            fprm = get_md5(file_url)
-            set_param(fprm, filename)
+            set_tg_file(file_uid, filename)
             
             tgmb = get_fatal_var(cid, 'tgm_msg_buf')
             
@@ -415,24 +474,35 @@ def handle_video_content(message):
     usern = message.from_user.username
 
     if caption:
-        caption = emoji.demojize(caption)
+        caption = rmv_emoji(caption)
 
     if not is_var_set(cid, 'tgm_msg_buf'):
         set_fatal_var(cid, 'tgm_msg_buf', [])
 
     if message.video_note:
         video_id = message.video_note.file_id
+        video_uid = message.video_note.file_unique_id
     else:
         if message.video.file_size > 20000000:
             video_id = message.video.thumb.file_id
+            video_uid = message.video.thumb.file_unique_id
         else:    
-            video_id = message.video.file_id    
+            video_id = message.video.file_id
+            video_uid = message.video.file_unique_id
     
     file_url = tbot.get_file_url(video_id)
     
-    thrn = '%s/save_and_upload' % (cid)
+    if not tgfile_exists(video_uid):
+        thrn = '%s/save_and_upload' % (cid)
+        call_in_sep_thr(thrn, save_and_upload, file_url)
+    else:
+        filename = get_tg_file(video_uid)
     
-    call_in_sep_thr(thrn, save_and_upload, file_url)
+        if not is_var_set(cid, 'tgm_pen_up_fls'):
+            set_fatal_var(cid, 'tgm_pen_up_fls', [filename])
+        else:
+            pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
+            pupf.append(filename)
     
     time.sleep(0.3)
     
@@ -447,6 +517,8 @@ def handle_video_content(message):
         purl = get_cfg_param('tgurl_prefix')
         rmsg = '%s%s' %(purl, filename)
         ndt = message.date
+        
+        set_tg_file(video_uid, filename)
         
         tgmb = get_fatal_var(cid, 'tgm_msg_buf')
         
@@ -479,8 +551,7 @@ def handle_video_content(message):
             rmsg = '%s%s' %(purl, filename)
             ndt = message.date
             
-            fprm = get_md5(file_url)
-            set_param(fprm, filename)
+            set_tg_file(video_uid, filename)
             
             tgmb = get_fatal_var(cid, 'tgm_msg_buf')
             
@@ -515,13 +586,17 @@ def handle_audio_content(message):
     
     if message.chat.type == 'private':
         if message.audio:
-            video_id = message.audio.file_id
+            audio_id = message.audio.file_id
+            audio_uid = message.audio.file_unique_id
         else:
-            video_id = message.voice.file_id
+            audio_id = message.voice.file_id
+            audio_uid = message.voice.file_unique_id
         
-        file_url = tbot.get_file_url(video_id)
+        file_url = tbot.get_file_url(audio_id)
         
         resp, filename = save_and_upload(file_url)
+        
+        set_tg_file(audio_uid, filename)
         
         if not resp:
             tbot.send_message(chatid, l('Unknown error!'))
@@ -550,11 +625,14 @@ def handle_sticker_content(message):
     usern = message.from_user.username
     
     sticker_id = message.sticker.file_id
+    sticker_uid = message.sticker.file_unique_id
     
     file_url = tbot.get_file_url(sticker_id)
     
     if message.chat.type == 'private':
         resp, filename = save_and_upload(file_url)    
+        
+        set_tg_file(sticker_uid, filename)
         
         if not resp:
             tbot.send_message(chatid, l('Unknown error!'))
@@ -576,6 +654,8 @@ def handle_sticker_content(message):
 
             if fext != 'tgs':
                 resp, filename = save_and_upload(file_url)
+                
+                set_tg_file(sticker_uid, filename)
                 
                 purl = get_cfg_param('tgurl_prefix')
                 
@@ -648,8 +728,11 @@ def command_messages(message):
         
         if wprname in cmdl:
             cparams = message.text.replace(cmdname, '') 
-                           
-            source = [str(chatid), str(usrid), fname]
+            
+            if usern:
+                source = [usrid, chatid, '@%s' % (usern)]
+            else:
+                source = [usrid, chatid, fname]
             
             call_command_handlers(wprname, 'telegram', source, cparams.strip(), wprname)
         else:
@@ -716,7 +799,7 @@ def command_messages(message):
                     rtx = ''
                 
                 if rtm.forward_from_chat:
-                    rtf = rtm.forward_from_chat.title
+                    rtf = rmv_emoji(rtm.forward_from_chat.title)
                     
                     if not rtm.caption:
                         rtl = ''
@@ -724,17 +807,26 @@ def command_messages(message):
                     rtu = ''
                 
                 fur = ''
+                file_uid = ''
                 
                 if rtm.photo:
-                    file_id = rtm.photo[-1].file_id
-                    file_url = tbot.get_file_url(file_id)
-                    fprm = get_md5(file_url)
-                    fur = get_param(fprm)
+                    file_uid = rtm.photo[-1].file_unique_id
                 elif rtm.video:
-                    file_id = rtm.video.file_id
-                    file_url = tbot.get_file_url(file_id)
-                    fprm = get_md5(file_url)
-                    fur = get_param(fprm)
+                    file_uid = rtm.video.file_unique_id
+                elif rtm.document:
+                    file_uid = rtm.document.file_unique_id
+                elif rtm.animation:
+                    file_uid = rtm.animation.file_unique_id
+                elif rtm.video_note:
+                    file_uid = rtm.video_note.file_unique_id
+                elif rtm.audio:
+                    file_uid = rtm.audio.file_unique_id
+                elif rtm.voice:
+                    file_uid = rtm.voice.file_unique_id
+                elif rtm.sticker:
+                    file_uid = rtm.sticker.file_unique_id
+                
+                fur = get_tg_file(file_uid)
                 
                 if fur:
                     purl = get_cfg_param('tgurl_prefix')
@@ -744,15 +836,21 @@ def command_messages(message):
                 if rtm.caption_entities:
                     for cent in rtm.caption_entities:
                         if cent.type == 'text_link':
+                            deml = len(rmv_emoji(rtx))
+                            rtxl = len(rtx)
+                            
+                            ic = (rtxl - deml) // 2
                             sti = cent.offset
-                            rtx = rtx[0:sti]
+                            rtx = rtx[0:sti-ic]
                             rtx = rtx.strip()
                             break
                 
-                rtx = emoji.demojize(rtx)
+                rtx = rmv_emoji(rtx)
                 
                 if rtu and rtf != rtu:
-                    rtx = ': ' + rtx 
+                    if rtx:
+                        rtx = ': ' + rtx
+                    
                     rto += '\n\n>> %s%s (@%s)%s' % (rtf, rtl, rtu, rtx)
                 else:
                     if rtx:
@@ -766,7 +864,7 @@ def command_messages(message):
                         url = ment.url
                         break
             
-            mtxt = emoji.demojize(message.text)
+            mtxt = rmv_emoji(message.text)
             
             lname = ''
             
@@ -799,7 +897,7 @@ def msg_worker(message, public=False):
     cr = ''
     
     if caption:
-        caption = emoji.demojize(caption)
+        caption = rmv_emoji(caption)
     
     while True:
         time.sleep(0.3)
@@ -852,7 +950,7 @@ def msg_worker(message, public=False):
     from_chat = ''
     
     if message.forward_from_chat:
-        from_chat = l('Forward from chat %s:') % (message.forward_from_chat.title)
+        from_chat = l('Forward from chat %s:') % (rmv_emoji(message.forward_from_chat.title))
         from_chat += '\n\n'
 
     url = ''
@@ -896,7 +994,13 @@ def listener(messages):
     cid = get_client_id()
     
     set_fatal_var(cid, 'last_tg_msgs', messages)
-
+    
+    if is_param_seti('tglog_json'):
+        for msg in messages:
+            json_str = msg.json
+            bfjs = '\n' +  json.dumps(json_str, indent=4) + '\n\n' + '=' * 80 + '\n'
+            log_null_cmdr(bfjs, 'syslogs/json.log')
+    
 def init_tgm_bot():
     cid = get_client_id()
   
@@ -919,13 +1023,27 @@ def init_tgm_bot():
         tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
         
         tbot.set_update_listener(listener)
+
+def check_expired_tg_files():
+    add_fatal_task('rmv_exp_tg_files', rmv_exp_tg_files, ival=3600)
         
 def create_tg_tables():
     cid = get_client_id()
     
+    if not is_db_exists('dynamic/%s/tgfiles.db' % (cid)):
+        sql = '''CREATE TABLE tgfiles (idn INTEGER PRIMARY KEY AUTOINCREMENT,
+            ufid VARCHAR(30) NOT NULL, flnm VARCHAR(30) NOT NULL, 
+            utime TIMESTAMP DEFAULT (strftime('%s', 'now')), UNIQUE (idn));''' 
+        
+        sqlquery('dynamic/%s/tgfiles.db' % (cid), sql)
+        
+        sql = 'CREATE UNIQUE INDEX itgfiles ON tgfiles (idn);'
+        
+        sqlquery('dynamic/%s/tgfiles.db' % (cid), sql) 
+    
     if not is_db_exists('dynamic/%s/tguserids.db' % (cid)):
         sql = '''CREATE TABLE tguserids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            id VARCHAR(30) NOT NULL, fname VARCHAR(30) NOT NULL, usrn VARCHAR(30) DEFAULT "",
+            id INTEGER NOT NULL, fname VARCHAR(30) NOT NULL, usrn VARCHAR(30) DEFAULT "",
             acc INTEGER NOT NULL DEFAULT 10, UNIQUE (id));''' 
         
         sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
@@ -935,7 +1053,7 @@ def create_tg_tables():
 
     if not is_db_exists('dynamic/%s/tgchatids.db' % (cid)):
         sql = '''CREATE TABLE tgchatids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            id VARCHAR(30) NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'''
+            id INTEGER NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'''
         sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
         
         sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (idn);'
@@ -946,3 +1064,4 @@ if is_param_set('tgbot_api_token'):
 
     register_stage0_init(create_tg_tables)
     register_stage0_init(init_tgm_bot)
+    register_stage2_init(check_expired_tg_files)

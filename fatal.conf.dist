@@ -19,6 +19,7 @@ tgpost_url = http://site.tld/upload.php
 tgpost_user = user
 tgpost_pass = password
 tgurl_prefix = http://site.tld/files/
+tglog_json = 0
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------

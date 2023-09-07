@@ -1,5 +1,7 @@
 dynamic/
 syslogs/
+logs/
+privlogs/
 *.pyc
 *.conf
 *.bak
@@ -7,3 +9,9 @@ syslogs/
 *.syn
 *.pid
 *.log
+*.*_
+*.txt
+*.b
+*.pem
+*.run
+*.bat

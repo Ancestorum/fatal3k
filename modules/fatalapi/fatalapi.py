@@ -116,6 +116,13 @@ def sprint(*args):
         log_exc_error()
         log_error(str(args), 'syslogs/output.log')
 
+def d(file=''):
+    cid = get_client_id()
+    
+    if file:
+        return 'dynamic/%s/%s' % (cid, file)
+    return 'dynamic/%s/' % (cid)
+
 def copyright():
     fatal_copy_head = ' ' + '=' * 41
     fatal_copy_mid = '< Copyright (c) 2009-2023 Ancestors Soft  >'
@@ -2272,9 +2279,15 @@ def sadmin_jid():
 
 def is_bot_admin(jid):
     admlst = get_lst_cfg_param('admins')
-    gdba = get_user_access(jid)
     
-    if jid in admlst or gdba == 100:
+    if isinstance(jid, int):
+        gdba = get_tg_usr_acc(jid)
+    else:
+        gdba = get_user_access(jid)
+        
+    tgua = get_int_cfg_param('tgbot_admin_id')
+    
+    if jid in admlst or jid == tgua or gdba == 100:
         return True
     return False
 
@@ -2606,7 +2619,7 @@ def reply(ltype, source, body):
         msg('console', body)
         return body
     elif ltype == 'telegram':
-        chatid = int(source[0])
+        chatid = source[1]
         msg('telegram', body, chatid)
         return body    
     elif ltype == 'null':
@@ -2655,6 +2668,9 @@ def get_true_jid(jid):
     
     if isinstance(jid, list):
         jid = jid[0]
+    
+    if isinstance(jid, int):
+        return jid
 
     stripped_jid = get_stripped(jid)
     resource = get_resource(jid)
@@ -2741,6 +2757,9 @@ def user_level(source, gch=''):
     cid = get_client_id()
     jid = get_true_jid(source)
     
+    if isinstance(jid, int):
+        return get_tg_usr_acc(jid)
+    
     if user_access_exists(jid):
         return get_user_access(jid)
     if user_access_exists(jid, gch):
@@ -2764,7 +2783,7 @@ def usrid_exists(usrid):
     if type(usrid) != int:
         return False 
 
-    sql = "SELECT * FROM tguserids WHERE id='%s';" % (usrid)
+    sql = '''SELECT * FROM tguserids WHERE id=%s;''' % (usrid)
     qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
     
     if qres:
@@ -2778,7 +2797,9 @@ def get_tg_usr_acc(usrid):
         return 0 
     
     if usrid_exists(usrid):
-        sql = "SELECT acc FROM tguserids WHERE \"id\"='%s';" % (usrid)
+        sql = '''SELECT acc FROM tguserids WHERE id=%s;''' % (usrid)
+    else:
+        return 0
     
     qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
     
@@ -2790,14 +2811,13 @@ def check_access(type, source, command):
     usracc = -1
     
     if type == 'telegram':
-        usrid = int(source[1])
-        usracc = int(get_tg_usr_acc(usrid))
-    elif type == 'null':
         usrid = source[1]
+        usracc = get_tg_usr_acc(usrid)
+    elif type == 'null':
+        usrid = source[0]
 
-        if usrid.isdigit():
-            usrid = int(usrid)
-            usracc = int(get_tg_usr_acc(usrid))
+        if isinstance(usrid, int):
+            usracc = get_tg_usr_acc(usrid)
     
     real_access = int(get_cmd_access(command))
 
@@ -2944,12 +2964,10 @@ def get_params():
     return qres
 
 def set_param(param, value):
-    value = value.replace('"', '&quot;')
-    
     if not param_exists('', param):
-        sql = "INSERT INTO config (param, value) VALUES ('%s', '%s');" % (param.strip(), value.strip())
+        sql = '''INSERT INTO config (param, value) VALUES ("%s", "%s");''' % (param.strip(), value.strip())
     else:
-        sql = "UPDATE config SET \"value\"='%s' WHERE param='%s';" % (value.strip(), param.strip())
+        sql = '''UPDATE config SET "value"="%s" WHERE param="%s";''' % (value.strip(), param.strip())
     
     cid = get_client_id()
     

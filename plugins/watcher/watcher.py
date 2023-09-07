@@ -142,10 +142,13 @@ def handler_watcher_mess(type, source, body):
                 
                 bnick = get_bot_nick(groupchat)
                 
-                if (type == 'telegram') and (type != 'private'):
+                ttype = 'jabber'
+                
+                if isinstance(wjid, int):
+                    ttype = 'telegram'
+                
+                if (ttype == 'telegram') and (type != 'private'):
                     if bnick != nick:
-                        chatid = get_fatal_var(cid, 'watchers', wjid, 'chatid')
-                        
                         return msg('telegram', rep, wjid)
                 else:
                     if type != 'private':
@@ -177,6 +180,8 @@ def handler_watcher(type, source, parameters):
         
         if parameters[0] == '-' and len(parameters) == 1:
             rmv_fatal_var(cid, 'watchers', jid)
+            wchrs = get_fatal_var(cid, 'watchers')
+            set_param('%s/watchers' % (cid), str(wchrs))
             return reply(type, source, l('List of watchers has been cleared!'))
         elif parameters[0] == '-' and len(parameters) > 1 and parameters[1:].isdigit():
             wgchn = int(parameters[1:])
@@ -198,6 +203,8 @@ def handler_watcher(type, source, parameters):
                     
                     if not is_var_set(cid, 'watchers', jid, 'gchs'):
                         rmv_fatal_var(cid, 'watchers', jid)
+                        wchrs = get_fatal_var(cid, 'watchers')
+                        set_param('%s/watchers' % (cid), str(wchrs))
                         
                     rep = l('Groupchat %s has been removed from list of watchers!') % (wgch)
                         
@@ -227,6 +234,9 @@ def handler_watcher(type, source, parameters):
                     
                     gchs.append(wgch)
                     
+                    wchrs = get_fatal_var(cid, 'watchers')
+                    set_param('%s/watchers' % (cid), str(wchrs))
+
                     return reply(type, source, l('Watcher for %s has been set!') % (wgch))
                 else:
                     if not is_var_set(cid, 'watchers', jid, 'gchs'):
@@ -255,14 +265,19 @@ def handler_watcher(type, source, parameters):
         else:
             return reply(type, source, l('Watcher has not been set yet!'))
 
-def resume_watcher(gch):
-    pass
+def resume_watchers():
+    cid = get_client_id()
+    
+    wchrs = get_param('%s/watchers' % (cid))
+    
+    if wchrs:
+        set_fatal_var(cid, 'watchers', eval(wchrs))
 
 register_join_handler(handler_watcher_join)
 register_leave_handler(handler_watcher_leave)
 register_presence_handler(handler_watcher_presence)
 register_message_handler(handler_watcher_mess)
 
-register_stage1_init(resume_watcher)
+register_stage2_init(resume_watchers)
 
 register_command_handler(handler_watcher, 'watcher', 100)
