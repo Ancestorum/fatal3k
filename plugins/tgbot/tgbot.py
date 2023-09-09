@@ -669,7 +669,10 @@ def handle_sticker_content(message):
                     filename = emoji.demojize(filename)
             
             if lname:
-                lname = ' ' + lname
+                if fname != lname:
+                    lname = ' ' + lname
+                else:
+                    lname = ''
             else:
                 lname = ''    
             
@@ -840,16 +843,22 @@ def command_messages(message):
                     rto = '\n\n>> %s' % (fur)
                 
                 if rtm.caption_entities:
+                    dtx = ''
+                    
                     for cent in rtm.caption_entities:
                         if cent.type == 'text_link':
+                            offs = cent.offset
+                        
                             deml = len(rmv_emoji(rtx))
                             rtxl = len(rtx)
+                            co = rtxl - deml
+                            ic = co // 2
                             
-                            ic = (rtxl - deml) // 2
-                            sti = cent.offset
-                            rtx = rtx[0:sti-ic]
-                            rtx = rtx.strip()
-                            break
+                            sti = offs
+                            dtx = rtx[0:sti-ic]
+                            dtx = rtx.strip()
+                    
+                    rtx = dtx
                 
                 rtx = rmv_emoji(rtx)
                 
@@ -875,7 +884,8 @@ def command_messages(message):
             lname = ''
             
             if message.from_user.last_name:
-                lname = ' ' + message.from_user.last_name
+                if fname != lname:
+                    lname = ' ' + message.from_user.last_name
             
             if usern and fname != usern:
                 rep = '[%s]<%s%s (@%s)> %s%s%s' % (message.chat.title, fname, lname, usern, from_usr, mtxt, rto)
@@ -969,7 +979,10 @@ def msg_worker(message, public=False):
                 break
     
     if lname:
-        lname = ' ' + lname
+        if fname != lname:
+            lname = ' ' + lname
+        else:
+            lname = ''
     else:
         lname = ''
     
@@ -1075,5 +1088,5 @@ if is_param_set('tgbot_api_token'):
     register_command_handler(handler_tgaccess_jcmd, 'tgaccess', 10)
 
     register_stage0_init(create_tg_tables)
-    register_stage0_init(init_tgm_bot)
+    register_stage2_init(init_tgm_bot)
     register_stage2_init(check_expired_tg_files)

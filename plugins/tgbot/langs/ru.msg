@@ -4,4 +4,3 @@ This video is too big for telegram bot:\n\n%s%s = Это видео слишко
 Forward from %s%s (@%s): = Переслано от %s%s (@%s):
 Forward from %s%s: = Переслано от %s%s:
 Forward from chat %s: = Переслано из %s:
-Forward from chat: %s = Переслано из: %s
