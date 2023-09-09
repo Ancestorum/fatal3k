@@ -55,7 +55,7 @@ def handler_watcher_presence(prs):
         wgchs = list(get_dict_fatal_var(cid, 'watchers'))
         
         for wjid in wgchs:
-            if wjid == 'telegram':
+            if isinstance(wjid, int):
                 return
                 
             if not is_watcher_here(groupchat, wjid):
@@ -71,7 +71,7 @@ def handler_watcher_leave(groupchat, nick, reason, code):
     wgchs = list(get_dict_fatal_var(cid, 'watchers'))
     
     for wjid in wgchs:
-        if wjid == 'telegram':
+        if isinstance(wjid, int):
             return
             
         if not is_watcher_here(groupchat, wjid) and is_ruser_prsnt(wjid):
@@ -104,7 +104,7 @@ def handler_watcher_join(groupchat, nick, aff, role):
     wrole = l(role)
     
     for wjid in wgchs:
-        if wjid == 'telegram':
+        if isinstance(wjid, int):
             return
         
         if not is_watcher_here(groupchat, wjid):
@@ -171,9 +171,9 @@ def handler_watcher(type, source, parameters):
         parameters = parameters.strip()
         
         if type == 'telegram':
-            chatid = source[0]
+            chatid = source[1]
             
-            if not chatid.startswith('-'):
+            if not chatid < 0:
                 return reply(type, source, l('This command can be used only in groupchat!'))
             
             jid = chatid
@@ -215,12 +215,10 @@ def handler_watcher(type, source, parameters):
             if not check_jid(wgch):
                 return reply(type, source, l('Invalid syntax!'))
             
-            chatid = 0
-            
             if type == 'telegram':
-                chatid = source[0]
+                chatid = source[1]
                 
-                if not chatid.startswith('-'):
+                if not chatid < 0: 
                     return reply(type, source, l('This command can be used only in groupchat!'))
                 
                 jid = chatid
@@ -247,9 +245,9 @@ def handler_watcher(type, source, parameters):
                 return reply(type, source, l('Watcher has been already set!'))
     else:
         if type == 'telegram':
-            chatid = source[0]
+            chatid = source[1]
             
-            if not chatid.startswith('-'):
+            if not chatid < 0:
                 return reply(type, source, l('This command can be used only in groupchat!'))
             
             jid = chatid

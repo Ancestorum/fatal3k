@@ -622,6 +622,7 @@ def handle_sticker_content(message):
     chatid = message.chat.id
     messid = message.message_id
     fname = message.from_user.first_name
+    lname = message.from_user.last_name
     usern = message.from_user.username
     
     sticker_id = message.sticker.file_id
@@ -667,11 +668,16 @@ def handle_sticker_content(message):
                 if filename:
                     filename = emoji.demojize(filename)
             
+            if lname:
+                lname = ' ' + lname
+            else:
+                lname = ''    
+            
             if filename:
                 if usern and fname != usern:
-                    rep = '[%s]<%s (@%s)> %s' % (message.chat.title, fname, usern, filename)
+                    rep = '[%s]<%s%s (@%s)> %s' % (message.chat.title, fname, lname, usern, filename)
                 else:
-                    rep = '[%s]<%s> %s' % (message.chat.title, fname, filename)
+                    rep = '[%s]<%s%s> %s' % (message.chat.title, fname, lname, filename)
                 
                 if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
                     wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
@@ -738,7 +744,7 @@ def command_messages(message):
         else:
             tbot.reply_to(message, l('Unknown command!'))
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
             url = ''
             
             from_usr = ''
@@ -879,8 +885,8 @@ def command_messages(message):
             if url:
                 rep += '\n\n%s' % (url)
             
-            if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
-                wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
+            if is_var_set(cid, 'watchers', chatid, 'gchs'):
+                wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
                 
                 for wgch in wgchs:
                     msg(wgch, rep)    
@@ -891,6 +897,7 @@ def msg_worker(message, public=False):
     chatid = message.chat.id
     caption = message.caption
     fname = message.from_user.first_name
+    lname = message.from_user.last_name
     usern = message.from_user.username
     chat_title = message.chat.title
     mult = ''
@@ -961,16 +968,21 @@ def msg_worker(message, public=False):
                 url = cape.url
                 break
     
+    if lname:
+        lname = ' ' + lname
+    else:
+        lname = ''
+    
     if usern and fname != usern:
         if caption:
-            rep = '[%s]<%s (@%s)> %s%s%s\n%s%s' % (chat_title, fname, usern, mult, from_chat, rep, cr, caption)
+            rep = '[%s]<%s%s (@%s)> %s%s%s\n%s%s' % (chat_title, fname, lname, usern, mult, from_chat, rep, cr, caption)
         else:
-            rep = '[%s]<%s (@%s)> %s%s%s' % (chat_title, fname, usern, mult, from_chat, rep)
+            rep = '[%s]<%s%s (@%s)> %s%s%s' % (chat_title, fname, lname, usern, mult, from_chat, rep)
     else:
         if caption:
-            rep = '[%s]<%s> %s%s%s\n%s%s' % (chat_title, fname, mult, from_chat, rep, cr, caption)
+            rep = '[%s]<%s%s> %s%s%s\n%s%s' % (chat_title, fname, lname, mult, from_chat, rep, cr, caption)
         else:    
-            rep = '[%s]<%s> %s%s%s' % (chat_title, fname, mult, from_chat, rep)
+            rep = '[%s]<%s%s> %s%s%s' % (chat_title, fname, lname, mult, from_chat, rep)
     
     if url:
         rep += ' (%s)' % (url)
