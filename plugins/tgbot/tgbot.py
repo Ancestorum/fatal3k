@@ -427,7 +427,7 @@ def handle_photo_content(message):
             if not is_thr_exists(thrn):
                 call_in_sep_thr(thrn, msg_worker, message)
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
             pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
             
             filename = pupf[-1]
@@ -541,7 +541,7 @@ def handle_video_content(message):
             if not is_thr_exists(thrn):
                 call_in_sep_thr(thrn, msg_worker, message)
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
             pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
             
             filename = pupf[-1]
@@ -649,7 +649,7 @@ def handle_sticker_content(message):
             else:
                 tbot.send_message(chatid, l('Unknown error!'))
     else:
-        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', str(chatid))):
+        if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
             fext = file_url.split('.')[-1]
             filename = ''
 
@@ -679,8 +679,8 @@ def handle_sticker_content(message):
                 else:
                     rep = '[%s]<%s%s> %s' % (message.chat.title, fname, lname, filename)
                 
-                if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
-                    wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
+                if is_var_set(cid, 'watchers', chatid, 'gchs'):
+                    wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
                     
                     for wgch in wgchs:
                         msg(wgch, rep)    
@@ -951,7 +951,7 @@ def msg_worker(message, public=False):
     if not public:
         return
 
-    if not is_var_set(cid, 'watchers', str(chatid)):
+    if not is_var_set(cid, 'watchers', chatid):
         return
 
     from_chat = ''
@@ -987,8 +987,8 @@ def msg_worker(message, public=False):
     if url:
         rep += ' (%s)' % (url)
     
-    if is_var_set(cid, 'watchers', str(chatid), 'gchs'):
-        wgchs = list(get_dict_fatal_var(cid, 'watchers', str(chatid), 'gchs'))
+    if is_var_set(cid, 'watchers', chatid, 'gchs'):
+        wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
                         
         for wgch in wgchs:
             fatalapi.msg(wgch, rep)    
