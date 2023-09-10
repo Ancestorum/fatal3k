@@ -843,8 +843,6 @@ def command_messages(message):
                     rto = '\n\n>> %s' % (fur)
                 
                 if rtm.caption_entities:
-                    dtx = ''
-                    
                     for cent in rtm.caption_entities:
                         if cent.type == 'text_link':
                             offs = cent.offset
@@ -855,12 +853,17 @@ def command_messages(message):
                             ic = co // 2
                             
                             sti = offs
-                            dtx = rtx[0:sti-ic]
-                            dtx = rtx.strip()
-                    
-                    rtx = dtx
+                            rtx = rtx[0:sti-ic]
+                            rtx = rtx.strip()
+                            break
                 
                 rtx = rmv_emoji(rtx)
+                
+                if len(rtx) >= 100:
+                    rtx = rtx[0:100] + '...'
+                
+                rtx = rtx.replace('\n', '\n>> ')
+                rtx = rtx.replace('\n\n', '\n\n>> ')
                 
                 if rtu and rtf != rtu:
                     if rtx:
