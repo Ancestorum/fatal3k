@@ -1021,6 +1021,11 @@ def tgm_polling_proc():
 def listener(messages):
     cid = get_client_id()
     
+    if len(messages) >= 2:
+        set_fatal_var(cid, 'tgmult_flag', 1)
+    else:
+        set_fatal_var(cid, 'tgmult_flag', 0)
+    
     set_fatal_var(cid, 'last_tg_msgs', messages)
     
     if is_param_seti('tglog_json'):

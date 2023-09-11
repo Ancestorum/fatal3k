@@ -118,8 +118,11 @@ def handler_python_sh(type, source, parameters):
     
     return_value = return_value.strip()
     
-    if return_value:
+    if return_value and not type == 'null':
         return reply(type, source, l('Shell output result (in: %s sec.):\n\n%s') % (round(stop-start, 3), return_value))
+    else:
+        if type == 'null':
+            return return_value
     return reply(type, source, l('Shell output result (in: %s sec.)!') % (round(stop-start, 3)))
     
 def handler_python_calc(type, source, parameters):

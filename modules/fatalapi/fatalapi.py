@@ -290,6 +290,11 @@ def log_ddos_act(guser, user, status, file='syslogs/ddos.log'):
     
     return '%s\n' % (comp_str)
 
+def get_md5(txt):
+    md5t = hashlib.md5(txt.encode())
+    md5t = md5t.hexdigest()
+    return md5t
+
 def _md5hash(plbody):
     md5s = hashlib.md5()
     md5s.update(plbody)
@@ -1729,6 +1734,9 @@ def rep_nested_cmds(type, source, params):
                 
                 if com in cmdl:
                     if check_access(type, source, com):
+                        if par.count('#'):
+                            par = par.replace('#', '%')
+                    
                         cmd_hnd = get_fatal_var('command_handlers', com)
                         res = str(cmd_hnd(type, source, par))
                     
@@ -2900,7 +2908,18 @@ def add_gch_config(gch):
             
         if qres == '':
             sprint('Unable to create config file for %s!' % (gch))
-            
+  
+def rmv_gch_param(gch, param):
+    cid = get_client_id()
+    
+    sql = '''DELETE FROM config WHERE param="%s";''' % (param)
+    
+    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql)
+    
+    if qres != '':
+        return True
+    return False
+  
 def get_gch_param(gch, param, oer=''):
     cid = get_client_id()
     

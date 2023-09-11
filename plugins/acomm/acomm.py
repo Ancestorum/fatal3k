@@ -36,9 +36,10 @@ def comp_acomm_rexps(gch):
             exp = acomm[2].replace('&quot;', '"')
             command = acomm[3].replace('&quot;', '"')
             params = acomm[4].replace('&quot;', "'")
-
+            
             try:
-                exp = re.compile(exp)
+                if not entity == 'cvar':
+                    exp = re.compile(exp)
             except Exception:
                 exp = None
             
@@ -50,6 +51,8 @@ def comp_acomm_rexps(gch):
                 npts.append((rid, exp, command, params))
             elif entity == 'jid':
                 jpts.append((rid, exp, command, params))
+            elif entity == 'cvar':
+                add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (gch, exp, command, params), ival=300)
                 
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'body', bpts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'status', spts)
@@ -262,6 +265,38 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
                 source = [groupchat + '/' + snick, groupchat, snick]
                 cmd_hnd('null', source, params)
 
+def check_cvar_val(groupchat, rexp, comm, params):
+    gchp = get_md5(rexp)
+    
+    if param_exists(groupchat, gchp):
+        oval = get_gch_param(groupchat, gchp)
+        
+        spov = oval.split(':=', 1)
+        gch_jid = spov[0]
+        oval = spov[1]
+        
+        nval = oval
+        
+        nick = get_resource(gch_jid)        
+        
+        source = [gch_jid, groupchat, nick]
+        
+        try:
+            rec = rexp.count('%')
+
+            if (rec // 2) >= 1:
+                nval = rep_nested_cmds('null', source, rexp)
+            else:
+                nval = eval(rexp)
+            
+            nval = nval.strip()
+        except Exception:
+            return False
+                
+        if nval != oval:
+            set_gch_param(groupchat, gchp, '%s:=%s' % (gch_jid, nval))
+            call_command_handlers(comm, 'null', source, params.strip(), comm)
+
 def handler_acomm_control(type, source, parameters):
     cid = get_client_id()
     
@@ -274,10 +309,17 @@ def handler_acomm_control(type, source, parameters):
         strp = parameters.strip()
         
         if len(strp) == 1 and strp == '-':
+            qli = get_all_rules(groupchat)
             res = rmv_all_rules(groupchat)
             
             if res != '':
                 comp_acomm_rexps(groupchat)
+                
+                for li in qli:
+                    if li[1] == 'cvar':
+                        gpar = get_md5(li[2])
+                        rmv_gch_param(groupchat, gpar)
+                        rmv_fatal_task('check_changed_var%s' % (li[0]))
                 
                 return reply(type, source, l('List of auto-command rules has been cleared!'))
             else:
@@ -292,6 +334,11 @@ def handler_acomm_control(type, source, parameters):
                     rid = dnum[0]
                     
                     res = rmv_acomm_rule(groupchat, rid)
+                    
+                    if dnum[1] == 'cvar':
+                        gpar = get_md5(dnum[2])
+                        rmv_gch_param(groupchat, gpar)
+                        rmv_fatal_task('check_changed_var%s' % (rid))
                     
                     if res != '':
                         comp_acomm_rexps(groupchat)
@@ -314,7 +361,7 @@ def handler_acomm_control(type, source, parameters):
             rexp = prsr[1]
             cmdpr = prsr[2]
             
-            if not entity or not entity in ['body', 'status', 'nick', 'jid']:
+            if not entity or not entity in ['body', 'status', 'nick', 'jid', 'cvar']:
                 entity = 'body'
             
             if not rexp:
@@ -357,11 +404,37 @@ def handler_acomm_control(type, source, parameters):
                     return reply(type, source, l('Too few rights to use this alias!'))
             else:
                 return reply(type, source, l('Command or alias not found!'))
-                
+
             res = set_acomm_rule(groupchat, entity, rexp, comm, params)
+
+            if res != '':
+                qli = get_all_rules(groupchat)
+                rid = 0
+                
+                if qli:
+                    rid = qli[-1][0]
+
+            if entity == 'cvar':
+                try:
+                    rec = rexp.count('%')
+
+                    if (rec // 2) >= 1:
+                        cvar = rep_nested_cmds('null', source, rexp)
+                    else:
+                        cvar = eval(rexp)
+                    
+                    cvar = cvar.strip()
+                    
+                    gchp = get_md5(rexp)
+                    set_gch_param(groupchat, gchp, '%s:=%s' % (source[0], cvar))
+                    add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (groupchat, rexp, comm, params), ival=300)
+                except Exception:
+                    log_exc_error()
+                    res = ''
                 
             if res != '':
-                comp_acomm_rexps(groupchat)
+                if not entity == 'cvar':
+                    comp_acomm_rexps(groupchat)
                 
                 return reply(type, source, l('Auto-command rule has been added!'))
             else:
