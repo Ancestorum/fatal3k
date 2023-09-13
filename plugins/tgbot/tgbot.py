@@ -758,15 +758,22 @@ def command_messages(message):
   </icon>\n'''
             
             if txt.isdigit():
+                if not is_var_set(cid, 'digitex_c'):
+                    set_fatal_var(cid, 'digitex_c', int(txt))
+                
                 set_fatal_var(cid, 'digit_text', txt.zfill(4))
                 tbot.send_document(chatid, open('static/emot/sepd02/%s.png' % (txt.zfill(4)), 'rb'))
             else:
-                dtxt = get_fatal_var(cid, 'digit_text')
+                dtxt = str(get_fatal_var(cid, 'digittex_c')).zfill(4)
                 emot = emoji.demojize(message.text)
                 
                 fp.write(icos % (emot, dtxt))
                 
                 tbot.send_message(chatid, emot)
+                
+                fnm = inc_fatal_var(cid, 'digitex_c')
+                
+                tbot.send_document(chatid, open('static/emot/sepd02/%s.png' % (str(fnm).zfill(4)), 'rb'))
         
             fp.close()
         
@@ -1073,7 +1080,7 @@ def init_tgm_bot():
         
         tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
         tbot.register_message_handler(command_messages, content_types=['text'])
-        #tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
+        tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
         tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
         tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
         tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
