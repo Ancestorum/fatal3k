@@ -747,6 +747,29 @@ def command_messages(message):
         else:
             tbot.reply_to(message, l('Unknown command!'))
     else:
+        if message.chat.type == 'private':
+            txt = message.text
+            
+            fp = open('static/emot/icondef.xml', 'a', encoding='utf-8')
+    
+            icos = '''  <icon>
+    <text>%s</text>
+    <object mime="image/png">%s.png</object>
+  </icon>\n'''
+            
+            if txt.isdigit():
+                set_fatal_var(cid, 'digit_text', txt.zfill(4))
+                tbot.send_document(chatid, open('static/emot/sepd02/%s.png' % (txt.zfill(4)), 'rb'))
+            else:
+                dtxt = get_fatal_var(cid, 'digit_text')
+                emot = emoji.demojize(message.text)
+                
+                fp.write(icos % (emot, dtxt))
+                
+                tbot.send_message(chatid, emot)
+        
+            fp.close()
+        
         if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
             url = ''
             
@@ -779,7 +802,7 @@ def command_messages(message):
                 rtm = message.reply_to_message
                 rtf = rtm.from_user.first_name
                 
-                if rtm.from_user.last_name:
+                if rtm.from_user.last_name and rtf != rtm.from_user.last_name:
                     rtl = ' ' + rtm.from_user.last_name + ': '
                 
                 if rtm.from_user.username:               
@@ -794,7 +817,7 @@ def command_messages(message):
                     
                     rtf = fwf.first_name
                     
-                    if fwf.last_name:
+                    if fwf.last_name and rtf != fwf.last_name:
                         rtl = ' ' + fwf.last_name
                         
                     if fwf.username:
@@ -810,8 +833,8 @@ def command_messages(message):
                 if rtm.forward_from_chat:
                     rtf = rmv_emoji(rtm.forward_from_chat.title)
                     
-                    if not rtm.caption:
-                        rtl = ''
+                    #if not rtm.caption:
+                    rtl = ''
                         
                     rtu = ''
                 
@@ -1050,7 +1073,7 @@ def init_tgm_bot():
         
         tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
         tbot.register_message_handler(command_messages, content_types=['text'])
-        tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
+        #tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
         tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
         tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
         tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])

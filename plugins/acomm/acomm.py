@@ -292,7 +292,10 @@ def check_cvar_val(groupchat, rexp, comm, params):
             nval = nval.strip()
         except Exception:
             return False
-                
+        
+        if (nval == '') or (oval == ''):
+            return False
+        
         if nval != oval:
             set_gch_param(groupchat, gchp, '%s:=%s' % (gch_jid, nval))
             call_command_handlers(comm, 'null', source, params.strip(), comm)

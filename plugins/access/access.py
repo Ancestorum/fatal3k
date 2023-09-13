@@ -53,6 +53,9 @@ def handler_access_login(type, source, parameters):
     
     if parameters.strip() == admpass:
         set_user_access(jid, 100)
+        
+        add_fatal_task('auto_logout/%s' % (jid), handler_access_logout, ('null', source, parameters), ival=3600, once=True)
+        
         return reply('private', source, l('Password adopted, a global full access has been granted!'))
     else:
         return reply('private', source, l('Incorrect password!'))
