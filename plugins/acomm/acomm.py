@@ -297,12 +297,7 @@ def check_cvar_val(groupchat, rexp, comm, params):
         if (nval == '') or (oval == ''):
             return False
         
-        log_null_cmdr('check_access: %s' % check_access('null', source, comm), 'syslogs/output.log')
-        log_null_cmdr('source: "%s"' % (source), 'syslogs/output.log')
-        
         if nval != oval:
-            log_null_cmdr('nval_o: "%s" <===> oval_o: "%s"' % (nval, oval), 'syslogs/output.log')
-        
             set_gch_param(groupchat, gchp, '%s:=%s' % (gch_jid, nval))
             call_command_handlers(comm, 'null', source, params.strip(), comm)
 
