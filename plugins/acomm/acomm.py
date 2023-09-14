@@ -277,9 +277,7 @@ def check_cvar_val(groupchat, rexp, comm, params):
         
         nval = oval
         
-        nick = get_resource(gch_jid)        
-        
-        source = [gch_jid, groupchat, nick]
+        source = [gch_jid, groupchat, '']
         
         try:
             rec = rexp.count('%')
@@ -293,10 +291,14 @@ def check_cvar_val(groupchat, rexp, comm, params):
         except Exception:
             return False
         
-        log_null_cmdr('nval_a: "%s" <===> oval_a: "%s"' % (nval, oval), 'syslogs/output.log')
+        if nval == rexp:
+            return False
         
         if (nval == '') or (oval == ''):
             return False
+        
+        log_null_cmdr('check_access: %s' % check_access('null', source, comm), 'syslogs/output.log')
+        log_null_cmdr('source: "%s"' % (source), 'syslogs/output.log')
         
         if nval != oval:
             log_null_cmdr('nval_o: "%s" <===> oval_o: "%s"' % (nval, oval), 'syslogs/output.log')
@@ -432,8 +434,10 @@ def handler_acomm_control(type, source, parameters):
                     
                     cvar = cvar.strip()
                     
+                    trjid = get_true_jid(source)
+                    
                     gchp = get_md5(rexp)
-                    set_gch_param(groupchat, gchp, '%s:=%s' % (source[0], cvar))
+                    set_gch_param(groupchat, gchp, '%s:=%s' % (trjid, cvar))
                     add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (groupchat, rexp, comm, params), ival=300)
                 except Exception:
                     log_exc_error()

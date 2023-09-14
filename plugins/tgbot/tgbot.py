@@ -758,13 +758,12 @@ def command_messages(message):
   </icon>\n'''
             
             if txt.isdigit():
-                if not is_var_set(cid, 'digitex_c'):
-                    set_fatal_var(cid, 'digitex_c', int(txt))
+                set_fatal_var(cid, 'digitex_c', int(txt))
                 
                 set_fatal_var(cid, 'digit_text', txt.zfill(4))
-                tbot.send_document(chatid, open('static/emot/sepd02/%s.png' % (txt.zfill(4)), 'rb'))
+                tbot.send_document(chatid, open('static/emot/sepd04/%s.png' % (txt.zfill(4)), 'rb'))
             else:
-                dtxt = str(get_fatal_var(cid, 'digittex_c')).zfill(4)
+                dtxt = str(get_fatal_var(cid, 'digitex_c')).zfill(4)
                 emot = emoji.demojize(message.text)
                 
                 fp.write(icos % (emot, dtxt))
@@ -772,8 +771,12 @@ def command_messages(message):
                 tbot.send_message(chatid, emot)
                 
                 fnm = inc_fatal_var(cid, 'digitex_c')
+                set_fatal_var(cid, 'digit_text', str(fnm).zfill(4))
                 
-                tbot.send_document(chatid, open('static/emot/sepd02/%s.png' % (str(fnm).zfill(4)), 'rb'))
+                try:
+                    tbot.send_document(chatid, open('static/emot/sepd04/%s.png' % (str(fnm).zfill(4)), 'rb'))
+                except Exception:
+                    pass
         
             fp.close()
         
