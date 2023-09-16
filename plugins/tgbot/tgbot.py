@@ -474,7 +474,7 @@ def handle_video_content(message):
     usern = message.from_user.username
 
     if caption:
-        caption = rmv_emoji(caption)
+        caption = emoji.demojize(caption)
 
     if not is_var_set(cid, 'tgm_msg_buf'):
         set_fatal_var(cid, 'tgm_msg_buf', [])
@@ -676,11 +676,16 @@ def handle_sticker_content(message):
             else:
                 lname = ''    
             
+            chat_title = rmv_emoji(message.chat.title)
+            
+            fname = rmv_emoji(fname)
+            lname = rmv_emoji(lname)
+            
             if filename:
                 if usern and fname != usern:
-                    rep = '[%s]<%s%s (@%s)> %s' % (message.chat.title, fname, lname, usern, filename)
+                    rep = '[%s]<%s%s (@%s)> %s' % (chat_title, fname, lname, usern, filename)
                 else:
-                    rep = '[%s]<%s%s> %s' % (message.chat.title, fname, lname, filename)
+                    rep = '[%s]<%s%s> %s' % (chat_title, fname, lname, filename)
                 
                 if is_var_set(cid, 'watchers', chatid, 'gchs'):
                     wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
@@ -747,39 +752,6 @@ def command_messages(message):
         else:
             tbot.reply_to(message, l('Unknown command!'))
     else:
-        if message.chat.type == 'private':
-            txt = message.text
-            
-            fp = open('static/emot/icondef.xml', 'a', encoding='utf-8')
-    
-            icos = '''  <icon>
-    <text>%s</text>
-    <object mime="image/png">%s.png</object>
-  </icon>\n'''
-            
-            if txt.isdigit():
-                set_fatal_var(cid, 'digitex_c', int(txt))
-                
-                set_fatal_var(cid, 'digit_text', txt.zfill(4))
-                tbot.send_document(chatid, open('static/emot/sepd04/%s.png' % (txt.zfill(4)), 'rb'))
-            else:
-                dtxt = str(get_fatal_var(cid, 'digitex_c')).zfill(4)
-                emot = emoji.demojize(message.text)
-                
-                fp.write(icos % (emot, dtxt))
-                
-                tbot.send_message(chatid, emot)
-                
-                fnm = inc_fatal_var(cid, 'digitex_c')
-                set_fatal_var(cid, 'digit_text', str(fnm).zfill(4))
-                
-                try:
-                    tbot.send_document(chatid, open('static/emot/sepd04/%s.png' % (str(fnm).zfill(4)), 'rb'))
-                except Exception:
-                    pass
-        
-            fp.close()
-        
         if (message.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
             url = ''
             
@@ -841,7 +813,7 @@ def command_messages(message):
                     rtx = ''
                 
                 if rtm.forward_from_chat:
-                    rtf = rmv_emoji(rtm.forward_from_chat.title)
+                    rtf = rtm.forward_from_chat.title
                     
                     #if not rtm.caption:
                     rtl = ''
@@ -880,7 +852,7 @@ def command_messages(message):
                         if cent.type == 'text_link':
                             offs = cent.offset
                         
-                            deml = len(rmv_emoji(rtx))
+                            deml = len(emoji.demojize(rtx))
                             rtxl = len(rtx)
                             co = rtxl - deml
                             ic = co // 2
@@ -890,7 +862,7 @@ def command_messages(message):
                             rtx = rtx.strip()
                             break
                 
-                rtx = rmv_emoji(rtx)
+                rtx = emoji.demojize(rtx)
                 
                 if len(rtx) >= 100:
                     rtx = rtx[0:100] + '...'
@@ -915,7 +887,7 @@ def command_messages(message):
                         url = ment.url
                         break
             
-            mtxt = rmv_emoji(message.text)
+            mtxt = emoji.demojize(message.text)
             
             lname = ''
             
@@ -923,10 +895,15 @@ def command_messages(message):
                 if fname != lname:
                     lname = ' ' + message.from_user.last_name
             
+            chat_title = rmv_emoji(message.chat.title)
+            
+            fname = rmv_emoji(fname)
+            lname = rmv_emoji(lname)
+            
             if usern and fname != usern:
-                rep = '[%s]<%s%s (@%s)> %s%s%s' % (message.chat.title, fname, lname, usern, from_usr, mtxt, rto)
+                rep = '[%s]<%s%s (@%s)> %s%s%s' % (chat_title, fname, lname, usern, from_usr, mtxt, rto)
             else:
-                rep = '[%s]<%s%s> %s%s%s' % (message.chat.title, fname, lname, from_usr, mtxt, rto)
+                rep = '[%s]<%s%s> %s%s%s' % (chat_title, fname, lname, from_usr, mtxt, rto)
             
             if url:
                 rep += '\n\n%s' % (url)
@@ -950,7 +927,7 @@ def msg_worker(message, public=False):
     cr = ''
     
     if caption:
-        caption = rmv_emoji(caption)
+        caption = emoji.demojize(caption)
     
     while True:
         time.sleep(0.3)
@@ -1003,7 +980,7 @@ def msg_worker(message, public=False):
     from_chat = ''
     
     if message.forward_from_chat:
-        from_chat = l('Forward from chat %s:') % (rmv_emoji(message.forward_from_chat.title))
+        from_chat = l('Forward from chat %s:') % (emoji.demojize(message.forward_from_chat.title))
         from_chat += '\n\n'
 
     url = ''
@@ -1021,6 +998,11 @@ def msg_worker(message, public=False):
             lname = ''
     else:
         lname = ''
+    
+    chat_title = rmv_emoji(chat_title)
+    
+    fname = rmv_emoji(fname)
+    lname = rmv_emoji(lname)
     
     if usern and fname != usern:
         if caption:

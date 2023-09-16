@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 #  fatal core
 #  fatal.py
@@ -7,7 +7,7 @@
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
 #  Modifications Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Parts of code Copyright © Boris Kotov <admin@avoozl.ru>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by

@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 Als <Als@exploru.net>
 #  Parts of code Copyright © Bohdan Turkynewych aka Gh0st <tb0hdan[at]gmail.com>
-#  Copyright © 2009-2016 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ __all__ = []
 
 from fatalapi import *
 from math import trunc
+import requests
 
 def get_and_out_jids(type, source, gch, affiliation, succstr, failstr):
     iq = xmpp.Iq('get')
@@ -1223,6 +1224,77 @@ def handler_groupchats(type, source, parameters):
 
     return reply(type, source, rep)
 
+def handler_http_get(type, source, parameters):
+    if not parameters:
+        return reply(type, source, l('Invalid syntax!'))
+    
+    url = ''
+    ppar = ''
+    spar = ''
+    sprs = True
+
+    splp = parameters.split() 
+
+    if len(splp) == 1:
+        url = splp[0]
+    elif len(splp) == 2:
+        pars = splp[0]
+        
+        if pars.count(':') == 1:
+            ppar = pars.split(':')[0]
+            spar = pars.split(':')[1]
+        elif not pars.count(':'):
+            ppar = pars
+        else:
+            sprs = False
+            
+        url = splp[-1]
+    elif len(splp) == 3:
+        pars = splp[0]
+        
+        if pars.count(':') == 1:
+            ppar = pars.split(':')[0]
+            spar = splp[1]
+        else:
+            sprs = False
+        
+        url = splp[-1]    
+    
+    if url:
+        resp = requests.get(url.strip(), stream=True)
+    else:
+        sprs = False
+    
+    if not sprs:
+        return reply(type, source, l('Invalid syntax!'))
+    
+    if resp.status_code == 200:
+        if ppar in ('headers', 'hdrs') and not spar:
+            hdrs = resp.headers
+            
+            return reply(type, source, str(hdrs))
+        elif ppar in ('headers', 'hdrs') and spar:
+            if spar:
+                try:
+                    spar = '-'.join([li.capitalize() for li in spar.split('-')])
+                
+                    hdrs = resp.headers[spar]
+                    return reply(type, source, str(hdrs))
+                except Exception:
+                    return reply(type, source, l('Invalid syntax!'))
+        elif ppar:
+            return reply(type, source, l('Invalid syntax!'))
+        
+        ct = resp.headers['Content-Type']
+        ct = ct.split(';')[0]
+        
+        if ct not in ('text/html', 'application/json'):
+            return reply(type, source, l('Unknown error!'))
+        
+        return reply(type, source, resp.text)
+    else:
+        return reply(type, source, l('Unknown error!'))
+
 def handler_getrealjid(type, source, parameters):
     groupchat = source[1]
     
@@ -1732,6 +1804,7 @@ register_join_handler(handler_user_join)
 register_leave_handler(handler_user_leave)
 register_presence_handler(handler_user_presence)
 
+register_command_handler(handler_http_get, 'http', 20)
 register_command_handler(handler_getrealjid, 'realjid', 20)
 register_command_handler(handler_total_in_muc, 'users', 10)
 register_command_handler(handler_bot_uptime, 'botup', 20)
