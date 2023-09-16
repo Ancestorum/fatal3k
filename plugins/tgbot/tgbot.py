@@ -3,7 +3,7 @@
 #  fatal plugin
 #  tgbot plugin
 
-#  Copyright © 2023 Ancestors Soft
+#  Copyright © 2022-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -14,6 +14,8 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU General Public License for more details.
+
+__all__ = []
 
 from fatalapi import *
 
@@ -669,6 +671,8 @@ def handle_sticker_content(message):
                     filename = emoji.demojize(filename)
             
             if lname:
+                lname = rmv_emoji(lname)
+
                 if fname != lname:
                     lname = ' ' + lname
                 else:
@@ -679,7 +683,6 @@ def handle_sticker_content(message):
             chat_title = rmv_emoji(message.chat.title)
             
             fname = rmv_emoji(fname)
-            lname = rmv_emoji(lname)
             
             if filename:
                 if usern and fname != usern:
@@ -892,13 +895,14 @@ def command_messages(message):
             lname = ''
             
             if message.from_user.last_name:
+                lname = rmv_emoji(lname)
+                
                 if fname != lname:
                     lname = ' ' + message.from_user.last_name
             
             chat_title = rmv_emoji(message.chat.title)
             
             fname = rmv_emoji(fname)
-            lname = rmv_emoji(lname)
             
             if usern and fname != usern:
                 rep = '[%s]<%s%s (@%s)> %s%s%s' % (chat_title, fname, lname, usern, from_usr, mtxt, rto)
@@ -992,6 +996,8 @@ def msg_worker(message, public=False):
                 break
     
     if lname:
+        lname = rmv_emoji(lname)
+        
         if fname != lname:
             lname = ' ' + lname
         else:
@@ -1002,7 +1008,6 @@ def msg_worker(message, public=False):
     chat_title = rmv_emoji(chat_title)
     
     fname = rmv_emoji(fname)
-    lname = rmv_emoji(lname)
     
     if usern and fname != usern:
         if caption:

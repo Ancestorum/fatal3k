@@ -6,7 +6,7 @@
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
 #  Parts of code Copyright © Bohdan Turkynewych aka Gh0st <tb0hdan[at]gmail.com>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -79,7 +79,9 @@ def handler_python_eval(type, source, parameters):
     gch = source[1]
     
     try:
-        return_value = '%s' % (eval(parameters))
+        result = eval(parameters)
+        return_value = '%s' % (result)
+        set_fatal_var(cid, 'eval_result', result)
     except:
         return_value = '%s - %s.' % (sys.exc_info()[0], sys.exc_info()[1])
     return reply(type, source, return_value.strip())
