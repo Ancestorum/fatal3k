@@ -825,9 +825,7 @@ def command_messages(message):
                 if rtm.forward_from_chat:
                     rtf = rtm.forward_from_chat.title
                     
-                    #if not rtm.caption:
                     rtl = ''
-                        
                     rtu = ''
                 
                 fur = ''
@@ -884,10 +882,16 @@ def command_messages(message):
                     if rtx:
                         rtx = ': ' + rtx
                     
+                    if rtl.count(':'):
+                        rtl = rtl.replace(': ', '')
+                    
                     rto += '\n\n>> %s%s (@%s)%s' % (rtf, rtl, rtu, rtx)
                 else:
                     if rtx:
                         rtx = ': ' + rtx 
+                    
+                    if rtl.count(':'):
+                        rtl = rtl.replace(': ', '')
                     
                     rto += '\n\n>> %s%s%s' % (rtf, rtl, rtx)
            
