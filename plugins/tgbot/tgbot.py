@@ -906,10 +906,12 @@ def command_messages(message):
             lname = ''
             
             if message.from_user.last_name:
-                lname = rmv_emoji(lname)
+                lname = rmv_emoji(message.from_user.last_name)
                 
                 if fname != lname:
-                    lname = ' ' + message.from_user.last_name
+                    lname = ' ' + lname
+                else:
+                    lname = ''
             
             chat_title = rmv_emoji(message.chat.title)
             

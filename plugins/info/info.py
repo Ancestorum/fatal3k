@@ -1285,6 +1285,9 @@ def handler_http_get(type, source, parameters):
         elif ppar:
             return reply(type, source, l('Invalid syntax!'))
         
+        if not 'Content-Type' in tuple(resp.headers):
+            return reply(type, source, l('Unknown error!'))
+        
         ct = resp.headers['Content-Type']
         ct = ct.split(';')[0]
         

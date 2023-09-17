@@ -108,3 +108,11 @@ thr_dump.ccat = info, superadmin, all, *
 thr_dump.desc = Позволяет сохранить список активных потоков бота в файл. Необходимо, когда потоков много.
 thr_dump.synt = %prefix%thr_dump
 thr_dump.exam = %prefix%thr_dump
+
+http.ccat = info, http, all, *
+http.desc = Позволяет послать get-запрос на URL и получить содержимое страницы из сети. С параметром headers|hdrs выводит заголовки get-запроса.
+http.synt = %prefix%http [headers:entity|hdrs:entity] <URL>
+http.exam = %prefix%http http://fatal-dev.ru
+http.exam = %prefix%http headers http://fatal-dev.ru
+http.exam = %prefix%http headers:content-length http://fatal-dev.ru
+http.exam = %prefix%http hdrs:content-type http://fatal-dev.ru
