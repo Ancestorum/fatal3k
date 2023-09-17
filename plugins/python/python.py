@@ -72,7 +72,7 @@ def check_allowed(shells):
 
 def handler_python_ssh(type, source, parameters):
     parameters = shell_del_specs_sym(parameters)
-    handler_python_sh(type, source, parameters)
+    return handler_python_sh(type, source, parameters)
 
 def handler_python_eval(type, source, parameters):
     cid = get_client_id()

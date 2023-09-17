@@ -764,6 +764,13 @@ def command_messages(message):
             fln = ''
             fus = ''
             
+            if message.forward_from_chat:
+                ffn = message.forward_from_chat.title
+            
+                from_usr = l('Forward from channel %s:') % (ffn)
+                
+                from_usr += '\n\n'
+            
             if message.forward_from:
                 ffn = message.forward_from.first_name
                 

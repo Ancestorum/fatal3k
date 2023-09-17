@@ -1732,12 +1732,17 @@ def rep_nested_cmds(type, source, params):
                 com = spc[0]
                 par = spc[1]
                 
-                if com in cmdl:
-                    if check_access(type, source, com):
+                cnm = get_real_cmd_name(com)
+                
+                if not cnm:
+                    cnm = com
+                
+                if cnm in cmdl:
+                    if check_access(type, source, cnm):
                         if par.count('#'):
                             par = par.replace('#', '%')
                     
-                        cmd_hnd = get_fatal_var('command_handlers', com)
+                        cmd_hnd = get_fatal_var('command_handlers', cnm)
                         res = str(cmd_hnd(type, source, par))
                     
                         params = params.replace(fcmd, res)
@@ -1749,9 +1754,14 @@ def rep_nested_cmds(type, source, params):
                 spc = fcmd.replace('%', '')
                 com = spc
                 
-                if com in cmdl:
-                    if check_access(type, source, com):
-                        cmd_hnd = get_fatal_var('command_handlers', com)
+                cnm = get_real_cmd_name(com)
+                
+                if not cnm:
+                    cnm = com
+                
+                if cnm in cmdl:
+                    if check_access(type, source, cnm):
+                        cmd_hnd = get_fatal_var('command_handlers', cnm)
                         res = str(cmd_hnd(type, source, ''))
                         
                         params = params.replace(fcmd, res)
