@@ -17,6 +17,7 @@
 #  GNU General Public License for more details.
 
 from contextlib import contextmanager
+from concurrent.futures import ThreadPoolExecutor
 import os
 import sys
 import mmap
@@ -33,7 +34,6 @@ import imp
 import socket
 import select
 import urllib.request, urllib.parse, urllib.error
-import urllib.request, urllib.error, urllib.parse
 import hashlib
 import base64
 import codecs
@@ -632,6 +632,34 @@ def _thr_counter():
             if ac != actcnt:
                 if ma == actcnt:
                     _app_file('counter.log', '\n%s/%s\n' % (actcnt, totcnt))
+
+def craiot(coro):
+    return create_and_run_asyncio_task(coro)
+
+def handle_task_done(task):
+    evn = task.get_name()
+    set_fatal_event(evn)
+
+def _executor_func(coro, evn):
+    loop = cgv('tgram_loop')
+    task = loop.create_task(coro)
+    task.set_name(evn)
+    task.add_done_callback(handle_task_done)
+    return task
+
+def create_and_run_asyncio_task(coro):
+    loop = cgv('tgram_loop')
+    
+    res = None
+    
+    evn = 'tgram_task_%s' % (rand10())
+    
+    with ThreadPoolExecutor() as executor:
+        res = loop.run_in_executor(executor, _executor_func, coro, evn)
+        iawt_fatal_event(evn)
+        res = res.result()
+        res = res.result()
+        return res
 
 def make_thr_name(cid, frm, name):
     thrc = inc_fatal_var('info', 'thr')
@@ -1344,10 +1372,11 @@ def ftcompl(text, state):
         return None
 
 def fatal_console():
+    os_uname = get_os_uname()
+    
     try:
-        if not get_int_cfg_param('show_console'):
-            input()
-            return
+        if not is_param_seti('show_console'):
+            return False
         
         owner = get_fatal_var('curr_cons_owner')
         
@@ -1361,7 +1390,7 @@ def fatal_console():
         set_fatal_var('con_last_prompt', prompt)
 
         conv_line = input(prompt)
-        
+                            
         comms = conv_line.strip()
         
         if not comms:
@@ -1395,9 +1424,7 @@ def fatal_console():
             if is_var_set('command_handlers', cmd):
                 cmdhnd = get_fatal_var('command_handlers', cmd)
                 
-                cpipei, cpipeo = os.pipe()
-                
-                set_fatal_var('console_cpipeo', cpipeo)
+                init_fatal_event('console_event')
                 
                 if len(splcmd) > 1:
                     params = ' '.join(splcmd[1:])
@@ -1405,14 +1432,10 @@ def fatal_console():
                 else:
                     call_in_sep_thr(owner + '/console', cmdhnd, 'console', [owner + '/' + resource, owner, ''], '')
                 
-                readsc = os.fdopen(cpipei)
-                constr = readsc.read()
-                sprint(constr)
-                
-                rmv_fatal_var('console_cpipeo')
+                wait_fatal_event('console_event', 3)
 
-                os.close(cpipei)
-                os.close(cpipeo)
+                constr = str(cgv('console_restr'))
+                sprint(constr)
             elif cmd in aliaso.galiaslist:
                 exp_alias = aliaso.expand(cmd, [owner + '/' + resource, owner, ''])
                 
@@ -1428,23 +1451,17 @@ def fatal_console():
                 if is_var_set('command_handlers', comm.lower()):
                     cmdhnd = get_fatal_var('command_handlers', comm.lower())
                     
-                    cpipei, cpipeo = os.pipe()
-                    
-                    set_fatal_var('console_cpipeo', cpipeo)
+                    init_fatal_event('console_event')
                     
                     if params:
                         call_in_sep_thr(owner + '/console', cmdhnd, 'console', [owner + '/' + resource, owner, ''], params)
                     else:
                         call_in_sep_thr(owner + '/console', cmdhnd, 'console', [owner + '/' + resource, owner, ''], '')
                     
-                    readsc = os.fdopen(cpipei)
-                    constr = readsc.read()
-                    sprint(constr)
+                    wait_fatal_event('console_event', 3)
                     
-                    rmv_fatal_var('console_cpipeo')
-
-                    os.close(cpipei)
-                    os.close(cpipeo)
+                    constr = str(cgv('console_restr'))
+                    sprint(constr)
             else:
                 exec(comms, globals())
 
@@ -1453,18 +1470,23 @@ def fatal_console():
     except EOFError:
         if is_param_seti('show_console'):
             dec_fatal_var('info', 'opnum')
-
+            
             if not is_var_set('is_console_hide'):
                 set_fatal_var('is_console_hide', 1)
 
-                sprint('\n\nPress Ctrl+D to show console again.')
+                if os_uname == 'linux':
+                    sprint('\n\nPress Ctrl+D to show console again.')
+                else:
+                    sprint('\n\nPress Ctrl+Z and Return to show console again.')
             else:
                 set_fatal_var('is_console_hide', 0)
 
                 sprint()
-            #return False
+            
+            return True
         else:
             sprint()
+            return True
     except IOError:
         return False
     except Exception:
@@ -1605,18 +1627,54 @@ def load_plugins():
     loadedpl, failedpl, chkddpl = [], [], []
     
     dsblpl = get_lst_cfg_param('disabled_plugins')
+    ntrelpl = get_lst_cfg_param('notreld_plugins')
 
     locale = get_sys_lang()
     locale = get_param('locale', locale)
     
+    sprint()
+    
+    delim = ','
+    suff = '(d)'
+    ldt = 0
+    tldt = 0
+    
     for plugin in plugins:
-        if plugin in dsblpl:
-            chkddpl.append(plugin)
-            continue
-        
+        if plugin == plugins[-1]:
+            delim = '.'
+
         try:
             try:
+                if plugin in dsblpl:
+                    chkddpl.append(plugin)
+                    
+                    suff = '(d)'
+                    
+                    if is_var_set('cle'):
+                        sys.stdout.write('%s%s%s%s%s%s%s ' % (cl_cyan, plugin, cl_cyan,  cl_none, suff, delim, cl_none))
+                    else:
+                        sys.stdout.write('%s%s%s ' % (plugin, suff, delim))
+                    
+                    continue
+            
+                ldt = time.time()
+            
                 _load(plugin)
+                
+                ldt = round(time.time() - ldt, 2)
+                
+                tldt += ldt
+                
+                if ldt >= 0.5:
+                    suff = '(%.2f)' % (ldt)
+                else:
+                    suff = ''
+                
+                if is_var_set('cle'):
+                    sys.stdout.write('%s%s%s%s%s%s%s ' % (cl_bgreen, plugin, cl_bgreen,  cl_none, suff, delim, cl_none))
+                else:
+                    sys.stdout.write('%s%s%s ' % (plugin, suff, delim))
+                    
                 plpath = sys.modules[plugin].__path__
                 plfile = '%s/%s.py' % (plpath[0], plugin)
                 set_fatal_var('ldpls', plugin, plfile)
@@ -1631,36 +1689,53 @@ def load_plugins():
                     load_lc_msgs(locale, dpath, 'fatal-bot')
                     load_hlp_msgs(locale, dpath, 'fatal-bot')
             except Exception:
+                suff = '(f)'
+                
+                if is_var_set('cle'):
+                    sys.stdout.write('%s%s%s%s%s%s%s ' % (cl_bred, plugin, cl_bred,  cl_none, suff, delim, cl_none))
+                else:
+                    sys.stdout.write('%s%s%s ' % (plugin, suff, delim))
+                
                 log_exc_error()
                 failedpl.append(plugin)
                 continue
+
+            sys.stdout.flush()
             
             relc = get_int_cfg_param('reload_code')
             
-            if relc:
+            if relc and plugin not in ntrelpl:
                 cpl_md5 = _plmd5hash(plugin)
                 set_fatal_var('pls_md5_hash', plugin, cpl_md5)
         except Exception:
             log_exc_error()
             failedpl.append(plugin)
     
+    if is_var_set('cle'):
+        sprint(cl_none)
+    else:
+        sprint()
+    
+    if loadedpl:
+        sprint('\n\Loaded plugins (%.2f) (total: %d).' % (round(tldt, 2), len(loadedpl)))
+    
     if chkddpl:
         chkddpl.sort()
-        sprint('\n\Disabled plugins (total: %d):' % (len(chkddpl)))
+        sprint('\n\Disabled plugins (d) (total: %d):' % (len(chkddpl)))
         displ = ', '.join(chkddpl)
         
         if is_var_set('cle'):
-            sprint(displ + '.', cl_green, True)
+            sprint('%s%s%s%s%s%s ' % (cl_cyan, displ, cl_cyan,  cl_none, delim, cl_none))
         else:
             sprint(displ + '.')
     
     if failedpl:
         failedpl.sort()
-        sprint('\n\Failed to load plugins (total: %d):' % (len(failedpl)))
+        sprint('\n\Failed to load plugins (f) (total: %d):' % (len(failedpl)))
         invp = ', '.join(failedpl)
         
         if is_var_set('cle'):
-            sprint(invp + '.', cl_bred, True)
+            sprint('%s%s%s%s%s%s ' % (cl_bred, invp, cl_bred,  cl_none, delim, cl_none))
         else:
             sprint(invp + '.')
         
@@ -1668,15 +1743,12 @@ def load_plugins():
         
     if loadedpl:
         loadedpl.sort()
-        sprint('\n\Loaded plugins (total: %d):' % (len(loadedpl)))
-        loaded = ', '.join(loadedpl)
         
-        if is_var_set('cle'):
-            sprint(loaded + '.\n', cl_bgreen, True)
-        else:
-            sprint(loaded + '.\n')
-            
+        loadedpl = [li for li in loadedpl if not li in ntrelpl]
+        
         add_fatal_var('plugins', loadedpl)
+        
+        sprint()
     else:
         sprint('\n\There are no plugins to load!\n')
         
@@ -2362,6 +2434,10 @@ def get_gch_role(gch, nick):
 def is_groupchat(jid):
     cid = get_client_id()
     
+    if isinstance(jid, int):
+        if jid < 0:
+            return True
+    
     if is_var_set(cid, 'gchrosters', jid):
         return True
     return False
@@ -2554,21 +2630,43 @@ def msg(target, body, chatid=0):
         return body
     
     if target == 'console':
-        costr = '\n' + body + '\n'
+        if is_param_seti('show_console'):
+            constr = '\n' + body + '\n'
+        else:
+            constr = body
         
         try:
-            cpipeo = get_int_fatal_var('console_cpipeo')
-            wrtdsc = os.fdopen(cpipeo, 'w')
-            wrtdsc.write(costr)
+            csv('console_restr', constr)
+            
+            if is_event_init('console_event'):
+                set_fatal_event('console_event')
+            else:
+                if not is_var_set('is_console_hide'):
+                    sys.stdout.write('\n' + constr)
+                else:
+                    sys.stdout.write(constr)
+                    
+                sys.stdout.flush()
+            
             return
         except Exception:
             log_exc_error()
             return
     
     if target == 'telegram':
-        cid = get_client_id()
-        tbot = get_fatal_var(cid, 'tgbot')
-        tbot.send_message(chatid, body)
+        tbot = cgv('tgbot')
+        
+        if tbot:
+            tbot.send_message(chatid, body)
+        
+        return
+    
+    if target == 'tgclient':
+        tgcli = cgv('tgram_client')
+        
+        if tgcli:
+            craiot(tgcli.send_message(chatid, body))
+        
         return
     
     if not isinstance(body, str):
@@ -3521,6 +3619,8 @@ def reconnect(jid, password, resource, port=5222, tlssl=1):
         set_fatal_var(jid, 'reconnect', 1)
         #rmv_all_tasks()
         
+        init_fatal_event('client_event')
+        
         time.sleep(5)
 
         connect_client(jid, password, resource, port, tlssl)
@@ -3558,10 +3658,12 @@ def dcHnd():
                 os._exit(1)
     
     send_client_state()
+    csv('client_state', True)
 
 def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     if not jid:
         send_client_state('brk')
+        csv('client_state', False)
         return
     
     username = get_usernode(jid)
@@ -3625,6 +3727,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
                         os._exit(1)
             
             send_client_state('brk')
+            csv('client_state', False)
 
         return
     else:
@@ -3647,6 +3750,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     if not auth:
         sprint('\Auth Error. Incorrect login/password?\n\Error: %s %s' % (jconn.lastErr, jconn.lastErrCode))
         send_client_state('brk')
+        csv('client_state', False)
 
         return
     else:
@@ -3779,7 +3883,14 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     
     set_fatal_var(jid, 'main_xmpp_stanza_pc', mn_xmpp_thr)
     set_fatal_var(jid, 'reconnect', 0)
-    send_client_state('suc')
+    
+    csv('client_state', True)
+    set_fatal_event('client_event')
+    
+    if is_param_seti('show_console') and is_var_set('con_last_prompt'):
+        prompt = get_fatal_var('con_last_prompt')
+        sys.stdout.write('\n' + prompt)
+        sys.stdout.flush()
 
 def get_curr_thr_name():
     curr_thr = threading.currentThread()

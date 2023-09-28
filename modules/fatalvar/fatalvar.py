@@ -405,14 +405,26 @@ def stop_scheduler():
     if tsko:
         tsko.Stop()
 
+def gcp(param, oer=''):
+    return get_cfg_param(param, oer)
+
 def get_cfg_param(param, oer=''):
     return _fatalConfig.getParam(param, oer)
 
+def gip(param, oer=0):
+    return get_int_cfg_param(param, oer)
+    
 def get_int_cfg_param(param, oer=0):
     return _fatalConfig.getIntParam(param, oer)
 
+def glp(param, oer=[]):
+    return get_lst_cfg_param(param, oer)
+
 def get_lst_cfg_param(param, oer=[]):
     return _fatalConfig.getListParam(param, oer)
+
+def gfp(param, oer=0.0):
+    return get_flt_cfg_param(param, oer)
 
 def get_flt_cfg_param(param, oer=0.0):
     return _fatalConfig.getFloatParam(param, oer)
@@ -455,30 +467,53 @@ def is_event_init(ename):
         return True
     return False
 
+def iawt_fatal_event(ename, timeout=None):
+    init_fatal_event(ename)
+    wait_fatal_event(ename, timeout)
+
+def ife(ename):
+    init_fatal_event(ename)
+
 def init_fatal_event(ename):
     cid = get_client_id()    
 
     _fatalVars.setVar(cid, ename, 'evnt', Event())
 
+def wfe(ename, timeout=None):
+    wait_fatal_event(ename, timeout)
+
 def wait_fatal_event(ename, timeout=None):
     cid = get_client_id()
     
-    evnt = Event()
+    evnt = _fatalVars.getVar(cid, ename, 'evnt')
     
-    _fatalVars.setVar(cid, ename, 'evnt', evnt)
-    _fatalVars.setVar(cid, ename, 'start', trunc(time.time()))
+    if is_event_init(ename):
+        _fatalVars.setVar(cid, ename, 'start', trunc(time.time()))
     
-    evnt.wait(timeout)
+    if evnt:
+        evnt.wait(timeout)
 
     if timeout: 
         _fatalVars.delVar(cid, ename)
 
+def sfe(ename):
+    set_fatal_event(ename)
+
 def set_fatal_event(ename):
     cid = get_client_id()
     
-    evnt = _fatalVars.getVar(cid, ename, 'evnt')
+    evnt = get_fatal_var(cid, ename, 'evnt')
+
     evnt.set()
-    _fatalVars.delVar(cid, ename)
+    
+    rmv_fatal_var(cid, ename)
+
+def cgv(*args):
+    cid = get_client_id()
+    return get_fatal_var(cid, *args)
+
+def find_fatal_var(patt):
+    return _fatalVars.findVar(patt)
 
 def get_fatal_var(*args):
     return _fatalVars.getVar(*args)
@@ -503,10 +538,18 @@ def get_list_fatal_var(*args):
     if not vval:
         return ['']
     return list(vval)
+
+def csv(*args):
+    cid = get_client_id()
+    set_fatal_var(cid, *args)
     
 def set_fatal_var(*args):
     _fatalVars.setVar(*args)
 
+def rcv(*args):
+    cid = get_client_id()
+    return rmv_fatal_var(cid, *args)
+    
 def rmv_fatal_var(*args):
     dvar = _fatalVars.getVar(*args)
     _fatalVars.delVar(*args)
@@ -563,6 +606,10 @@ def dec_fatal_var(*args):
 
 def enum_fatal_vars():
     return _fatalVars.Vars()
+
+def iscvs(*args):
+    cid = get_client_id()
+    return is_var_set(cid, *args)
 
 def is_var_set(*args):
     var = _fatalVars.getVar(*args)
@@ -782,7 +829,7 @@ class _fCycleTasks(object):
                 except Exception:
                     self._fails += 1
             
-            wait_fatal_event('task_manager_event', self._miv)
+            iawt_fatal_event('task_manager_event', self._miv)
 
             for tsk in tskl:
                 self._tasks[tsk]['count'] += self._miv
@@ -1016,6 +1063,13 @@ class _fConfig(object):
         self._filename = ''
         self._status = False
 
+    def _is_digit(self, n):
+        try:
+            int(n)
+            return True
+        except ValueError:
+            return  False
+            
     def _str_to_list(self, strng, spltr=','):
         if strng:
             lst = strng.split(spltr)
@@ -1115,7 +1169,15 @@ class _fConfig(object):
         value = self._get_param(param)
         
         if value:
-            return self._str_to_list(value)
+            lop = self._str_to_list(value)
+            rsl = []
+            
+            for lpi in lop:
+                if self._is_digit(lpi):
+                    rsl.append(int(lpi))
+                else:
+                    rsl.append(lpi)
+            return rsl
         return list(oer)
 
     def setParam(self, param, value):
@@ -1426,6 +1488,13 @@ class _fVars(object):
                     return None
             else:
                 return None
+
+    def findVar(self, patt):
+        keyl = self._vars.keys()
+        
+        for key in keyl:
+            if key.startswith(patt):
+                return self.getVar(key)
 
     def getVar(self, *args):
         return self._sfr_dic_val(self._vars, *args)

@@ -18,6 +18,7 @@
 __all__ = []
 
 from fatalapi import *
+import emoji
 
 def is_watcher_here(gch, jid):
     cid = get_client_id()
@@ -149,6 +150,8 @@ def handler_watcher_mess(type, source, body):
                 
                 if (ttype == 'telegram') and (type != 'private'):
                     if bnick != nick:
+                        rep = emoji.emojize(rep)
+                        
                         return msg('telegram', rep, wjid)
                 else:
                     if type != 'private':
@@ -164,16 +167,13 @@ def handler_watcher(type, source, parameters):
     else:
         jid = get_true_jid(source)
 
-    if is_groupchat(groupchat):
-        return reply(type, source, l('This command can not be used in groupchat!'))
-
     if parameters:
         parameters = parameters.strip()
         
         if type == 'telegram':
             chatid = source[1]
             
-            if not chatid < 0:
+            if not is_groupchat(chatid):
                 return reply(type, source, l('This command can be used only in groupchat!'))
             
             jid = chatid
@@ -218,7 +218,7 @@ def handler_watcher(type, source, parameters):
             if type == 'telegram':
                 chatid = source[1]
                 
-                if not chatid < 0: 
+                if not is_groupchat(chatid): 
                     return reply(type, source, l('This command can be used only in groupchat!'))
                 
                 jid = chatid
@@ -247,7 +247,7 @@ def handler_watcher(type, source, parameters):
         if type == 'telegram':
             chatid = source[1]
             
-            if not chatid < 0:
+            if not is_groupchat(chatid):
                 return reply(type, source, l('This command can be used only in groupchat!'))
             
             jid = chatid

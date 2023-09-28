@@ -13,13 +13,18 @@ resource = res, res2, res3
 # Telegram bot api token, chat_id and userid for plugin tgbot
 #------------------------------------------------------------
 bot_api_token = 
-tgm_chat_id = 
+tgbot_group_id = 
 tgbot_admin_id = 
 tgpost_url = http://site.tld/upload.php
 tgpost_user = user
 tgpost_pass = password
 tgurl_prefix = http://site.tld/files/
 tglog_json = 0
+tgram_api_id = 
+tgram_api_hash = 
+tgram_phone = 
+tgram_password =
+tgram_user_id = 
 
 # TLS/SSL, if no need, comment or leave as is
 #---------------------------------------------
@@ -86,6 +91,16 @@ comm_prefix = .
 #-------------------------------------------------------------
 #disabled_plugins = plugin1,plugin2,pluginN
 
+# List of not reloadable fatal plugins
+#-------------------------------------
+notreld_plugins = tgbot, tgram
+
+# Additional modules paths
+# This param for tgbot/tgram plugins
+#-----------------------------------
+modules_path = modules/telethon
+modules_path = modules/telethon/aiohttp
+
 # Privacy lists support through xep0016
 #--------------------------------------
 privacy_lists = 1
@@ -115,7 +130,7 @@ debug_mode = 0
 reload_code = 0
 
 # Whether to write or not syslogs for threads and tasks
-#-------------------------------------------------------------------------
+#------------------------------------------------------
 log_thrs = 0
 log_tsks = 0
 

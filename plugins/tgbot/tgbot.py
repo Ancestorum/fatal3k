@@ -288,7 +288,7 @@ def save_and_upload(file_url):
     try:
         filename = file_url.split('/')[-1]
         
-        flsdir = 'dynamic/%s/files' % (cid)
+        flsdir = d('files')
         
         pfilenm = '%s/%s' % (flsdir, filename)
         
@@ -1042,7 +1042,7 @@ def msg_worker(message, public=False):
         for wgch in wgchs:
             fatalapi.msg(wgch, rep)    
 
-def tgm_polling_proc():
+def tgbot_polling_proc():
     cid = get_client_id()
     tbot = get_fatal_var(cid, 'tgbot')
     
@@ -1079,7 +1079,7 @@ def init_tgm_bot():
         
         set_fatal_var(cid, 'tgbot', tbot)
         
-        call_in_sep_thr(cid + '/init_tgm_bot', tgm_polling_proc)
+        call_in_sep_thr(cid + '/init_tgm_bot', tgbot_polling_proc)
         
         tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
         tbot.register_message_handler(command_messages, content_types=['text'])

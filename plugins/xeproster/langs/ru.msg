@@ -8,3 +8,4 @@ New account %s has been authorized and added in the roster! = Новый кон�
 Account %s has rejected subscription and has not been added! = Контакт %s отказался от подписки и не был добавлен в ростер!
 Roster users (total: %s):\n\n%s = Пользователи бота (всего: %s):\n\n%s
 User: %s\n     \Group(s): %s\n     \Subscription: %s\n     \Status: %s\n     \Access: %s\n = Пользователь: %s\n     \Группы: %s\n     \Подписка: %s\n     \Статус: %s\n     \Доступ: %s\n
+User: %s\n     \Group(s): %s\n     \Subscription: %s\n     \Status: %s\n     \Resources: %s\n     \Access: %s\n = Пользователь: %s\n     \Группы: %s\n     \Подписка: %s\n     \Статус: %s\n     \Ресурсы: %s\n     \Доступ: %s\n

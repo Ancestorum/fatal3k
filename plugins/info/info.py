@@ -21,7 +21,9 @@ __all__ = []
 
 from fatalapi import *
 from math import trunc
+import urllib3
 import requests
+#from bs4 import BeautifulSoup
 
 def get_and_out_jids(type, source, gch, affiliation, succstr, failstr):
     iq = xmpp.Iq('get')
@@ -1224,6 +1226,18 @@ def handler_groupchats(type, source, parameters):
 
     return reply(type, source, rep)
 
+def handler_html_parse(type, source, parameters):
+    http = urllib3.PoolManager()
+    header = {'User-Agent': 'Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.18'}
+    
+    url = parameters.strip()
+    
+    resp = http.request('GET', url, headers=header)
+    
+    bsp = BeautifulSoup(resp.data, 'html.parser')
+    
+    return reply(type, source, bsp.get_text())
+
 def handler_http_get(type, source, parameters):
     if not parameters:
         return reply(type, source, l('Invalid syntax!'))
@@ -1807,6 +1821,7 @@ register_join_handler(handler_user_join)
 register_leave_handler(handler_user_leave)
 register_presence_handler(handler_user_presence)
 
+register_command_handler(handler_html_parse, 'html', 20)
 register_command_handler(handler_http_get, 'http', 20)
 register_command_handler(handler_getrealjid, 'realjid', 20)
 register_command_handler(handler_total_in_muc, 'users', 10)

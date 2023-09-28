@@ -71,8 +71,11 @@ if not sys.stdin.isatty():
     sys.stdout = output_log
 
 #----------------------------------------------------------------------------
-    
+
 def main():
+    def signal_handler(signal, frame):    
+        raise KeyboardInterrupt
+
     try:
         cthr = threading.current_thread()
         
@@ -109,6 +112,11 @@ def main():
             load_locale('fatal-bot')
         else:
             init_clients_vars(cljds)
+        
+        modl = get_lst_cfg_param('modules_path')
+        
+        for mdp in modl:
+            sys.path.insert(1, mdp)
         
         load_plugins()
         
@@ -148,66 +156,56 @@ def main():
             prti = ports.pop(0)
             tlsi = tlss.pop(0)
             
+            init_fatal_event('client_event')
+
             call_in_sep_thr(cli + '/main', connect_client, cli, pswi, rsci, prti, tlsi)
         
-            sres = read_client_state()
+            wait_fatal_event('client_event')
         
-            if sres == 'brk':
-                if get_int_cfg_param('reconnect_forever'):
+            if not iscvs('client_state'): 
+                if is_param_seti('reconnect_forever'):
                     if cli:
                         cljds.append(cli)
                         cpsws.append(pswi)
-            elif sres == 'suc':
+            elif iscvs('client_state'):
                 set_fatal_var(cli, 'if_client_connected', 1)
 
-        if not get_os_uname() == 'freebsd' and get_int_cfg_param('show_console'):
-            sprint('\nPress Ctrl+D to hide console.\n')
-        
-        close_state_pipes()
+        os_uname = get_os_uname()
+
+        if not os_uname == 'freebsd' and is_param_seti('show_console'):
+            if os_uname == 'linux':
+                sprint('\nPress Ctrl+D to hide console.\n')
+            else:
+                sprint('\nPress Ctrl+Z and Return to hide console.\n')
         
         sprint("All ready, let's work! ;)\n")
-        
-        os_uname = get_os_uname()
         
         if readline:
             readline.set_completer(ftcompl)
         
         while True:
             try:                
-                if not get_int_cfg_param('show_console'):
-                    if os_uname == 'linux':
-                        signal.pause()
-
-                    break
+                if not is_param_seti('show_console'):
+                    iawt_fatal_event('suspend_term')
                 
                 if is_cycle_overload('console_cycle'):
                     break
                 
                 if os_uname == 'freebsd':
-                    break
+                    iawt_fatal_event('suspend_error')
                 
-                ires = fatal_console()
+                ires = fatal_console()    
                     
-                if ires == False and os_uname == 'linux':
-                    signal.pause()
-                    
-                    break
+                if ires == False:
+                    iawt_fatal_event('suspend_error')
+                else:
+                    continue
             except KeyboardInterrupt:
                 if not sys.stdin.isatty():
                     log_error('Error: Unresolved Ctrl+C operation!')
                     
                     continue
                 else:
-                    cpipeo = rmv_fatal_var('console_cpipeo')
-
-                    if cpipeo:
-                        sys.stdout.write('\r')
-                        os.close(cpipeo)
-                        
-                        dec_fatal_var('info', 'opnum')
-
-                        continue
-
                     sprint('\n\nThis operation stops fatal-bot, are you sure?\n')
 
                     try:

@@ -20,6 +20,7 @@
 __all__ = []
 
 from fatalapi import *
+from threading import Event
 
 def handler_ping(type, source, parameters):
     nick = parameters.strip()
@@ -70,7 +71,7 @@ def handler_ping_answ(coze, res, t0, type, source, param, sId):
         else:
             rep = l('Unknown error!')
 
-    return reply(type, source, rep)
+        return reply(type, source, rep)
     
 register_command_handler(handler_ping, 'ping')
 

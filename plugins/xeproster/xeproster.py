@@ -246,7 +246,11 @@ def handler_list_roster(type, source, parameters):
         groups = rostero.getGroups(jdi)
         show = rostero.getShow(jdi)
         status = rostero.getStatus(jdi)
+        resrcs = rostero.getResources(jdi)
         access = user_level(jdi)
+
+        if resrcs:
+            usrln = l('User: %s\n     \Group(s): %s\n     \Subscription: %s\n     \Status: %s\n     \Resources: %s\n     \Access: %s\n')
 
         if not is_ruser_prsnt(jdi):
             status = 'offline'
@@ -270,7 +274,12 @@ def handler_list_roster(type, source, parameters):
             grpln = l('None')
 
         subs = rostero.getSubscription(jdi)
-        usrlst.append(usrln % (user, grpln, subs, status, access))
+        
+        if resrcs:
+            resrcs = ', '.join(resrcs)
+            usrlst.append(usrln % (user, grpln, subs, status, resrcs, access))
+        else:    
+            usrlst.append(usrln % (user, grpln, subs, status, access))
 
     nusrls = get_num_list(usrlst)
 
@@ -279,7 +288,10 @@ def handler_list_roster(type, source, parameters):
     if type == 'public':
         reply(type, source, l('Look in private!'))
 
-    return reply('private', source, rep.strip())
+    if type in ('console', 'null', 'telegram'):
+        return reply(type, source, rep.strip())
+    else:
+        return reply('private', source, rep.strip())
 
 register_stage2_init(init_roster_subs_process)
 

@@ -75,7 +75,6 @@ def handler_python_ssh(type, source, parameters):
     return handler_python_sh(type, source, parameters)
 
 def handler_python_eval(type, source, parameters):
-    cid = get_client_id()
     gch = source[1]
     
     try:
@@ -87,7 +86,6 @@ def handler_python_eval(type, source, parameters):
     return reply(type, source, return_value.strip())
 
 def handler_python_exec(type, source, parameters):
-    cid = get_client_id()
     gch = source[1]
     
     if '\n' in parameters and parameters[-1] != '\n':

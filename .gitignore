@@ -2,6 +2,7 @@ dynamic/
 syslogs/
 logs/
 privlogs/
+__pycache__/
 *.pyc
 *.conf
 *.bak
