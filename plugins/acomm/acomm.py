@@ -32,10 +32,11 @@ def comp_acomm_rexps(gch):
         
         for acomm in qli:
             rid = '%s' % (acomm[0])
-            entity = acomm[1].replace('&quot;', '"')
-            exp = acomm[2].replace('&quot;', '"')
-            command = acomm[3].replace('&quot;', '"')
-            params = acomm[4].replace('&quot;', "'")
+            
+            entity = acomm[1]
+            exp = acomm[2]
+            command = acomm[3]
+            params = acomm[4]
             
             try:
                 if not entity == 'cvar':
@@ -94,7 +95,21 @@ def get_acomm_rules(gch, entity):
     return qres
 
 def set_acomm_rule(gch, entity, exp, command, params=''):
-    sql = '''INSERT INTO acomm (entity, exp, command, params) VALUES ("%s", "%s", "%s", "%s");''' % (entity.strip(), exp.strip(), command.strip(), params.strip())
+    sql = '''INSERT INTO acomm (entity, exp, command, params) VALUES ("%s", %a, "%s", %b);'''
+    
+    if exp.count('"'):
+        sql = sql.replace('%a', "'%s'")
+    else:
+        sql = sql.replace('%a', '"%s"')
+    
+    if params.count('"'):
+        sql = sql.replace('%b', "'%s'")
+    else:
+        sql = sql.replace('%b', '"%s"')
+          
+    print(sql)
+
+    sql = sql % (entity.strip(), exp.strip(), command.strip(), params.strip())
     
     cid = get_client_id()
     
@@ -446,7 +461,7 @@ def handler_acomm_control(type, source, parameters):
         res = get_all_rules(groupchat)
             
         if res:
-            rlst = ['%s: %s = %s %s' % (rli[1], rli[2], rli[3], rli[4].replace('&quot;',"'")) for rli in res]
+            rlst = ['%s: %s := %s %s' % (rli[1], rli[2], rli[3], rli[4]) for rli in res]
             nrl = get_num_list(rlst)
             rep = l('List of auto-command rules (total: %s):\n\n%s') % (len(nrl), '\n'.join(nrl))
             

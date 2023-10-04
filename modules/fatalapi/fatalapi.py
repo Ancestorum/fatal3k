@@ -1091,7 +1091,7 @@ def parse_cmd_params(params):
         fgroup = splp[0].strip()
         return fgroup, sgroup, tgroup
     elif not splp[0] and splp[1]:
-        ssplp = safe_split(splp[1], '=')
+        ssplp = safe_split(splp[1], ':=')
         
         if ssplp[0] and not ssplp[1]:
             sgroup = ssplp[0].strip()
@@ -1108,7 +1108,7 @@ def parse_cmd_params(params):
     elif splp[0] and splp[1]:
         fgroup = splp[0].strip()
         
-        ssplp = safe_split(splp[1], '=')
+        ssplp = safe_split(splp[1], ':=')
         
         if ssplp[0] and not ssplp[1]:
             sgroup = ssplp[0].strip()
