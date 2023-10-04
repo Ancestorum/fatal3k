@@ -94,12 +94,7 @@ def get_acomm_rules(gch, entity):
     return qres
 
 def set_acomm_rule(gch, entity, exp, command, params=''):
-    entity = entity.replace('"', '&quot;')
-    exp = exp.replace('"', '&quot;')
-    command = command.replace('"', '&quot;')
-    params = params.replace("'", '&quot;')
-    
-    sql = "INSERT INTO acomm (entity, exp, command, params) VALUES ('%s', '%s', '%s', '%s');" % (entity.strip(), exp.strip(), command.strip(), params.strip())
+    sql = '''INSERT INTO acomm (entity, exp, command, params) VALUES ("%s", "%s", "%s", "%s");''' % (entity.strip(), exp.strip(), command.strip(), params.strip())
     
     cid = get_client_id()
     
