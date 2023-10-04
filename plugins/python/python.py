@@ -81,7 +81,7 @@ def handler_python_eval(type, source, parameters):
         result = eval(parameters)
         return_value = '%s' % (result)
         set_fatal_var(cid, 'eval_result', result)
-    except:
+    except Exception:
         return_value = '%s - %s.' % (sys.exc_info()[0], sys.exc_info()[1])
     return reply(type, source, return_value.strip())
 
@@ -92,8 +92,11 @@ def handler_python_exec(type, source, parameters):
         parameters += '\n'
     try:
         exec(str(parameters), globals())
+        
+        if type == 'null':
+            return reply(type, source, '')
         return reply(type, source, l('Executed!'))
-    except:
+    except Exception:
         rep = '%s - %s' % (sys.exc_info()[0], sys.exc_info()[1])
         return reply(type, source, rep.strip())
 

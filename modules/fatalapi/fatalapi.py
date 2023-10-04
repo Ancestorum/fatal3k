@@ -226,6 +226,9 @@ def _app_file(filename, data):
     except Exception:
         log_exc_error()
 
+def tms_to_str(tmstm=time.time(), pat='%d.%m.%Y/%H:%M:%S'):
+    return time.strftime(pat, time.localtime(tmstm))
+
 def log_null_cmdr(data, file='syslogs/ncmdr.log'):
     stm = time.time()
     
@@ -234,14 +237,14 @@ def log_null_cmdr(data, file='syslogs/ncmdr.log'):
     stim = sptl[1]
     stim = stim[:3]
 
-    stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S.', time.localtime(stm))
+    stz_time = '[%s.' % (tms_to_str())
     stz_time = '%s%s]: '% (stz_time, stim) 
     _app_file(file, '%s%s\n' % (stz_time, data))
     return '%s%s\n' % (stz_time, data)
 
 def log_exc_error(file='syslogs/error.log'):
     exc_err = traceback.format_exc()
-    exc_time = time.strftime('[%d.%m.%Y/%H:%M:%S]: ', time.localtime(time.time()))
+    exc_time = '[%s]: ' % (tms_to_str())
     _app_file(file, '%s%s\n' % (exc_time, exc_err))
     
     if is_var_set('cle'):
@@ -250,7 +253,7 @@ def log_exc_error(file='syslogs/error.log'):
     return '%s%s' % (exc_time, exc_err)
 
 def log_error(err, file='syslogs/error.log'):
-    err_time = time.strftime('[%d.%m.%Y/%H:%M:%S]: ', time.localtime(time.time()))
+    err_time = '[%s]: ' % (tms_to_str())
     _app_file(file, '%s%s\n' % (err_time, err))
     
     if is_var_set('cle'):
@@ -259,12 +262,12 @@ def log_error(err, file='syslogs/error.log'):
     return '%s%s\n' % (err_time, err)
 
 def log_raw_stnzs(stanza, file='syslogs/xmpp.log'):
-    stz_time = time.strftime('[%d.%m.%Y/%H:%M:%S]: ', time.localtime(time.time()))
+    stz_time = '[%s]: ' % (tms_to_str())
     _app_file(file, '\n%s%s\n' % (stz_time, stanza))
     return '%s%s\n' % (stz_time, stanza)
 
 def log_cmd_run(cmd, params, guser, user, file='syslogs/cmdruns.log'):
-    run_time = time.strftime('[%d.%m.%Y/%H:%M:%S]', time.localtime(time.time()))
+    run_time = '[%s]' % (tms_to_str())
     
     if len(params) > 255:
         params = '%s [...]' % (params[:254])
@@ -279,7 +282,7 @@ def log_cmd_run(cmd, params, guser, user, file='syslogs/cmdruns.log'):
     return '%s\n' % (comp_str)
 
 def log_ddos_act(guser, user, status, file='syslogs/ddos.log'):
-    run_time = time.strftime('[%d.%m.%Y/%H:%M:%S]', time.localtime(time.time()))
+    run_time = '[%s]' % (tms_to_str())
     
     if guser:
         comp_str = '%s<%s>(%s): %s' % (run_time, guser, user, status)
@@ -1778,7 +1781,9 @@ def _get_pl_body(plfile):
         return ''
 
 def extr_nested_cmd(expr):
-    pat = '%{1,1}[a-zа-я]{1,}:{2,2}'
+    cn = gcp('comm_nested', '#')
+    
+    pat = '%s{1,1}[a-zа-я]{1,}:{2,2}' % (cn)
     sts = []
     
     mit = re.finditer(pat, expr)
@@ -1789,7 +1794,7 @@ def extr_nested_cmd(expr):
     for s in sts:
         si = s + 1
         
-        fe = expr[si:].find('%') + si
+        fe = expr[si:].find(cn) + si
         
         if fe in sts:
             continue
@@ -1798,8 +1803,10 @@ def extr_nested_cmd(expr):
     return []
 
 def rep_nested_cmds(type, source, params):
-    if not (params.count('%') % 2) and params.count('%'):
-        frex = '%{1,1}[a-zа-я]{1,}%{1,1}'
+    cn = gcp('comm_nested', '#')
+    
+    if not (params.count(cn) % 2) and params.count(cn):
+        frex = '%s{1,1}[a-zа-я]{1,}%s{1,1}' % (cn, cn)
         
         fcmds = re.findall(frex, params)
         
@@ -1812,7 +1819,7 @@ def rep_nested_cmds(type, source, params):
             fcmd = fcmds[0]
             
             if fcmd.count('::'):
-                spc = fcmd.replace('%', '')
+                spc = fcmd.replace(cn, '')
                 spc = safe_split(spc, '::')
                 
                 com = spc[0]
@@ -1825,9 +1832,6 @@ def rep_nested_cmds(type, source, params):
                 
                 if cnm in cmdl:
                     if check_access(type, source, cnm):
-                        if par.count('#'):
-                            par = par.replace('#', '%')
-                    
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
                         res = str(cmd_hnd(type, source, par))
                     
@@ -1837,7 +1841,7 @@ def rep_nested_cmds(type, source, params):
                 else:
                     return params
             else:
-                spc = fcmd.replace('%', '')
+                spc = fcmd.replace(cn, '')
                 com = spc
                 
                 cnm = get_real_cmd_name(com)

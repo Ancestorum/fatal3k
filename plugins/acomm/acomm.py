@@ -280,7 +280,8 @@ def check_cvar_val(groupchat, rexp, comm, params):
         source = [gch_jid, groupchat, '']
         
         try:
-            rec = rexp.count('%')
+            cn = gcp('comm_nested', '#')
+            rec = rexp.count(cn)
 
             if (rec // 2) >= 1:
                 nval = rep_nested_cmds('null', source, rexp)
@@ -420,7 +421,8 @@ def handler_acomm_control(type, source, parameters):
 
             if entity == 'cvar':
                 try:
-                    rec = rexp.count('%')
+                    cn = gcp('comm_nested', '#')
+                    rec = rexp.count(cn)
 
                     if (rec // 2) >= 1:
                         cvar = rep_nested_cmds('null', source, rexp)

@@ -85,6 +85,7 @@ shell_allowed = all
 # Command prefix. For example: . or * or something you like
 #----------------------------------------------------------
 comm_prefix = .
+comm_nested = #
 
 # List of disabled fatal plugins
 # Uncomment and specify it if you want to disable some plugins
