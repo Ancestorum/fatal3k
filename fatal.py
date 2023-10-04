@@ -207,6 +207,8 @@ def main():
                     continue
                 else:
                     sprint('\n\nThis operation stops fatal-bot, are you sure?\n')
+                    
+                    answ = ''
 
                     try:
                         answ = input('(Y/n): ')

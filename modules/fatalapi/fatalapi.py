@@ -302,7 +302,7 @@ def _md5hash(plbody):
 
 def _sha1hash(text):
     sha1s = hashlib.sha1()
-    sha1s.update(text)
+    sha1s.update(text.encode())
     return sha1s.hexdigest()
 
 def _get_core_body():
@@ -1160,7 +1160,7 @@ def sqlquery(dbpath, query):
             
             return result
         except db.Error as e:
-            log_error('SQLite3 error (%s) ---> %s' % (dbpath, e.args[0]))
+            log_error('SQLite3 error (%s) [%s] ---> %s' % (dbpath, query, e.args[0]))
             
             if cursor:
                cursor.close()
@@ -1174,10 +1174,10 @@ def sqlquery(dbpath, query):
         
 def core_md5(path):
     try:
-        fp = file(path)
+        fp = open(path, 'r')
         ccbody = fp.read()
         fp.close()
-        return _md5hash(ccbody)
+        return _md5hash(ccbody.encode())
     except Exception:
         return ''
 
@@ -1777,22 +1777,36 @@ def _get_pl_body(plfile):
     else:
         return ''
 
+def extr_nested_cmd(expr):
+    pat = '%{1,1}[a-zа-я]{1,}:{2,2}'
+    sts = []
+    
+    mit = re.finditer(pat, expr)
+    
+    for oi in mit:
+        sts.append(oi.start())
+   
+    for s in sts:
+        si = s + 1
+        
+        fe = expr[si:].find('%') + si
+        
+        if fe in sts:
+            continue
+        else:
+            return [expr[s:fe+1]]
+    return []
+
 def rep_nested_cmds(type, source, params):
     if not (params.count('%') % 2) and params.count('%'):
         frex = '%{1,1}[a-zа-я]{1,}%{1,1}'
-        srex = '%{1,1}[a-zа-я]{1,}:{2,2}[a-zA-zа-яА-я0-9\'"]{1,}.*[^%]%{1,1}'
-        trex = '%{1,1}[a-zа-я]{1,}[a-zA-ZА-Яа-я0-9\'"]{1,}\w.[^%]{0,}%{1,1}'
         
         fcmds = re.findall(frex, params)
         
         if not fcmds:
-            fcmds = re.findall(srex, params)
+            fcmds = extr_nested_cmd(params)
         
         cmdl = get_list_fatal_var('command_handlers')
-        
-        if fcmds:
-            if fcmds[0].count('%') >= 4:
-                fcmds = re.findall(trex, params)
         
         if fcmds:
             fcmd = fcmds[0]
@@ -1817,7 +1831,7 @@ def rep_nested_cmds(type, source, params):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
                         res = str(cmd_hnd(type, source, par))
                     
-                        params = params.replace(fcmd, res)
+                        params = params.replace(fcmd, res, 1)
                     else:
                         return params
                 else:
@@ -1836,7 +1850,7 @@ def rep_nested_cmds(type, source, params):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
                         res = str(cmd_hnd(type, source, ''))
                         
-                        params = params.replace(fcmd, res)
+                        params = params.replace(fcmd, res, 1)
                     else:
                         return params
                 else:
@@ -2144,8 +2158,7 @@ def rmv_cmd_name(aname=''):
     if not aname:
         sql = 'DELETE FROM cmdnames;'
     else:
-        aname = aname.replace('"', '&quot;')
-        sql = "DELETE FROM cmdnames WHERE aname='%s';" % (aname)
+        sql = '''DELETE FROM cmdnames WHERE aname='%s';''' % (aname)
     
     qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
     
@@ -2154,9 +2167,7 @@ def rmv_cmd_name(aname=''):
 def cmd_name_exists(real_cmd):
     cid = get_client_id()
     
-    real_cmd = real_cmd.replace('"', '&quot;')
-
-    sql = "SELECT * FROM cmdnames WHERE iname='%s';" % (real_cmd)
+    sql = '''SELECT * FROM cmdnames WHERE iname='%s';''' % (real_cmd)
     qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
     
     if qres:
@@ -2167,9 +2178,7 @@ def cmd_name_exists(real_cmd):
 def get_real_cmd_name(cmdname):
     cid = get_client_id()
     
-    cmdname = cmdname.replace('"', '&quot;')
-
-    sql = "SELECT iname FROM cmdnames WHERE aname='%s';" % (cmdname)
+    sql = '''SELECT iname FROM cmdnames WHERE aname='%s';''' % (cmdname)
     qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
     
     if qres:
@@ -2180,10 +2189,8 @@ def get_real_cmd_name(cmdname):
         
 def get_cmd_name(real_cmd):
     cid = get_client_id()
-    
-    real_cmd = real_cmd.replace('"', '&quot;')
 
-    sql = "SELECT aname FROM cmdnames WHERE iname='%s';" % (real_cmd)
+    sql = '''SELECT aname FROM cmdnames WHERE iname='%s';''' % (real_cmd)
     qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
     
     if qres:
@@ -2206,14 +2213,12 @@ def get_cmd_name_list():
 def set_cmd_name(real_cmd, aname):
     cid = get_client_id()
     
-    real_cmd = real_cmd.replace('"', '&quot;')
-    
     if not cmd_name_exists(real_cmd):
-        sql = "INSERT INTO cmdnames (iname, aname) VALUES ('%s', '%s');" % (real_cmd.strip(), aname.strip())
+        sql = '''INSERT INTO cmdnames (iname, aname) VALUES ('%s', '%s');''' % (real_cmd.strip(), aname.strip())
     elif get_cmd_name(aname):
-        sql = 'DELETE FROM cmdnames WHERE iname="%s";' % (real_cmd.strip())
+        sql = '''DELETE FROM cmdnames WHERE iname='%s';''' % (real_cmd.strip())
     else:
-        sql = "UPDATE cmdnames SET \"aname\"='%s' WHERE iname='%s';" % (aname.strip(), real_cmd.strip())
+        sql = '''UPDATE cmdnames SET aname='%s' WHERE iname='%s';''' % (aname.strip(), real_cmd.strip())
     
     qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
     
@@ -2224,7 +2229,7 @@ def cmd_access_exists(cmd):
     
     cmd = cmd.replace('"', '&quot;')
 
-    sql = "SELECT * FROM cmdaccess WHERE cmd='%s';" % (cmd)
+    sql = '''SELECT * FROM cmdaccess WHERE cmd='%s';''' % (cmd)
     qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql)
     
     if qres:
@@ -2235,9 +2240,7 @@ def cmd_access_exists(cmd):
 def get_cmd_access(cmd):
     cid = get_client_id()
     
-    cmd = cmd.replace('"', '&quot;')
-
-    sql = "SELECT acc FROM cmdaccess WHERE cmd='%s';" % (cmd)
+    sql = '''SELECT acc FROM cmdaccess WHERE cmd='%s';''' % (cmd)
     qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql)
     
     if qres:
@@ -2249,12 +2252,10 @@ def get_cmd_access(cmd):
 def set_cmd_access(cmd, access):
     cid = get_client_id()
     
-    cmd = cmd.replace('"', '&quot;')
-    
     if not cmd_access_exists(cmd):
-        sql = "INSERT INTO cmdaccess (cmd, acc) VALUES ('%s', '%s');" % (cmd.strip(), access.strip())
+        sql = '''INSERT INTO cmdaccess (cmd, acc) VALUES ('%s', '%s');''' % (cmd.strip(), access.strip())
     else:
-        sql = "UPDATE cmdaccess SET \"acc\"='%s' WHERE cmd='%s';" % (access.strip(), cmd.strip())
+        sql = '''UPDATE cmdaccess SET acc='%s' WHERE cmd='%s';''' % (access.strip(), cmd.strip())
     
     qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql)
     

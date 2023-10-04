@@ -84,12 +84,12 @@ def log_thread(thro, file='syslogs/threads.log'):
 
 def _md5hash(plbody):
     md5s = hashlib.md5()
-    md5s.update(plbody)
+    md5s.update(plbody.encode())
     return md5s.hexdigest()
 
 def _eval_md5(path):
     try:
-        fp = file(path)
+        fp = open(path, 'r')
         ccbody = fp.read()
         fp.close()
         return _md5hash(ccbody)

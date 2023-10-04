@@ -365,7 +365,9 @@ def get_rem_nick(gch, jid):
  
 def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=False, mod=0):
     cid = get_client_id()
-    mess = mess.replace(r'"', r'&quot;')
+    
+    if mess.count("'"):
+        mess = mess.replace("'", '"')
     
     sql = '''INSERT INTO reminds (nick, jid, rtime, ctms, dsts, mess, status, timerid, ctask, mod) 
               VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');''' % (nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle), mod)
