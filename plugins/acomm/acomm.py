@@ -107,8 +107,6 @@ def set_acomm_rule(gch, entity, exp, command, params=''):
     else:
         sql = sql.replace('%b', '"%s"')
           
-    print(sql)
-
     sql = sql % (entity.strip(), exp.strip(), command.strip(), params.strip())
     
     cid = get_client_id()
