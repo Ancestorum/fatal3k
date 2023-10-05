@@ -95,23 +95,13 @@ def get_acomm_rules(gch, entity):
     return qres
 
 def set_acomm_rule(gch, entity, exp, command, params=''):
-    sql = '''INSERT INTO acomm (entity, exp, command, params) VALUES ("%s", %a, "%s", %b);'''
-    
-    if exp.count('"'):
-        sql = sql.replace('%a', "'%s'")
-    else:
-        sql = sql.replace('%a', '"%s"')
-    
-    if params.count('"'):
-        sql = sql.replace('%b', "'%s'")
-    else:
-        sql = sql.replace('%b', '"%s"')
-          
-    sql = sql % (entity.strip(), exp.strip(), command.strip(), params.strip())
+    sql = '''INSERT INTO acomm (entity, exp, command, params) VALUES (?, ?, ?, ?);'''
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql)
+    args = entity.strip(), exp.strip(), command.strip(), params.strip()
+    
+    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql, *args)
 
     return qres
 

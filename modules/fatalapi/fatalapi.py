@@ -18,6 +18,7 @@
 
 from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime as dt
 import os
 import sys
 import mmap
@@ -228,6 +229,15 @@ def _app_file(filename, data):
 
 def tms_to_str(tmstm=time.time(), pat='%d.%m.%Y/%H:%M:%S'):
     return time.strftime(pat, time.localtime(tmstm))
+
+def iso_to_tms(isof):
+    try:
+        return dt.fromisoformat(isof).timestamp()
+    except ValueError:
+        try:
+            return dt.fromisoformat(isof[:-1]).timestamp()
+        except Exception:
+            return time.time()
 
 def log_null_cmdr(data, file='syslogs/ncmdr.log'):
     stm = time.time()
@@ -1135,7 +1145,7 @@ def is_db_exists(dbpath):
         return True
     return False
 
-def sqlquery(dbpath, query):
+def sqlquery(dbpath, query, *args):
     if query:
         cursor, connection = None, None
         
@@ -1154,7 +1164,10 @@ def sqlquery(dbpath, query):
             if query.count(';') > 1:
                 cursor.executescript(query)
             else:
-                cursor.execute(query)
+                if args:
+                    cursor.execute(query, args)
+                else:
+                    cursor.execute(query)
             
             result = cursor.fetchall()
             connection.commit()

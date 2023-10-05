@@ -82,6 +82,7 @@ def handler_python_eval(type, source, parameters):
         return_value = '%s' % (result)
         set_fatal_var(cid, 'eval_result', result)
     except Exception:
+        log_exc_error()
         return_value = '%s - %s.' % (sys.exc_info()[0], sys.exc_info()[1])
     return reply(type, source, return_value.strip())
 
