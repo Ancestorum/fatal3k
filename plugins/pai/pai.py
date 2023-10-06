@@ -3,8 +3,8 @@
 #  fatal pseudo AI plugin v1.2
 #  pai plugin
 
-#  Idea from (C) 2009, Pavel Vishnevsky aka awel
-#  Copyright © 2009-2013 Ancestors Soft
+#  Idea from © 2009, Pavel Vishnevsky aka awel
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -146,9 +146,9 @@ def save_phrase(phrase, gch):
     cid = get_client_id()
     
     phrase = phrase.replace(r'"', r'&quot;')
-    sql = "INSERT INTO phrases (phrase) VALUES ('%s');" % (phrase.strip())
+    sql = "INSERT INTO phrases (phrase) VALUES (?);" 
     
-    rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
+    rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase.strip())
     
     return rep
 
@@ -156,29 +156,29 @@ def del_phrase(phrase_id, gch):
     cid = get_client_id()
     
     if isinstance(phrase_id, int):
-        sql = "DELETE FROM phrases WHERE id='%s';" % (phrase_id)
+        sql = "DELETE FROM phrases WHERE id=?;"
         
-        rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
+        rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase_id)
         
         return rep
     elif phrase_id.isdigit():
-        sql = "DELETE FROM phrases WHERE id='%s';" % (phrase_id)
+        sql = "DELETE FROM phrases WHERE id=?;"
         
-        rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
+        rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase_id)
         
         return rep
     else:
-        sql = "SELECT COUNT(id) FROM phrases WHERE phrase LIKE '%%%s%%';" % (phrase_id)
+        sql = "SELECT COUNT(id) FROM phrases WHERE phrase LIKE %%?%%;"
         
-        qres = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase_id)
         
         if qres:
             cnt = qres[0][0]
             
             if cnt:
-                sql = "DELETE FROM phrases WHERE phrase LIKE '%%%s%%';" % (phrase_id)
+                sql = "DELETE FROM phrases WHERE phrase LIKE '%%?%%';"
                 
-                sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
+                sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase_id)
                 
             return cnt
         else:
@@ -199,8 +199,8 @@ def get_reply(phrase, gch):
 
     cid = get_client_id()
 
-    sql = "SELECT * FROM phrases WHERE phrase LIKE '%%%s%%' ORDER BY RANDOM() LIMIT 1;" % (keyword)
-    rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
+    sql = "SELECT * FROM phrases WHERE phrase LIKE '%%?%%' ORDER BY RANDOM() LIMIT 1;"
+    rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, keyword)
     
     if rep:
         rep = list(rep[0])
@@ -208,7 +208,6 @@ def get_reply(phrase, gch):
         if len(rep) >= 2:
             rep_phrase = rep[1]
             
-        rep_phrase = rep_phrase.replace(r'&quot;', r'"')
         set_fatal_var(cid, 'last_phrase_id', gch, rep[0])
     return rep_phrase.strip()
 
@@ -219,7 +218,7 @@ def get_pai_state(gch):
         sql = 'CREATE TABLE phrases (id INTEGER PRIMARY KEY AUTOINCREMENT, phrase TEXT NOT NULL, UNIQUE(phrase));'
         sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
         
-        sql = 'CREATE UNIQUE INDEX iphrases ON phrases (id,phrase);'
+        sql = 'CREATE UNIQUE INDEX iphrases ON phrases (id, phrase);'
         sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql)
 
     if not param_exists(gch, 'pai_on'):

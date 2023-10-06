@@ -1,4 +1,4 @@
-invite.ccat = muc, all, *
+invite.ccat = *, all, muc, xepinvite
 invite.desc = Приглашет заданного пользователя в конференцию.
 invite.synt = %prefix%invite <nick>|<jid> [:<причина>]
 invite.exam = %prefix%invite guy

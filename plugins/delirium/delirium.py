@@ -4,7 +4,7 @@
 #  delirium_plugin.py
 
 #  Initial Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -21,31 +21,29 @@ __all__ = []
 from fatalapi import *
 
 def poke_phrase_exists(poke_phrase, gch=''):
-    poke_phrase = poke_phrase.replace('"', '&quot;')
-
-    sql = "SELECT * FROM pokes WHERE poke='%s';" % (poke_phrase)
+    sql = "SELECT * FROM pokes WHERE poke=?;"
 
     cid = get_client_id()
 
     if gch:
-        qres = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql, poke_phrase)
     else:
-        qres = sqlquery('static/pokes.db', sql)
+        qres = sqlquery('static/pokes.db', sql, poke_phrase)
     
     if qres:
         return True
     else:
         return False
 
-def get_poke_phrase(id, gch=''):
-    sql = "SELECT poke FROM pokes WHERE id='%d';" % (id)
+def get_poke_phrase(rid, gch=''):
+    sql = "SELECT poke FROM pokes WHERE id=?;"
     
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql, rid)
     else:
-        qres = sqlquery('static/pokes.db', sql)
+        qres = sqlquery('static/pokes.db', sql, rid)
     
     if qres:
         poke = qres[0][0]
@@ -82,22 +80,20 @@ def get_rnd_poke_phrase(gch=''):
         return ''
 
 def del_poke_phrase(poke_id, gch):
-    sql = "DELETE FROM pokes WHERE id='%d';" % (poke_id)
+    sql = "DELETE FROM pokes WHERE id=?;"
     
     cid = get_client_id()
     
-    rep = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql)
+    rep = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql, poke_id)
     
     return rep	
         
 def save_poke_phrase(poke_phrase, gch):
-    poke_phrase = poke_phrase.replace('"', '&quot;')
-    
-    sql = "INSERT INTO pokes(poke) VALUES ('%s');" % (poke_phrase.strip().encode('utf-8'))
+    sql = "INSERT INTO pokes(poke) VALUES (?);" 
     
     cid = get_client_id()
     
-    rep = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql)
+    rep = sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql, poke_phrase.strip())
     
     return rep
         
@@ -235,7 +231,10 @@ def get_pokes_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/pokes.db' % (cid, gch)):
-        sql = 'CREATE TABLE pokes (id INTEGER PRIMARY KEY AUTOINCREMENT, poke TEXT NOT NULL, UNIQUE(poke));'
+        sql = '''CREATE TABLE pokes(id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                                    poke TEXT NOT NULL, 
+                                    UNIQUE(poke));'''
+                                    
         sqlquery('dynamic/%s/%s/pokes.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX ipokes ON pokes (poke);'

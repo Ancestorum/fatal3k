@@ -1,4 +1,4 @@
-tld.ccat = *, all, info
+tld.ccat = *, all, info, fact
 tld.desc = Показывает нахождение домена первого уровня (географическое).
 tld.synt = %prefix%tld <название|сокращение>
 tld.exam = %prefix%tld ru

@@ -3,7 +3,7 @@
 #  fatal plugin
 #  acomm plugin
 
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -61,11 +61,11 @@ def comp_acomm_rexps(gch):
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'jid', jpts)
 
 def rmv_acomm_rule(gch, rid):
-    sql = "DELETE FROM acomm WHERE id='%s';" % (rid)
+    sql = "DELETE FROM acomm WHERE id=?;"
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql, rid)
 
     return qres
 
@@ -87,15 +87,15 @@ def get_all_rules(gch):
     return qres
 
 def get_acomm_rules(gch, entity):
-    sql = "SELECT exp, command, params FROM acomm WHERE entity='%s';" % (entity)
+    sql = "SELECT exp, command, params FROM acomm WHERE entity=?;"
     
     cid = get_client_id()
 
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql, entity)
     return qres
 
 def set_acomm_rule(gch, entity, exp, command, params=''):
-    sql = '''INSERT INTO acomm (entity, exp, command, params) VALUES (?, ?, ?, ?);'''
+    sql = "INSERT INTO acomm (entity, exp, command, params) VALUES (?, ?, ?, ?);"
     
     cid = get_client_id()
     
@@ -487,7 +487,12 @@ def init_acomm_db(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/acomm.db' % (cid, gch)):
-        sql = 'CREATE TABLE acomm (id INTEGER PRIMARY KEY AUTOINCREMENT, entity VARCHAR NOT NULL, exp VARCHAR NOT NULL, command VARCHAR NOT NULL, params VARCHAR);'
+        sql = '''CREATE TABLE acomm(id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    entity VARCHAR NOT NULL,
+                                    exp VARCHAR NOT NULL,
+                                    command VARCHAR NOT NULL,
+                                    params VARCHAR);'''
+                    
         sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql)
         
         sql = 'CREATE INDEX iacomm ON acomm (id);'

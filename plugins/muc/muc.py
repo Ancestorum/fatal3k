@@ -3,7 +3,7 @@
 #  fatal plugin
 #  muc plugin
 
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -96,13 +96,11 @@ def del_banned(gch, nick):
     if not nick:
         nick = ''
     
-    nick = nick.replace('"', '&quot;')
-    
-    sql = "DELETE FROM users WHERE nick='%s';" % (nick)
+    sql = "DELETE FROM users WHERE nick=?;"
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres == []:
         return True
@@ -130,12 +128,10 @@ def get_join_nick(gch, jid):
     return nick
     
 def get_muc_nick(gch, jid):
-    jid = jid.replace('"', '&quot;')
-    
     cid = get_client_id()
     
-    sql = "SELECT nick FROM users WHERE jid='%s' ORDER BY ujoin;" % (jid)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    sql = "SELECT nick FROM users WHERE jid=? ORDER BY ujoin;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, jid)
     
     if qres:
         nick = qres[-1][0]
@@ -143,10 +139,9 @@ def get_muc_nick(gch, jid):
 
 def get_muc_jid(gch, nick):
     cid = get_client_id()
-    
-    nick = nick.replace('"', '&quot;')
-    sql = "SELECT jid FROM users WHERE nick='%s';" % (nick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+
+    sql = "SELECT jid FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres:
         jid = qres[0][0]
@@ -339,17 +334,16 @@ def owner(groupchat, nick_jid, reason):
         return True
 
 def save_amuc(gch, amuc, exp, reason=''):
-    exp = exp.replace(r'"', r'&quot;')
-    reason = reason.replace(r'"', r'&quot;')
-    
     if amuc == 'akick' or amuc == 'aban':
-        sql = "INSERT INTO %s (exp,reason) VALUES ('%s','%s');" % (amuc, exp.strip(), reason.strip())
+        sql = "INSERT INTO %s (exp,reason) VALUES (?, ?);" % (amuc)
+        args = exp.strip(), reason.strip()
     else:
-        sql = "INSERT INTO %s (exp) VALUES ('%s');" % (amuc, exp.strip())
+        sql = "INSERT INTO %s (exp) VALUES (?);" % (amuc)
+        args = (exp.strip(),)
     
     cid = get_client_id()
     
-    rep = sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
+    rep = sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql, *args)
         
     return rep
     
@@ -365,11 +359,11 @@ def show_amuc(gch, amuc):
     return rep
 
 def del_amuc(gch, amuc, amucre):
-    sql = "DELETE FROM %s WHERE exp='%s';" % (amuc, amucre)
+    sql = "DELETE FROM %s WHERE exp=?;" % (amuc)
     
     cid = get_client_id()
     
-    rep = sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
+    rep = sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql, amucre)
         
     return rep
 
@@ -662,25 +656,25 @@ def get_muc_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/amuc.db' % (cid, gch)):
-        sql = 'CREATE TABLE avisitor (id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, UNIQUE (exp));'
+        sql = 'CREATE TABLE avisitor(id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, UNIQUE (exp));'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX iavisitor ON avisitor (exp);'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
 
-        sql = 'CREATE TABLE akick (id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, reason VARCHAR, UNIQUE (exp));'
+        sql = 'CREATE TABLE akick(id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, reason VARCHAR, UNIQUE (exp));'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX iakick ON akick (exp);'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
 
-        sql = 'CREATE TABLE amoderator (id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, UNIQUE (exp));'
+        sql = 'CREATE TABLE amoderator(id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, UNIQUE (exp));'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX iamoderator ON amoderator (exp);'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
 
-        sql = 'CREATE TABLE aban (id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, reason VARCHAR, UNIQUE (exp));'
+        sql = 'CREATE TABLE aban(id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR, reason VARCHAR, UNIQUE (exp));'
         sqlquery('dynamic/%s/%s/amuc.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX iaban ON aban (exp);'

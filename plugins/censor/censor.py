@@ -3,7 +3,7 @@
 #  fatal plugin
 #  censor plugin
 
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -65,14 +65,14 @@ def comp_censor_rexps(gch):
         set_fatal_var(cid, 'comp_censor_exp', gch, cpts)
 
 def rmv_censor_rule(gch, rid):
-    sql = "DELETE FROM censor WHERE id='%s';" % (rid)
+    sql = "DELETE FROM censor WHERE id=?;"
     
     cid = get_client_id()
     
     if gch: 
-        qres = sqlquery('dynamic/%s/%s/censor.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/censor.db' % (cid, gch), sql, rid)
     else:
-        qres = sqlquery('dynamic/%s/gcensor.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/gcensor.db' % (cid), sql, rid)
         
     return qres
 
@@ -101,17 +101,15 @@ def get_all_rules(gch=''):
     return qres
 
 def set_censor_rule(gch, exp, reason=''):
-    exp = exp.replace('"', '&quot;')
-    reason = reason.replace('"', '&quot;')
-    
-    sql = "INSERT INTO censor (exp, reason) VALUES ('%s', '%s');" % (exp.strip(), reason.strip())
+    sql = "INSERT INTO censor (exp, reason) VALUES (?, ?);"
+    args = exp.strip(), reason.strip()
     
     cid = get_client_id()
     
     if gch: 
-        qres = sqlquery('dynamic/%s/%s/censor.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/censor.db' % (cid, gch), sql, *args)
     else:
-        qres = sqlquery('dynamic/%s/gcensor.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/gcensor.db' % (cid), sql, *args)
 
     return qres
 
@@ -461,7 +459,10 @@ def init_censor_db(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/censor.db' % (cid, gch)):
-        sql = 'CREATE TABLE censor (id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR NOT NULL, reason VARCHAR);'
+        sql = '''CREATE TABLE censor(id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                     exp VARCHAR NOT NULL,
+                                     reason VARCHAR);'''
+                                     
         sqlquery('dynamic/%s/%s/censor.db' % (cid, gch), sql)
         
         sql = 'CREATE INDEX icensor ON censor (id);'
@@ -476,7 +477,10 @@ def init_gcensor_db():
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/gcensor.db' % (cid)):
-        sql = 'CREATE TABLE censor (id INTEGER PRIMARY KEY AUTOINCREMENT, exp VARCHAR NOT NULL, reason VARCHAR);'
+        sql = '''CREATE TABLE censor(id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                     exp VARCHAR NOT NULL, 
+                                     reason VARCHAR);'''
+                                     
         sqlquery('dynamic/%s/gcensor.db' % (cid), sql)
         
         sql = 'CREATE INDEX icensor ON censor (id);'

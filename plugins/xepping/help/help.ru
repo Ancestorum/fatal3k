@@ -1,4 +1,4 @@
-ping.ccat = info, muc, all, *
+ping.ccat = *, all, info, muc, xepping
 ping.desc = Пингует определенного пользователя или сервер.
 ping.synt = %prefix%ping [<nick>|<jid>|<server>]
 ping.exam = %prefix%ping

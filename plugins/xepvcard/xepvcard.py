@@ -6,7 +6,7 @@
 #  Initial Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
 #  Some portions of code © 2010 Quality <admin@qabber.ru>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ __all__ = []
 
 from fatalapi import *
 from muc import kick, ban, visitor, del_banned
+import base64
 
 def handler_vcardget(type, source, parameters):
     gch_jid = source[1]
@@ -161,11 +162,11 @@ def handler_vcardget_answ(coze, res, type, source, nick, sId):
                 if p.getName() == 'PHOTO':
                     for pc in p.getChildren():
                         if pc.getName() == 'BINVAL': 
-                            avlen = len(base64.decodestring(pc.getData()))
+                            avlen = len(base64.b64decode(pc.getData()))
                             avlkb = round(float(avlen) / 1024, 1)
-                            binval = '%s кБ.' % (avlkb)
+                            binval = l('%s kB.') % (avlkb)
                         
-                        if pc.getName() == 'TYPE': 
+                        if pc.getName() == 'TYPE':
                             typep = pc.getData().strip('/')
                         
             if not nick:

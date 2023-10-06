@@ -237,11 +237,9 @@ def create_quotes_table():
         sqlquery('static/pit_pages/borpit.db', sql)
 
 def add_bashorg_quote(idc, page, quote):
-    quote = quote.replace("'", '&quot;')
+    sql = "INSERT INTO quotes (page, id, quote) VALUES (?, ?, ?);"
 
-    sql = "INSERT INTO quotes (page, id, quote) VALUES ('%s', '%s', '%s');" % (page, idc, quote.strip())
-
-    qres = sqlquery('static/pit_pages/borpit.db', sql)
+    qres = sqlquery('static/pit_pages/borpit.db', sql, page, idc, quote.strip())
 
     if qres != '':
         return True

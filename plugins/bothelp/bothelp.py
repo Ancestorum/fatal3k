@@ -6,7 +6,7 @@
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
 #  Help Copyright © 2007 dimichxp <dimichxp@gmail.com>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -25,11 +25,11 @@ from fatalapi import *
 def rmv_help_info(cmd):
     cmd = cmd.replace('"', '&quot;')
     
-    sql = "DELETE FROM help WHERE command='%s';" % (cmd)
+    sql = "DELETE FROM help WHERE command=?;"
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/help.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/help.db' % (cid), sql, cmd)
     
     return qres
 
@@ -56,8 +56,8 @@ def help_info_exists(cmd):
 
     cid = get_client_id()
     
-    sql = "SELECT * FROM help WHERE command='%s';" % (cmd)
-    qres = sqlquery('dynamic/%s/help.db' % (cid), sql)
+    sql = "SELECT * FROM help WHERE command=?;"
+    qres = sqlquery('dynamic/%s/help.db' % (cid), sql, cmd)
     
     if qres:
         return True
@@ -68,14 +68,12 @@ def get_help_info(cmd, toi='desc'):
 
     if not toi in ['ccat', 'desc', 'synt', 'exam']:
         toi = 'desc'
-    
-    cmd = cmd.replace('"', '&quot;')
 
-    sql = "SELECT %s FROM help WHERE command='%s';" % (toi, cmd)
+    sql = "SELECT %s FROM help WHERE command=?;" % (toi)
     
     cid = get_client_id()
     
-    qdyn = sqlquery('dynamic/%s/help.db' % (cid), sql)
+    qdyn = sqlquery('dynamic/%s/help.db' % (cid), sql, cmd)
     qs = get_help_sect(cmd, toi)
 
     if qdyn and qs:
@@ -130,17 +128,16 @@ def set_help_info(cmd, info, toi='desc'):
     if not toi in ['ccat', 'desc', 'synt', 'exam']:
         toi = 'desc'
     
-    cmd = cmd.replace('"', '&quot;')
-    info = info.replace('"', '&quot;')
-    
     if not help_info_exists(cmd):
-        sql = "INSERT INTO help (command, %s) VALUES ('%s', '%s');" % (toi.strip(), cmd.strip(), info.strip())
+        sql = "INSERT INTO help (command, %s) VALUES (?, ?);" % (toi.strip())
+        args = cmd.strip(), info.strip()
     else:
-        sql = "UPDATE help SET \"%s\"='%s' WHERE command='%s';" % (toi.strip(), info.strip(), cmd.strip())
+        sql = "UPDATE help SET %s=? WHERE command=?;" % (toi.strip())
+        args = info.strip(), cmd.strip()
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/help.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/help.db' % (cid), sql, *args)
     
     return qres
 
@@ -778,7 +775,11 @@ def init_help_db():
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/help.db' % (cid)):
-        sql = 'CREATE TABLE help (command VARCHAR NOT NULL, ccat VARCHAR, desc VARCHAR, synt VARCHAR, exam VARCHAR, UNIQUE(command));'
+        sql = '''CREATE TABLE help(command VARCHAR NOT NULL,
+                                   ccat VARCHAR, desc VARCHAR,
+                                   synt VARCHAR, exam VARCHAR,
+                                   UNIQUE(command));'''
+                                    
         sqlquery('dynamic/%s/help.db' % (cid), sql)
         
         sql = 'CREATE UNIQUE INDEX ihelp ON help (command);'

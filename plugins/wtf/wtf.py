@@ -3,7 +3,7 @@
 #  fatal plugin
 #  wtf plugin
 
-#  Copyright © 2009-2016 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -76,8 +76,8 @@ def check_stream(gch, nick, to, sid):
 def check_reader_id(gch, reader_id):
     cid = get_client_id()
     
-    sql = "SELECT * FROM readers WHERE rid='%s';" % (reader_id)
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    sql = "SELECT * FROM readers WHERE rid=?;"
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, reader_id)
     
     if qres:
         return False
@@ -87,8 +87,8 @@ def check_reader_id(gch, reader_id):
 def check_entity(gch, entity):
     cid = get_client_id()
     
-    sql = "SELECT entity FROM defs WHERE entity='%s';" % (entity)
-    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql)
+    sql = "SELECT entity FROM defs WHERE entity=?;"
+    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, entity)
     
     if qres:
         return True
@@ -98,8 +98,8 @@ def check_entity(gch, entity):
 def chk_rdr_ent(gch, entity, reader_id):
     cid = get_client_id()
     
-    sql = "SELECT entity FROM %s WHERE entity='%s';" % (reader_id, entity)
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    sql = "SELECT entity FROM %s WHERE entity=?;" % (reader_id)
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity)
     
     if qres:
         return True
@@ -153,11 +153,11 @@ def clr_rdr_blist(gch, reader_id):
     return qres
 
 def del_exp_wtf(gch, entity, reader_id):
-    sql = "DELETE FROM %s WHERE entity='%s';" % (reader_id, entity)
+    sql = "DELETE FROM %s WHERE entity=?;" % (reader_id)
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity)
     
     return qres
 
@@ -186,8 +186,8 @@ def show_opened(gch, opli):
 def get_rdr_wtf(gch, reader_id, entity):
     cid = get_client_id()
     
-    sql = "SELECT * FROM %s WHERE entity='%s';" % (reader_id, entity)
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    sql = "SELECT * FROM %s WHERE entity=?;" % (reader_id)
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity)
     
     if qres:
         return qres[0]
@@ -197,8 +197,8 @@ def get_rdr_wtf(gch, reader_id, entity):
 def get_reader_id(gch, jid):
     cid = get_client_id()
     
-    sql = "SELECT rid FROM readers WHERE jid='%s';" % (jid)
-    reader_id = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    sql = "SELECT rid FROM readers WHERE jid=?;"
+    reader_id = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, jid)
     
     if reader_id:
         return reader_id[0][0]
@@ -209,44 +209,54 @@ def save_pos(gch, jid, entity, last, part, spart, qop, reader_id=''):
     cid = get_client_id()
     
     if not reader_id:
-        reader_id = 'reader%s' % (random.randrange(10000000, 99999999))
+        reader_id = 'reader%s' % (rand10())
         chk_rid = check_reader_id(gch, reader_id)
         
         while not chk_rid:
-            reader_id = 'reader%s' % (random.randrange(10000000, 99999999))
+            reader_id = 'reader%s' % (rand10())
             chk_rid = check_reader_id(gch, reader_id)
         
-        sql = "INSERT INTO readers (jid,rid) VALUES ('%s','%s');" % (jid, reader_id)
+        sql = "INSERT INTO readers (jid, rid) VALUES (?, ?);"
         
-        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, jid, reader_id)
         
-        sql = 'CREATE TABLE %s (entity VARCHAR NOT NULL, part VARCHAR NOT NULL, spart VARCHAR NOT NULL, qop VARCHAR NOT NULL, last VARCHAR NOT NULL, UNIQUE (entity));' % (reader_id)
-        
-        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
-        
-        sql = 'CREATE UNIQUE INDEX i%s ON %s (entity);' % (reader_id, reader_id)
-        sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
-    
-    sql = "INSERT INTO %s (entity,part,spart,qop,last) VALUES ('%s','%s','%s','%s','%s');" % (reader_id, entity, part, spart, qop, last)
-    
-    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
-    
-    if res == '':
-        upd_sql = "UPDATE %s SET \"part\"='%s', \"spart\"='%s', \"qop\"='%s', \"last\"='%s' WHERE entity='%s';" % (reader_id, part, spart, qop, last, entity)
-        
-        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), upd_sql)
-    
-    if res == '':
-        sql = 'CREATE TABLE %s (entity VARCHAR NOT NULL, part VARCHAR NOT NULL, spart VARCHAR NOT NULL, qop VARCHAR NOT NULL, last VARCHAR NOT NULL, UNIQUE (entity));' % (reader_id)
+        sql = '''CREATE TABLE %s(entity VARCHAR NOT NULL, 
+                                 part VARCHAR NOT NULL, 
+                                 spart VARCHAR NOT NULL, 
+                                 qop VARCHAR NOT NULL, 
+                                 last VARCHAR NOT NULL, 
+                                 UNIQUE (entity));''' % (reader_id)
         
         res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX i%s ON %s (entity);' % (reader_id, reader_id)
         sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    
+    sql = "INSERT INTO %s (entity, part, spart, qop, last) VALUES (?, ?, ?, ?, ?);" % (reader_id)
+    
+    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity, part, spart, qop, last)
+    
+    if res == '':
+        upd_sql = "UPDATE %s SET part=?, spart=?, qop=?, last=? WHERE entity=?;" % (reader_id)
         
-        sql = "INSERT INTO %s (entity,part,spart,qop,last) VALUES ('%s','%s','%s','%s','%s');" % (reader_id, entity, part, spart, qop, last)
+        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), upd_sql, part, spart, qop, last, entity)
+    
+    if res == '':
+        sql = '''CREATE TABLE %s(entity VARCHAR NOT NULL, 
+                                 part VARCHAR NOT NULL, 
+                                 spart VARCHAR NOT NULL, 
+                                 qop VARCHAR NOT NULL, 
+                                 last VARCHAR NOT NULL, 
+                                 UNIQUE (entity));''' % (reader_id)
         
         res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+        
+        sql = 'CREATE UNIQUE INDEX i%s ON %s (entity);' % (reader_id, reader_id)
+        sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+        
+        sql = "INSERT INTO %s (entity, part, spart, qop, last) VALUES (?, ?, ?, ?, ?);" % (reader_id)
+        
+        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity, part, spart, qop, last)
 
     return res
         
@@ -371,21 +381,21 @@ def add_def(gch, entity, gdef, author=''):
                 return ('b', entity)
     
     entity = filter_ent(entity)
-    gdef = gdef.replace('"', '&quot;')
-    author = author.replace('"', '&quot;')
     
     action = ''
     
     if not check_entity(gch, entity):
-        sql = "INSERT INTO defs (entity,def,author) VALUES ('%s','%s','%s');" % (entity.strip(), gdef.strip(), author)
+        sql = "INSERT INTO defs (entity, def, author) VALUES (?, ?, ?);"
         action = 'a'
+        args = entity.strip(), gdef.strip(), author
     else:
-        sql = "UPDATE defs SET \"def\"='%s', \"author\"='%s' WHERE entity='%s';" % (gdef.strip(), author, entity.strip())
+        sql = "UPDATE defs SET def=?, author=? WHERE entity=?;"
         action = 'u'
+        args = gdef.strip(), author, entity.strip()
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, *args)
     
     if qres != '':
         return (action, entity)
@@ -395,17 +405,17 @@ def add_def(gch, entity, gdef, author=''):
 def del_def(gch, entity):
     cid = get_client_id()
     
-    del_sql = "DELETE FROM defs WHERE entity='%s';" % (entity)
+    del_sql = "DELETE FROM defs WHERE entity=?;"
 
-    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), del_sql)
+    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), del_sql, entity)
 
     return qres		
         
 def get_def(gch, entity):
     cid = get_client_id()
     
-    sql = "SELECT def,entity FROM defs WHERE entity LIKE '%s%%' ORDER BY entity LIMIT 1;" % (entity)
-    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql)
+    sql = "SELECT def, entity FROM defs WHERE entity LIKE '?%%' ORDER BY entity LIMIT 1;"
+    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, entity)
     
     if qres:
         gdef = qres[0][0]
@@ -433,11 +443,11 @@ def get_rnd_def(gch):
 def find_ent_def(gch, key):
     cid = get_client_id()
     
-    sql = "SELECT entity FROM defs WHERE entity LIKE '%%%s%%' ORDER BY entity;" % (key)
-    ent_res = sqlquery('dynamic/%s/%s/def.db', sql)
+    sql = "SELECT entity FROM defs WHERE entity LIKE '%%?%%' ORDER BY entity;"
+    ent_res = sqlquery('dynamic/%s/%s/def.db', sql, key)
     
-    sql = "SELECT entity FROM defs WHERE def LIKE '%%%s%%' ORDER BY entity;" % (key)
-    def_res = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql)
+    sql = "SELECT entity FROM defs WHERE def LIKE '%%?%%' ORDER BY entity;"
+    def_res = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, key)
     
     ent_list = []
     def_list = []
@@ -454,14 +464,14 @@ def get_wtf_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/def.db' % (cid, gch)):
-        sql = 'CREATE TABLE defs (entity VARCHAR, def TEXT, author VARCHAR, UNIQUE (entity));'
+        sql = 'CREATE TABLE defs(entity VARCHAR, def TEXT, author VARCHAR, UNIQUE (entity));'
         sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX idefs ON defs (entity);'
         sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql)
         
     if not is_db_exists('dynamic/%s/%s/readers.db' % (cid, gch)):
-        sql = 'CREATE TABLE readers (jid VARCHAR, rid VARCHAR, UNIQUE (rid))'
+        sql = 'CREATE TABLE readers(jid VARCHAR, rid VARCHAR, UNIQUE (rid))'
         sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX ireaders ON readers (jid,rid);'

@@ -112,14 +112,14 @@ async def tgram_start():
             admin = admins[0]
         
         if is_param_set('tgbot_api_token') and iscvs('tgbot') and is_param_set('tgbot_admin_id'):
-            mess = l('To sign in Telegram client you have to enter secret code! To enter code use command /tgcode.')
+            mess = l('In order to sign in Telegram client you have to enter secret code! To enter code use command /tgcode.')
             userid = get_int_cfg_param('tgbot_admin_id')
             repent = lambda m: msg('telegram', m, userid)
             repent(mess)
             isaent = True
         elif is_ruser_prsnt(admin):
             prefix = get_cfg_param('comm_prefix')
-            mess = l('To sign in Telegram client you have to enter secret code! To enter code use command %stgcode.') % (prefix)
+            mess = l('In order to sign in Telegram client you have to enter secret code! To enter code use command %stgcode.') % (prefix)
             repent = lambda m: msg(admin, m)
             repent(mess)
             isaent = True
@@ -128,7 +128,7 @@ async def tgram_start():
             repent = lambda m: msg('console', m)
                         
             if not is_var_set('is_console_hide'):
-                mess = l('To sign in Telegram client you have to enter secret code! To enter code use command tgcode.')
+                mess = l('In order to sign in Telegram client you have to enter secret code! To enter code use command tgcode.')
                 repent(mess)
                 
                 if prompt:

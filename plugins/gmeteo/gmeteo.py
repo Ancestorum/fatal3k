@@ -24,20 +24,19 @@ import urllib3
 from fatalapi import *
 
 def get_meteo_info(query):
-    query = query.replace('"', '&quot;')
     city = query.lower()
 
-    sql = "SELECT value FROM weather WHERE city='%s';" % (city)
-    qres = sqlquery('static/gismeteo.db', sql)
+    sql = "SELECT value FROM weather WHERE city=?;"
+    qres = sqlquery('static/gismeteo.db', sql, city)
     
     if not qres:
-        sql = "SELECT city FROM weather WHERE value='%s';" % (query)
-        qres = sqlquery('static/gismeteo.db', sql)
+        sql = "SELECT city FROM weather WHERE value=?;"
+        qres = sqlquery('static/gismeteo.db', sql, query)
     
     if qres:
         info = qres[0][0]
         
-        return info.replace('&quot;', '"')
+        return info
     else:
         return ''
 

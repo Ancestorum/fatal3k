@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploru.net>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,15 +23,14 @@ from fatalapi import *
 import pymetar
 
 def get_weather_info(query):
-    query = query.replace('"', '&quot;')
     ccode = query.upper()
 
-    sql = "SELECT desc FROM weather WHERE ccode='%s';" % (ccode)
-    qres = sqlquery('static/weather.db', sql)
+    sql = "SELECT desc FROM weather WHERE ccode=?;"
+    qres = sqlquery('static/weather.db', sql, ccode)
     
     if not qres:
-        sql = "SELECT ccode FROM weather WHERE desc LIKE '%s%%';" % (query)
-        qres = sqlquery('static/weather.db', sql)
+        sql = "SELECT ccode FROM weather WHERE desc LIKE '?%%';"
+        qres = sqlquery('static/weather.db', sql, query)
     
     if qres:
         info = qres[0][0]

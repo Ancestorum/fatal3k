@@ -4,7 +4,7 @@
 #  xepinvite plugin
 
 #  Initial Copyright © 2008 Als <Als@exploit.in>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -23,9 +23,8 @@ from fatalapi import *
 def get_invite_jid(gch, nick):
     cid = get_client_id()
     
-    nick = nick.replace('"', '&quot;')
-    sql = "SELECT jid FROM users WHERE nick='%s';" % (nick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    sql = "SELECT jid FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres:
         return qres[0][0]

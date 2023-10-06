@@ -35,3 +35,4 @@ Reaction on empty vCard has been set to %s. = Реакция на пустой �
 Reaction on empty vCard is set to %s. = Здесь реакция на пустой вкард: %s.
 Message if vCard is empty has been set! = Cообщение при реакции на пустой вкард установлено!
 Message if vCard is empty is set to: %s = Здесь сообщение при реакции на пустой вкард: %s
+%s kB. = %s кБ.

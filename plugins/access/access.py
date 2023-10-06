@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,9 +24,8 @@ from fatalapi import *
 def getacc_jid(gch, nick):
     cid = get_client_id()
     
-    nick = nick.replace('"', '&quot;')
-    sql = "SELECT jid FROM users WHERE nick='%s';" % (nick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    sql = "SELECT jid FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres:
         jid = qres[0][0]
@@ -316,7 +315,10 @@ def get_access_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/access.db' % (cid, gch)):
-        sql = 'CREATE TABLE access(jid VARCHAR(50) NOT NULL, access VARCHAR(4) NOT NULL, UNIQUE(jid))'
+        sql = '''CREATE TABLE access(jid VARCHAR(50) NOT NULL,
+                                     access VARCHAR(4) NOT NULL,
+                                     UNIQUE(jid));'''
+                                     
         qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql)
 
 register_command_handler(handler_access_login, 'login')

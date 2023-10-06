@@ -108,8 +108,8 @@ def get_thr_list():
 def is_rem_exists(gch, timerid):
     cid = get_client_id()
     
-    sql = "SELECT * FROM reminds WHERE timerid='%s';" % (timerid)
-    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    sql = "SELECT * FROM reminds WHERE timerid=?;"
+    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, timerid)
     
     if qres:
         return True
@@ -118,8 +118,8 @@ def is_rem_exists(gch, timerid):
 def get_rem_rtime(gch, timerid):
     cid = get_client_id()
     
-    sql = "SELECT rtime FROM reminds WHERE timerid='%s';" % (timerid)
-    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    sql = "SELECT rtime FROM reminds WHERE timerid=?;"
+    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, timerid)
     
     if qres:
         return qres[0][0]
@@ -128,8 +128,8 @@ def get_rem_rtime(gch, timerid):
 def get_rem_cts(gch, timerid):
     cid = get_client_id()
     
-    sql = "SELECT ctms FROM reminds WHERE timerid='%s';" % (timerid)
-    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    sql = "SELECT ctms FROM reminds WHERE timerid=?;"
+    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, timerid)
     
     if qres:
         return qres[0][0]
@@ -138,8 +138,8 @@ def get_rem_cts(gch, timerid):
 def check_timerid(gch, timerid):
     cid = get_client_id()
     
-    sql = "SELECT * FROM reminds WHERE timerid='%s';" % (timerid)
-    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    sql = "SELECT * FROM reminds WHERE timerid=?;"
+    qres = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, timerid)
     
     if qres:
         return False
@@ -148,36 +148,36 @@ def check_timerid(gch, timerid):
 def set_rem_mod(gch, mod, timerid):
     cid = get_client_id()
 
-    upd_sql = '''UPDATE reminds SET  "mod"='%s' WHERE timerid='%s';''' % (mod, timerid)
+    upd_sql = "UPDATE reminds SET  mod=? WHERE timerid=?;"
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, mod, timerid)
     
     return rep
     
 def set_rem_cts(gch, cts, timerid):
     cid = get_client_id()
 
-    upd_sql = '''UPDATE reminds SET  "ctms"='%s' WHERE timerid='%s';''' % (cts, timerid)
+    upd_sql = "UPDATE reminds SET  ctms=? WHERE timerid=?;"
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, cts, timerid)
     
     return rep
  
 def set_rem_dts(gch, dts, timerid):
     cid = get_client_id()
 
-    upd_sql = '''UPDATE reminds SET  "dsts"='%s' WHERE timerid='%s';''' % (dts, timerid)
+    upd_sql = "UPDATE reminds SET  dsts=? WHERE timerid=?;"
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, dts, timerid)
     
     return rep
  
 def get_rem_mod(gch, timerid):
     cid = get_client_id()
 
-    upd_sql = '''SELECT mod FROM reminds WHERE timerid='%s';''' % (timerid)
+    upd_sql = "SELECT mod FROM reminds WHERE timerid=?;"
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, timerid)
     
     if rep:
         return rep[0][0]
@@ -186,18 +186,18 @@ def get_rem_mod(gch, timerid):
 def set_run_cnt(gch, cnt, timerid):
     cid = get_client_id()
 
-    upd_sql = '''UPDATE reminds SET  "cnt"='%s' WHERE timerid='%s';''' % (cnt, timerid)
+    upd_sql = "UPDATE reminds SET  cnt=? WHERE timerid=?;"
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, cnt, timerid)
     
     return rep
     
 def get_run_cnt(gch, timerid):
     cid = get_client_id()
 
-    upd_sql = '''SELECT cnt FROM reminds WHERE timerid='%s';''' % (timerid)
+    upd_sql = "SELECT cnt FROM reminds WHERE timerid=?;"
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, timerid)
     
     if rep:
         return rep[0][0]
@@ -317,9 +317,8 @@ def rem_timer(groupchat, cts, dts, nick, jid, mess, timerid='', cycle=False, mod
 def get_ujoin_time(gch, nick):
     cid = get_client_id()
     
-    nick = nick.replace('"', '&quot;')
-    sql = "SELECT ujoin FROM users WHERE nick='%s';" % (nick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    sql = "SELECT ujoin FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres:
         ujoin = qres[0][0]
@@ -331,9 +330,8 @@ def get_ujoin_time(gch, nick):
 def get_info_jid(gch, nick):
     cid = get_client_id()
     
-    nick = nick.replace('"', '&quot;')
-    sql = "SELECT jid FROM users WHERE nick='%s';" % (nick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    sql = "SELECT jid FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres:
         jid = qres[0][0]
@@ -369,18 +367,21 @@ def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=
     if mess.count("'"):
         mess = mess.replace("'", '"')
     
-    sql = '''INSERT INTO reminds (nick, jid, rtime, ctms, dsts, mess, status, timerid, ctask, mod) 
-              VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s');''' % (nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle), mod)
+    sql = '''INSERT INTO reminds(nick, jid, rtime, ctms, 
+                                 dsts, mess, status, timerid, ctask, mod) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
+    args = nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle), mod
+    
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, *args)
     
     if rep != '':
         return rep
     else:
-        upd_sql = '''UPDATE reminds SET "nick"='%s', "jid"='%s', "rtime"='%s', 
-                         "ctms"='%s', "dsts"='%s', "status"='%s', "timerid"='%s' WHERE mess='%s';''' % (nick, jid, rtime, ctms, dsts, status, timerid, mess)
+        upd_sql = "UPDATE reminds SET nick=?, jid=?, rtime=?, ctms=?, dsts=?, status=?, timerid=? WHERE mess=?;"
         
-        rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql)
+        args = nick, jid, rtime, ctms, dsts, status, timerid, mess
+        
+        rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), upd_sql, *args)
         
         return rep
 
@@ -504,11 +505,13 @@ def del_remind(gch, jid, mess, timerid=''):
     cid = get_client_id()
     
     if timerid:
-        del_sql = "DELETE FROM reminds WHERE jid='%s' AND mess='%s' AND timerid='%s';" % (jid, mess, timerid)
+        del_sql = "DELETE FROM reminds WHERE jid=? AND mess=? AND timerid=?;"
+        args = jid, mess, timerid
     else:
-        del_sql = "DELETE FROM reminds WHERE jid='%s' AND mess='%s';" % (jid, mess)
+        del_sql = "DELETE FROM reminds WHERE jid=? AND mess=?;"
+        args = jid, mess
     
-    res = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), del_sql)
+    res = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), del_sql, *args)
     
     return res
 
@@ -532,7 +535,7 @@ def get_dm_nicks(gch):
     qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
     
     if qres:
-        nicks = [nil[0].replace('&quot;', '"') for nil in qres]
+        nicks = [nil[0] for nil in qres]
         return nicks
     return []
     
@@ -619,51 +622,52 @@ def get_hd_dm_nick(gch, body):
     return ('', delim)
 
 def del_dms(gch, jid):
-    sql = "DELETE FROM dmess WHERE djid='%s'" % (jid)
+    sql = "DELETE FROM dmess WHERE djid=?"
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql, jid)
     
     return qres
 
 def get_sms(gch, jid):
     cid = get_client_id()
     
-    sql = "SELECT * FROM dmess WHERE sjid='%s'" % (jid)
-    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
+    sql = "SELECT * FROM dmess WHERE sjid=?"
+    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql, jid)
     
     return qres
 
 def get_dms(gch, jid):
     cid = get_client_id()
     
-    sql = "SELECT * FROM dmess WHERE djid='%s'" % (jid)
-    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
+    sql = "SELECT * FROM dmess WHERE djid=?"
+    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql, jid)
     
     return qres
 
 def save_dm(gch, snick, sjid, dnick, djid, mess):
     date = time.time()
-    mess = mess.replace('"', '&quot;')
-    
+   
     cid = get_client_id()
     
-    sql = "SELECT mess FROM dmess WHERE mess='%s'" % (mess)
-    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
+    sql = "SELECT mess FROM dmess WHERE mess=?"
+    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql, mess)
     
     if not qres:
-        sql = "INSERT INTO dmess (snick, sjid, dnick, djid, mess, date) VALUES ('%s', '%s', '%s', '%s', '%s', '%s');" % (snick, sjid, dnick, djid, mess, date)
+        sql = "INSERT INTO dmess (snick, sjid, dnick, djid, mess, date) VALUES (?, ?, ?, ?, ?, ?);"
+        args = snick, sjid, dnick, djid, mess, date
     else:
-        sql = "UPDATE dmess SET \"snick\"='%s', \"sjid\"='%s', \"dnick\"='%s', \"djid\"='%s', \"date\"='%s' WHERE mess='%s';" % (snick, sjid, dnick, djid, date, mess)
+        sql = "UPDATE dmess SET snick=?, sjid=?, dnick=?, djid=?, date=? WHERE mess=?;"
+        args = snick, sjid, dnick, djid, date, mess
     
-    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql, *args)
     
     return qres
     
 def show_dms(dms):
     if dms:
-        ndmsli = [l('%s) Sent by %s %s at %s:\n\n%s') % (dms.index(ndli) + 1, ndli[0], time.strftime('%d.%m.%Y', time.localtime(float(ndli[5]))), time.strftime('%H:%M:%S', time.localtime(float(ndli[5]))), ndli[4].replace('&quot;', '"')) for ndli in dms]
+        ndmsli = [l('%s) Sent by %s %s at %s:\n\n%s') % (dms.index(ndli) + 1, ndli[0], time.strftime('%d.%m.%Y', time.localtime(float(ndli[5]))), time.strftime('%H:%M:%S', time.localtime(float(ndli[5]))), ndli[4]) for ndli in dms]
         return ndmsli
     
     return []
@@ -704,33 +708,46 @@ def get_info_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/users.db' % (cid, gch)):
-        sql = '''CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                 nick VARCHAR(30) NOT NULL, jid VARCHAR(30) NOT NULL, 
-                 ujoin VARCHAR(20) NOT NULL, uleave VARCHAR(20) NOT NULL, 
-                 reason VARCHAR, UNIQUE (nick));'''
+        sql = '''CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                                    nick VARCHAR(30) NOT NULL, 
+                                    jid VARCHAR(30) NOT NULL, 
+                                    ujoin VARCHAR(20) NOT NULL, 
+                                    uleave VARCHAR(20) NOT NULL, 
+                                    reason VARCHAR, 
+                                    UNIQUE (nick));'''
+                 
         sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX iusers ON users (nick);'
         sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql) 
         
     if not is_db_exists('dynamic/%s/%s/reminds.db' % (cid, gch)):
-        sql = '''CREATE TABLE reminds (nick VARCHAR(30) NOT NULL, 
-                jid VARCHAR(30) NOT NULL, rtime VARCHAR(20) NOT NULL, 
-                ctms VARCHAR(20) NOT NULL, dsts VARCHAR(20) NOT NULL, 
-                mess VARCHAR NOT NULL, status VARCHAR(10) NOT NULL, 
-                timerid VARCHAR(20) NOT NULL, ctask VARCHAR(1) NOT NULL, 
-                mod VARCHAR(4) NOT NULL, cnt VARCHAR NOT NULL DEFAULT 0,
-                UNIQUE (timerid));'''
+        sql = '''CREATE TABLE reminds(nick VARCHAR(30) NOT NULL, 
+                                      jid VARCHAR(30) NOT NULL, 
+                                      rtime VARCHAR(20) NOT NULL, 
+                                      ctms VARCHAR(20) NOT NULL, 
+                                      dsts VARCHAR(20) NOT NULL, 
+                                      mess VARCHAR NOT NULL, 
+                                      status VARCHAR(10) NOT NULL, 
+                                      timerid VARCHAR(20) NOT NULL, 
+                                      ctask VARCHAR(1) NOT NULL, 
+                                      mod VARCHAR(4) NOT NULL, 
+                                      cnt VARCHAR NOT NULL DEFAULT 0,
+                                      UNIQUE (timerid));'''
+                                      
         sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
         
         sql = 'CREATE INDEX ireminds ON reminds (nick, jid);'
         sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql)
         
     if not is_db_exists('dynamic/%s/%s/dmess.db' % (cid, gch)):
-        sql = '''CREATE TABLE dmess (snick VARCHAR(30) NOT NULL, 
-                sjid VARCHAR(30) NOT NULL, dnick VARCHAR(30) NOT NULL, 
-                djid VARCHAR(30) NOT NULL, mess VARCHAR NOT NULL, 
-                date VARCHAR(20) NOT NULL);'''
+        sql = '''CREATE TABLE dmess(snick VARCHAR(30) NOT NULL, 
+                                    sjid VARCHAR(30) NOT NULL, 
+                                    dnick VARCHAR(30) NOT NULL, 
+                                    djid VARCHAR(30) NOT NULL, 
+                                    mess VARCHAR NOT NULL, 
+                                    date VARCHAR(20) NOT NULL);'''
+        
         sqlquery('dynamic/%s/%s/dmess.db' % (cid, gch), sql)
     
         sql = 'CREATE INDEX idmess ON dmess (sjid, djid);'
@@ -855,7 +872,7 @@ def handler_tell(type, source, parameters):
         dmsl = get_sms(groupchat, sjid)
         
         if dmsl:
-            ndmsl = [l('%s) Sent to %s %s at %s:\n\n%s') % (dmsl.index(ndli) + 1, ndli[2], time.strftime('%d.%m.%Y', time.localtime(float(ndli[5]))), time.strftime('%H:%M:%S', time.localtime(float(ndli[5]))), ndli[4].replace('&quot;', '"')) for ndli in dmsl]
+            ndmsl = [l('%s) Sent to %s %s at %s:\n\n%s') % (dmsl.index(ndli) + 1, ndli[2], time.strftime('%d.%m.%Y', time.localtime(float(ndli[5]))), time.strftime('%H:%M:%S', time.localtime(float(ndli[5]))), ndli[4]) for ndli in dmsl]
 
             rep = l('Delayed messages (total: %s):\n\n%s') % (len(ndmsl), '\n\n'.join(ndmsl))
         else:
@@ -869,12 +886,10 @@ def handler_tell(type, source, parameters):
 def handler_user_join(groupchat, nick, aff, role):
     jid = get_true_jid(groupchat + '/' + nick)
 
-    qnick = nick.replace('"', '&quot;')
-    
     cid = get_client_id()
     
-    check_sql = "SELECT nick FROM users WHERE nick='%s'" % (qnick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+    check_sql = "SELECT nick FROM users WHERE nick=?"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, nick)
     
     if is_gch_user(groupchat, nick):
         ujoin = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'joined')
@@ -882,13 +897,13 @@ def handler_user_join(groupchat, nick, aff, role):
         ujoin = time.time()
     
     if qres:
-        upd_sql = "UPDATE users SET \"ujoin\"='%s', \"jid\"='%s' WHERE nick='%s';" % (ujoin, jid.strip(), qnick)
+        upd_sql = "UPDATE users SET ujoin=?, jid=? WHERE nick=?;"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql)
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, ujoin, jid.strip(), nick)
     else:
-        ins_sql = "INSERT INTO users (nick, jid, ujoin, uleave, reason) VALUES ('%s', '%s', '%s', '%s', '%s');" % (qnick, jid.strip(), ujoin, ujoin, '')
+        ins_sql = "INSERT INTO users (nick, jid, ujoin, uleave, reason) VALUES (?, ?, ?, ?, ?);"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql)
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql, nick, jid.strip(), ujoin, ujoin, '')
         
     reminds = get_reminds(groupchat)
     
@@ -939,12 +954,10 @@ def handler_user_join(groupchat, nick, aff, role):
         del_dms(groupchat, jid)
     
 def handler_user_leave(groupchat, nick, reason, code):
-    qnick = nick.replace('"', '&quot;')
-    
     cid = get_client_id()
     
-    check_sql = "SELECT nick FROM users WHERE nick='%s'" % (qnick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+    check_sql = "SELECT nick FROM users WHERE nick=?"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, nick)
     
     uleave = time.time()
     
@@ -952,16 +965,15 @@ def handler_user_leave(groupchat, nick, reason, code):
         reason = ''
     
     if qres:
-        upd_sql = "UPDATE users SET \"uleave\"='%s', \"reason\"='%s'  WHERE nick='%s';" % (uleave, reason.strip(), qnick)
+        upd_sql = "UPDATE users SET uleave=?, reason=?  WHERE nick=?;"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql)
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, uleave, reason.strip(), nick)
 
 def handler_user_presence(prs):
     ptype = prs.getType()
     groupchat = get_stripped(prs.getFrom())
 
     nick = get_resource(prs.getFrom())
-    nick = nick.replace('"', '&quot;')
     
     jid = get_info_jid(groupchat, nick)
     
@@ -972,25 +984,23 @@ def handler_user_presence(prs):
                 
         sjid = get_true_jid(groupchat + '/' + newnick)
                 
-        qnewnick = newnick.replace('"', '&quot;')
-        
         cid = get_client_id()
         
-        check_sql = "SELECT nick FROM users WHERE nick='%s'" % (qnewnick)
-        qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+        check_sql = "SELECT nick FROM users WHERE nick=?"
+        qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, newnick)
         
         ujoin = get_ujoin_time(groupchat, nick)
         set_fatal_var(cid, 'gchrosters', groupchat, newnick, 'joined', ujoin)
             
         if qres:
-            upd_sql = "UPDATE users SET \"jid\"='%s', \"ujoin\"='%s' WHERE nick='%s';" % (sjid, ujoin, nick)
+            upd_sql = "UPDATE users SET jid=?, ujoin=? WHERE nick=?;"
             
-            sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql)
+            sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, sjid, ujoin, nick)
         else:
-            if jid and qnewnick:
-                ins_sql = "INSERT INTO users (nick, jid, ujoin, uleave, reason) VALUES ('%s', '%s', '%s', '%s', '%s');" % (qnewnick, jid.strip(), ujoin, ujoin, '')
+            if jid and newnick:
+                ins_sql = "INSERT INTO users (nick, jid, ujoin, uleave, reason) VALUES (?, ?, ?, ?, ?);"
                 
-                sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql)
+                sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql, newnick, jid.strip(), ujoin, ujoin, '')
 
 def handler_seen(type, source, parameters):
     cid = get_client_id()
@@ -1013,8 +1023,6 @@ def handler_seen(type, source, parameters):
     else:
         nick = nick_jid
     
-    qnick = nick.replace('"', '&quot;')
-    
     gch_dic = dict(get_dict_fatal_var(cid, 'gchrosters', groupchat))
     conf_nicks = list(gch_dic)
     
@@ -1030,17 +1038,17 @@ def handler_seen(type, source, parameters):
             if jid == rjid:
                 if is_gch_user(groupchat, nkc):
                     nick = nkc
-                    check_sql = "SELECT nick, ujoin, uleave FROM users WHERE nick='%s'" % (qnick)
-                    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+                    check_sql = "SELECT nick, ujoin, uleave FROM users WHERE nick=?"
+                    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, nick)
                     break
         
         if not qres:
-            check_sql = "SELECT nick, ujoin, uleave FROM users WHERE jid='%s' ORDER BY uleave" % (jid)
-            qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+            check_sql = "SELECT nick, ujoin, uleave FROM users WHERE jid=? ORDER BY uleave"
+            qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, jid)
 
         if qres:
             qres = list(qres[-1])
-            gnick = qres[0].replace('&quot;', '"')
+            gnick = qres[0]
             join_time = float(qres[1])
             leave_time = float(qres[2])
             
@@ -1062,8 +1070,8 @@ def handler_seen(type, source, parameters):
             rep = l('The user %s has never been in this groupchat!') % (jid)
             return reply(type, source, rep)
     elif nick:
-        check_sql = "SELECT nick, ujoin, uleave, jid FROM users WHERE nick='%s'" % (qnick)
-        qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+        check_sql = "SELECT nick, ujoin, uleave, jid FROM users WHERE nick=?"
+        qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, nick)
         
         if qres:
             jid = list(qres[0])[3]
@@ -1081,14 +1089,14 @@ def handler_seen(type, source, parameters):
                     gnick = nkc
                     break
     
-        check_sql = "SELECT nick, ujoin, uleave, jid FROM users WHERE jid='%s' ORDER BY uleave" % (jid)
-        qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql)
+        check_sql = "SELECT nick, ujoin, uleave, jid FROM users WHERE jid=? ORDER BY uleave"
+        qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, jid)
     
         if qres:
             qres = list(qres[-1])
             
             if not gnick:
-                gnick = qres[0].replace('&quot;', '"')
+                gnick = qres[0]
             
             join_time = float(qres[1])
             leave_time = float(qres[2])
@@ -1150,11 +1158,11 @@ def handler_nicks(type, source, parameters):
         prob_jid = parameters
         
         if check_jid(prob_jid):
-            sql = "SELECT nick, ujoin FROM users WHERE jid='%s' ORDER BY ujoin DESC;" % (prob_jid)
-            qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql)
+            sql = "SELECT nick, ujoin FROM users WHERE jid=? ORDER BY ujoin DESC;"
+            qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, prob_jid)
             
             if qres:
-                qres = [li[0].replace('&quot;', '"') for li in qres]
+                qres = [li[0] for li in qres]
                 rep = l('Nicks used by %s in this groupchat (total: %s):\n\n%s.') % (prob_jid, len(qres), ', '.join(qres))
             else:
                 rep = l('The user %s has never been in this groupchat!') % (prob_jid)
@@ -1163,11 +1171,11 @@ def handler_nicks(type, source, parameters):
             jid = get_info_jid(groupchat, prob_nick)
             
             if jid:
-                sql = "SELECT nick, ujoin FROM users WHERE jid='%s' ORDER BY ujoin DESC;" % (jid)
-                qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql)
+                sql = "SELECT nick, ujoin FROM users WHERE jid=? ORDER BY ujoin DESC;"
+                qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, jid)
                 
                 if qres:
-                    qres = [li[0].replace('&quot;', '"') for li in qres]
+                    qres = [li[0] for li in qres]
                     rep = l('Nicks used by %s in this groupchat (total: %s):\n\n%s.') % (prob_nick, len(qres), ', '.join(qres))
                 else:
                     rep = l('Unknown error!')
@@ -1183,10 +1191,10 @@ def handler_nicks(type, source, parameters):
             nlst = []
             
             for li in qres:
-                nick = li[0].replace('&quot;', '"')
+                nick = li[0]
                 jotm = float(li[1])
                 letm = float(li[2])
-                jid = li[3].replace('&quot;', '"')
+                jid = li[3]
                 
                 if ctm - jotm <= 86400:
                     if is_gch_user(groupchat, nick):
@@ -1327,8 +1335,8 @@ def handler_getrealjid(type, source, parameters):
     
     cid = get_client_id()
     
-    sql = "SELECT jid FROM users WHERE nick='%s';" % (nick.replace('"', '&quot;'))
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql)
+    sql = "SELECT jid FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, nick)
     
     if not qres:
         return reply(type, source, l('User not found!'))

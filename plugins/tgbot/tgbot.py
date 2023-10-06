@@ -39,8 +39,8 @@ def rmv_emoji(text):
     return emoji.demojize(text)
 
 def tgfile_exists(ufid):
-    sql = '''SELECT * FROM tgfiles WHERE ufid="%s";''' % (ufid)
-    qres = sqlquery(d('tgfiles.db'), sql)
+    sql = "SELECT * FROM tgfiles WHERE ufid=?;"
+    qres = sqlquery(d('tgfiles.db'), sql, ufid)
     
     if qres:
         return True
@@ -67,36 +67,38 @@ def rmv_exp_tg_files(days=10):
 
 def rmv_tg_file(ufid):
     if tgfile_exists(ufid):
-        sql = '''DELETE FROM tgfiles WHERE ufid="%s";''' % (ufid)
+        sql = "DELETE FROM tgfiles WHERE ufid=?;"
    
-        sqlquery(d('tgfiles.db'), sql)
+        sqlquery(d('tgfiles.db'), sql, ufid)
     
         return True
     return False
     
 def set_tg_file(ufid, filename):
     if not tgfile_exists(ufid):
-        sql = '''INSERT INTO tgfiles (ufid, flnm) VALUES ("%s", "%s");''' % (ufid, filename)
+        sql = "INSERT INTO tgfiles (ufid, flnm) VALUES (?, ?);"
+        args = ufid, filename
     else:
-        sql = '''UPDATE tgfiles SET "flnm"="%s" WHERE "ufid"="%s";''' % (filename, ufid)
+        sql = "UPDATE tgfiles SET flnm=? WHERE ufid=?;"
+        args = filename, ufid
     
-    qres = sqlquery(d('tgfiles.db'), sql)
+    qres = sqlquery(d('tgfiles.db'), sql, *args)
     
     if qres != '':
         return True
     return False
 
 def get_tg_file(ufid):
-    sql = '''SELECT flnm FROM tgfiles WHERE ufid="%s";''' % (ufid)
+    sql = "SELECT flnm FROM tgfiles WHERE ufid=?;"
     
-    qres = sqlquery(d('tgfiles.db'), sql)
+    qres = sqlquery(d('tgfiles.db'), sql, ufid)
     
     if qres:
         return qres[0][0]
     return False
 
 def get_tg_files():
-    sql = '''SELECT ufid, flnm, utime FROM tgfiles;'''
+    sql = "SELECT ufid, flnm, utime FROM tgfiles;"
     
     qres = sqlquery(d('tgfiles.db'), sql)
     
@@ -105,16 +107,16 @@ def get_tg_files():
     return False
 
 def get_tg_chid(gtitle):
-    sql = '''SELECT id FROM tgchatids WHERE gname="%s";''' % (gtitle)
-    qres = sqlquery(d('tgchatids.db'), sql)
+    sql = "SELECT id FROM tgchatids WHERE gname=?;"
+    qres = sqlquery(d('tgchatids.db'), sql, gtitle)
     
     if qres:
         return qres[0][0]
     return False
 
 def get_tg_usrid(fnme):
-    sql = '''SELECT id FROM tguserids WHERE fname="%s";''' % (fnme.strip())
-    qres = sqlquery(d('tguserids.db'), sql)
+    sql = "SELECT id FROM tguserids WHERE fname=?;"
+    qres = sqlquery(d('tguserids.db'), sql, fnme.strip())
     
     if qres:
         return qres[0][0]
@@ -124,8 +126,8 @@ def get_tg_fnme(usrid):
     if type(usrid) != int:
         return False 
 
-    sql = '''SELECT fname FROM tguserids WHERE id=%s;''' % (usrid)
-    qres = sqlquery(d('tguserids.db'), sql)
+    sql = "SELECT fname FROM tguserids WHERE id=?;"
+    qres = sqlquery(d('tguserids.db'), sql, usrid)
     
     if qres:
         return qres[0][0]
@@ -135,8 +137,8 @@ def get_tg_usrn(usrid):
     if type(usrid) != int:
         return False
 
-    sql = '''SELECT usrn FROM tguserids WHERE id=%s;''' % (usrid)
-    qres = sqlquery(d('tguserids.db'), sql)
+    sql = "SELECT usrn FROM tguserids WHERE id=?;"
+    qres = sqlquery(d('tguserids.db'), sql, usrid)
     
     if qres:
         return qres[0][0]
@@ -148,16 +150,20 @@ def set_tg_usrid(usrid, fnme, usrn=''):
     
     if not usrid_exists(usrid):
         if usrn:
-            sql = '''INSERT INTO tguserids (id, fname, usrn) VALUES (%s, "%s", "%s");''' % (usrid, fnme.strip(), usrn.strip())
+            sql = "INSERT INTO tguserids (id, fname, usrn) VALUES (?, ?, ?);"
+            args = usrid, fnme.strip(), usrn.strip()
         else:
-            sql = '''INSERT INTO tguserids (id, fname) VALUES (%s, "%s");''' % (usrid, fnme.strip())
+            sql = "INSERT INTO tguserids (id, fname) VALUES (?, ?);"
+            args = usrid, fnme.strip()
     else:
         if usrn:
-            sql = '''UPDATE tguserids SET "fname"="%s", "usrn"="%s" WHERE "id"=%s;''' % (fnme.strip(), usrn.strip(), usrid)
+            sql = "UPDATE tguserids SET fname=?, usrn=? WHERE id=?;"
+            args = fnme.strip(), usrn.strip(), usrid
         else:
-            sql = '''UPDATE tguserids SET "fname"="%s" WHERE "id"=%s;''' % (fnme.strip(), usrid)
+            sql = "UPDATE tguserids SET fname=? WHERE id=?;"
+            args = fnme.strip(), usrid
     
-    qres = sqlquery(d('tguserids.db'), sql)
+    qres = sqlquery(d('tguserids.db'), sql, *args)
     
     if qres != '':
         return True
@@ -168,9 +174,9 @@ def set_tg_usr_acc(usrid, acc):
         return False 
     
     if usrid_exists(usrid):
-        sql = '''UPDATE tguserids SET acc=%s WHERE id=%s;''' % (acc, usrid)
+        sql = "UPDATE tguserids SET acc=? WHERE id=?;"
     
-    qres = sqlquery(d('tguserids.db'), sql)
+    qres = sqlquery(d('tguserids.db'), sql, acc, usrid)
     
     return qres
 
@@ -178,8 +184,8 @@ def chid_exists(chid):
     if type(chid) != int:
         return False 
 
-    sql = '''SELECT * FROM tgchatids WHERE id=%s;''' % (chid)
-    qres = sqlquery(d('tgchatids.db'), sql)
+    sql = "SELECT * FROM tgchatids WHERE id=?;"
+    qres = sqlquery(d('tgchatids.db'), sql, chid)
     
     if qres:
         return True
@@ -190,11 +196,11 @@ def rmv_tg_usrid(usrid):
         return False 
     
     if usrid_exists(usrid):
-        sql = '''DELETE FROM tgusrids WHERE id=%s;''' % (usrid)
+        sql = "DELETE FROM tgusrids WHERE id=?;"
     else:
         return False
    
-    qres = sqlquery(d('tguserids.db'), sql)
+    qres = sqlquery(d('tguserids.db'), sql, usrid)
     
     return qres
 
@@ -203,11 +209,11 @@ def rmv_tg_chid(chid):
         return False 
     
     if chid_exists(chid):
-        sql = '''DELETE FROM tgchatids WHERE id=%s;''' % (chid)
+        sql = "DELETE FROM tgchatids WHERE id=?;"
     else:
         return False
    
-    qres = sqlquery(d('tgchatids.db'), sql)
+    qres = sqlquery(d('tgchatids.db'), sql, chid)
     
     return qres
 
@@ -218,11 +224,13 @@ def set_tg_chid(chid, gtitle):
     gtitle = gtitle.replace('"', '&quot;')
     
     if not chid_exists(chid):
-        sql = '''INSERT INTO tgchatids (id, gname) VALUES (%s, "%s");''' % (chid, gtitle.strip())
+        sql = "INSERT INTO tgchatids (id, gname) VALUES (?, ?);"
+        args = chid, gtitle.strip()
     else:
-        sql = '''UPDATE tgchatids SET "gname"="%s" WHERE id=%s;''' % (gtitle.strip(), chid)
+        sql = "UPDATE tgchatids SET gname=? WHERE id=?;"
+        args = gtitle.strip(), chid
     
-    qres = sqlquery(d('tgchatids.db'), sql)
+    qres = sqlquery(d('tgchatids.db'), sql, *args)
     
     if qres != '':
         return True
@@ -1097,9 +1105,11 @@ def create_tg_tables():
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/tgfiles.db' % (cid)):
-        sql = '''CREATE TABLE tgfiles (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            ufid VARCHAR(30) NOT NULL, flnm VARCHAR(30) NOT NULL, 
-            utime TIMESTAMP DEFAULT (strftime('%s', 'now')), UNIQUE (idn));''' 
+        sql = '''CREATE TABLE tgfiles(idn INTEGER PRIMARY KEY AUTOINCREMENT,
+                                      ufid VARCHAR(30) NOT NULL, 
+                                      flnm VARCHAR(30) NOT NULL,                                      
+                                      utime TIMESTAMP DEFAULT (strftime('%s', 'now')), 
+                                      UNIQUE (idn));''' 
         
         sqlquery('dynamic/%s/tgfiles.db' % (cid), sql)
         
@@ -1108,9 +1118,12 @@ def create_tg_tables():
         sqlquery('dynamic/%s/tgfiles.db' % (cid), sql) 
     
     if not is_db_exists('dynamic/%s/tguserids.db' % (cid)):
-        sql = '''CREATE TABLE tguserids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            id INTEGER NOT NULL, fname VARCHAR(30) NOT NULL, usrn VARCHAR(30) DEFAULT "",
-            acc INTEGER NOT NULL DEFAULT 10, UNIQUE (id));''' 
+        sql = '''CREATE TABLE tguserids(idn INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        id INTEGER NOT NULL, 
+                                        fname VARCHAR(30) NOT NULL, 
+                                        usrn VARCHAR(30) DEFAULT "",
+                                        acc INTEGER NOT NULL DEFAULT 10, 
+                                        UNIQUE (id));''' 
         
         sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
         
@@ -1118,8 +1131,11 @@ def create_tg_tables():
         sqlquery('dynamic/%s/tguserids.db' % (cid), sql) 
 
     if not is_db_exists('dynamic/%s/tgchatids.db' % (cid)):
-        sql = '''CREATE TABLE tgchatids (idn INTEGER PRIMARY KEY AUTOINCREMENT,
-            id INTEGER NOT NULL, gname VARCHAR(30) NOT NULL, UNIQUE (id));'''
+        sql = '''CREATE TABLE tgchatids(idn INTEGER PRIMARY KEY AUTOINCREMENT,
+                                        id INTEGER NOT NULL, 
+                                        gname VARCHAR(30) NOT NULL, 
+                                        UNIQUE (id));'''
+                                        
         sqlquery('dynamic/%s/tgchatids.db' % (cid), sql)
         
         sql = 'CREATE UNIQUE INDEX itgchatids ON tgchatids (idn);'

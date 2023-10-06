@@ -1,4 +1,4 @@
-version.ccat = *, all, info
+version.ccat = *, all, info, xepversion
 version.desc = Показывает информацию о клиенте, который использует пользователь или сервер.
 version.synt = %prefix%version [<nick>|<jid/resource>|<server>]
 version.exam = %prefix%version

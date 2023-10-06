@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,20 +22,19 @@ __all__ = []
 from fatalapi import *
 
 def get_tld_info(query):
-    query = query.replace('"', '&quot;')
     query = query.lower()
 
-    sql = "SELECT info FROM tlds WHERE tld='%s';" % (query)
-    qres = sqlquery('static/tlds.db', sql)
+    sql = "SELECT info FROM tlds WHERE tld=?;"
+    qres = sqlquery('static/tlds.db', sql, query)
     
     if not qres:
-        sql = "SELECT tld FROM tlds WHERE info LIKE '%s%%';" % (query)
-        qres = sqlquery('static/tlds.db', sql)
+        sql = "SELECT tld FROM tlds WHERE info LIKE ?%;"
+        qres = sqlquery('static/tlds.db', sql, query)
     
     if qres:
         info = qres[0][0]
         
-        return info.replace('&quot;', '"')
+        return info
     else:
         return ''
 

@@ -1,4 +1,4 @@
-xeps.ccat = muc, info, all, *
+xeps.ccat = *, all, info, muc, xepfeatures
 xeps.desc = Показывает, какие XEP'ы Jabber'a подерживает твой клиент или клиент определенного юзера (nick) или джида (jid).
 xeps.synt = %prefix%xeps [<ник|жид>]
 xeps.exam = %prefix%xeps

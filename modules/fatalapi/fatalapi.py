@@ -117,6 +117,14 @@ def sprint(*args):
         log_exc_error()
         log_error(str(args), 'syslogs/output.log')
 
+def dgch(file=''):
+    curr_thrn = get_curr_thr_name()
+    gch = cgv(curr_thrn, 'called_from')
+
+    if gch:
+        return d('%s/%s' % (gch, file))
+    return ''
+
 def d(file=''):
     cid = get_client_id()
     
@@ -740,45 +748,6 @@ def get_client_conn(cid=''):
     
     return get_fatal_var(cid, 'jconn')
 
-def read_client_state(rlen=3):
-    try:
-        if not is_var_set('client_pipei'):
-            pipei, pipeo = os.pipe()
-            set_fatal_var('client_pipeo', pipeo)
-            set_fatal_var('client_pipei', pipei)
-        else:
-            pipei = get_int_fatal_var('client_pipei')
-        
-        stres = os.read(pipei, rlen)
-        
-        return stres
-    except Exception:
-        log_exc_error()
-        return 'brk'
-    
-def send_client_state(data='suc'):
-    try:
-        pipeo = get_int_fatal_var('client_pipeo')
-        
-        if pipeo:
-            os.write(pipeo, data.encode())
-    except Exception:
-        log_exc_error()
-
-def close_state_pipes():
-    try:
-        if is_var_set('client_pipeo'):
-            pipeo = get_int_fatal_var('client_pipeo')
-            pipei = get_int_fatal_var('client_pipei')
-            
-            os.close(pipeo)
-            os.close(pipei)
-            
-            rmv_fatal_var('client_pipeo')
-            rmv_fatal_var('client_pipei')
-    except Exception:
-        log_exc_error()
-
 def _get_pooled_thr_id():
     thrid = get_int_fatal_var('info', 'pld_thr_id')
     
@@ -1201,8 +1170,8 @@ def is_fl_domain(domain):
     domain = domain.strip()
     
     if domain:
-        sql = "SELECT COUNT(tld) FROM tlds WHERE tld='%s';" % (domain)
-        qres = sqlquery('static/tlds.db', sql)
+        sql = "SELECT COUNT(tld) FROM tlds WHERE tld=?;" 
+        qres = sqlquery('static/tlds.db', sql, domain)
 
         if qres:
             tldc = qres[0][0]
@@ -2143,7 +2112,7 @@ def call_command_handlers(command, type, source, parameters, callee):
         if not is_bot_admin(jid):
             return
 
-    cmdl = ['acomm', 'ctask', 'remind', 'alias_add', 'galias_add'] 
+    cmdl = ('acomm', 'ctask', 'remind', 'alias_add', 'galias_add') 
 
     if not command in cmdl:
         parameters = rep_nested_cmds('null', source, parameters)
@@ -2174,18 +2143,20 @@ def rmv_cmd_name(aname=''):
     
     if not aname:
         sql = 'DELETE FROM cmdnames;'
+        args = ()
     else:
-        sql = '''DELETE FROM cmdnames WHERE aname='%s';''' % (aname)
+        sql = "DELETE FROM cmdnames WHERE aname=?;"
+        args = (aname,)
     
-    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql, *args)
     
     return qres
     
 def cmd_name_exists(real_cmd):
     cid = get_client_id()
     
-    sql = '''SELECT * FROM cmdnames WHERE iname='%s';''' % (real_cmd)
-    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
+    sql = "SELECT * FROM cmdnames WHERE iname=?;"
+    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql, real_cmd)
     
     if qres:
         return True
@@ -2195,8 +2166,8 @@ def cmd_name_exists(real_cmd):
 def get_real_cmd_name(cmdname):
     cid = get_client_id()
     
-    sql = '''SELECT iname FROM cmdnames WHERE aname='%s';''' % (cmdname)
-    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
+    sql = "SELECT iname FROM cmdnames WHERE aname=?;"
+    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql, cmdname)
     
     if qres:
         iname = qres[0][0]
@@ -2207,8 +2178,8 @@ def get_real_cmd_name(cmdname):
 def get_cmd_name(real_cmd):
     cid = get_client_id()
 
-    sql = '''SELECT aname FROM cmdnames WHERE iname='%s';''' % (real_cmd)
-    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
+    sql = "SELECT aname FROM cmdnames WHERE iname=?;"
+    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql, real_cmd)
     
     if qres:
         aname = qres[0][0]
@@ -2219,7 +2190,7 @@ def get_cmd_name(real_cmd):
 def get_cmd_name_list():
     cid = get_client_id()
     
-    sql = 'SELECT * FROM cmdnames;'
+    sql = "SELECT * FROM cmdnames;"
     qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
     
     if qres:
@@ -2231,23 +2202,24 @@ def set_cmd_name(real_cmd, aname):
     cid = get_client_id()
     
     if not cmd_name_exists(real_cmd):
-        sql = '''INSERT INTO cmdnames (iname, aname) VALUES ('%s', '%s');''' % (real_cmd.strip(), aname.strip())
+        sql = "INSERT INTO cmdnames (iname, aname) VALUES (?, ?);"
+        args = real_cmd.strip(), aname.strip()
     elif get_cmd_name(aname):
-        sql = '''DELETE FROM cmdnames WHERE iname='%s';''' % (real_cmd.strip())
+        sql = "DELETE FROM cmdnames WHERE iname=?;"
+        args = (real_cmd.strip(),)
     else:
-        sql = '''UPDATE cmdnames SET aname='%s' WHERE iname='%s';''' % (aname.strip(), real_cmd.strip())
+        sql = "UPDATE cmdnames SET aname=? WHERE iname=?;"
+        args = aname.strip(), real_cmd.strip()
     
-    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/cmdnames.db' % (cid), sql, *args)
     
     return qres
         
 def cmd_access_exists(cmd):
     cid = get_client_id()
-    
-    cmd = cmd.replace('"', '&quot;')
 
-    sql = '''SELECT * FROM cmdaccess WHERE cmd='%s';''' % (cmd)
-    qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql)
+    sql = "SELECT * FROM cmdaccess WHERE cmd=?;"
+    qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql, cmd)
     
     if qres:
         return True
@@ -2257,8 +2229,8 @@ def cmd_access_exists(cmd):
 def get_cmd_access(cmd):
     cid = get_client_id()
     
-    sql = '''SELECT acc FROM cmdaccess WHERE cmd='%s';''' % (cmd)
-    qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql)
+    sql = "SELECT acc FROM cmdaccess WHERE cmd=?;"
+    qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql, cmd)
     
     if qres:
         access = qres[0][0]
@@ -2270,11 +2242,13 @@ def set_cmd_access(cmd, access):
     cid = get_client_id()
     
     if not cmd_access_exists(cmd):
-        sql = '''INSERT INTO cmdaccess (cmd, acc) VALUES ('%s', '%s');''' % (cmd.strip(), access.strip())
+        sql = "INSERT INTO cmdaccess (cmd, acc) VALUES (?, ?);"
+        args = cmd.strip(), access.strip()
     else:
-        sql = '''UPDATE cmdaccess SET acc='%s' WHERE cmd='%s';''' % (access.strip(), cmd.strip())
+        sql = "UPDATE cmdaccess SET acc=? WHERE cmd=?;"
+        args = access.strip(), cmd.strip()
     
-    qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/cmdaccess.db' % (cid), sql, *args)
     
     return qres
 
@@ -2478,24 +2452,19 @@ def add_chatroom(gch='', nick='', passw=''):
     if not nick:
         nick = get_cfg_param('default_nick')
     
-    gch = gch.replace('"', '&quot;')
-    nick = nick.replace('"', '&quot;')
-    passw = passw.replace('"', '&quot;')
-    
     if not gch: 
         return
     
     if not gch_exists(gch):
-        sql = "INSERT INTO chatrooms (chatroom, nick, pass) VALUES ('%s', '%s', '%s');" % (gch.strip(), nick.strip(), passw.strip())
+        sql = "INSERT INTO chatrooms (chatroom, nick, pass) VALUES (?, ?, ?);"
+        args = gch.strip(), nick.strip(), passw.strip()
     else:
-        sql = "UPDATE chatrooms SET \"nick\"='%s', \"pass\"='%s' WHERE chatroom='%s';" % (nick.strip(), passw.strip(), gch.strip())
+        sql = "UPDATE chatrooms SET nick=?, pass=? WHERE chatroom=?;"
+        args = nick.strip(), passw.strip(), gch.strip()
 
     cid = get_client_id()
 
-    qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql)
-
-    #prefix = get_comm_prefix(gch)
-    #set_comm_prefix(gch, prefix)
+    qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql, *args)
 
     return qres
     
@@ -2739,7 +2708,7 @@ def reply(ltype, source, body):
     
     if not isinstance(body, str):
         body = body.decode('utf8', 'replace')
-        
+    
     if ltype == 'public':
         if fjid == groupchat:
             msg(groupchat, body)
@@ -2832,16 +2801,14 @@ def user_access_exists(jid, gch=''):
     if not jid:
         return False
     
-    jid = jid.replace('"', '&quot;')
-
-    sql = "SELECT * FROM access WHERE jid='%s';" % (jid)
+    sql = "SELECT * FROM access WHERE jid=?;"
     
     cid = get_client_id()
     
     if gch and is_groupchat(gch):
-        qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql, jid)
     else:
-        qres = sqlquery('dynamic/%s/gaccess.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/gaccess.db' % (cid), sql, jid)
     
     if qres:
         return True
@@ -2850,25 +2817,26 @@ def user_access_exists(jid, gch=''):
 def set_user_access(jid, access=0, gch=''):
     if not jid:
         return ''
-    
-    jid = jid.replace('"', '&quot;')
-    
+   
     if not user_access_exists(jid, gch):
         access = str(access)
-        sql = "INSERT INTO access (jid, access) VALUES ('%s', '%s');" % (jid.strip(), access.strip())
+        sql = "INSERT INTO access (jid, access) VALUES (?, ?);"
+        args = jid.strip(), access.strip()
     else:
         if access:
             access = str(access)
-            sql = "UPDATE access SET \"access\"='%s' WHERE jid='%s';" % (access.strip(), jid.strip())
+            sql = "UPDATE access SET access=? WHERE jid=?;"
+            args = access.strip(), jid.strip()
         else:
-            sql = "DELETE FROM access WHERE jid='%s';" % (jid.strip())
+            sql = "DELETE FROM access WHERE jid='%s';" % ()
+            args = (jid.strip(),)
     
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql, *args)
     else:
-        qres = sqlquery('dynamic/%s/gaccess.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/gaccess.db' % (cid), sql, *args)
     
     return qres
 
@@ -2917,8 +2885,8 @@ def usrid_exists(usrid):
     if type(usrid) != int:
         return False 
 
-    sql = '''SELECT * FROM tguserids WHERE id=%s;''' % (usrid)
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    sql = "SELECT * FROM tguserids WHERE id=?;"
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql, usrid)
     
     if qres:
         return True
@@ -2931,11 +2899,11 @@ def get_tg_usr_acc(usrid):
         return 0 
     
     if usrid_exists(usrid):
-        sql = '''SELECT acc FROM tguserids WHERE id=%s;''' % (usrid)
+        sql = "SELECT acc FROM tguserids WHERE id=?;"
     else:
         return 0
     
-    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/tguserids.db' % (cid), sql, usrid)
     
     if qres:
         return qres[0][0]
@@ -2967,8 +2935,8 @@ def check_access(type, source, command):
 def gch_exists(gch):
     cid = get_client_id()
     
-    sql = "SELECT chatroom FROM chatrooms WHERE chatroom='%s';" % (gch)
-    qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql)
+    sql = "SELECT chatroom FROM chatrooms WHERE chatroom=?;"
+    qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql, gch)
     
     if qres:
         return True
@@ -2977,11 +2945,11 @@ def gch_exists(gch):
 def remove_chatroom(gch):
     sql = ''
     if gch_exists(gch):
-        sql = "DELETE FROM chatrooms WHERE chatroom='%s';" % (gch.strip())
+        sql = "DELETE FROM chatrooms WHERE chatroom=?;"
 
     cid = get_client_id()
 
-    qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql, gch.strip())
 
     return qres
 
@@ -2998,14 +2966,14 @@ def get_chatrooms_list():
 #------------------------------------------------------------------------------------------
 
 def param_exists(gch, param):
-    sql = "SELECT * FROM config WHERE param='%s';" % (param)
+    sql = "SELECT * FROM config WHERE param=?;"
     
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql, param)
     else:
-        qres = sqlquery('dynamic/%s/gbt_config.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/gbt_config.db' % (cid), sql, param)
     
     if qres:
         return True
@@ -3014,7 +2982,6 @@ def param_exists(gch, param):
 def add_gch_config(gch):
     cid = get_client_id()
     
-    #gch = gch.encode('utf-8')
     if not os.path.exists('dynamic/%s/%s' % (cid, gch)):
         os.mkdir('dynamic/%s/%s' % (cid, gch), 0o755)
         
@@ -3038,9 +3005,9 @@ def add_gch_config(gch):
 def rmv_gch_param(gch, param):
     cid = get_client_id()
     
-    sql = '''DELETE FROM config WHERE param="%s";''' % (param)
+    sql = "DELETE FROM config WHERE param=?;"
     
-    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql, param)
     
     if qres != '':
         return True
@@ -3049,14 +3016,14 @@ def rmv_gch_param(gch, param):
 def get_gch_param(gch, param, oer=''):
     cid = get_client_id()
     
-    sql = "SELECT value FROM config WHERE param='%s';" % (param)
-    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql)
+    sql = "SELECT value FROM config WHERE param=?;"
+    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql, param)
     
     if qres == '':
         return oer
     else:
         if qres:
-            value = qres[0][0].replace('&quot;', '"')
+            value = qres[0][0]
             return value
         else:
             return oer
@@ -3064,22 +3031,22 @@ def get_gch_param(gch, param, oer=''):
 def get_gch_params(gch):
     cid = get_client_id()
     
-    sql = 'SELECT * FROM config;'
+    sql = "SELECT * FROM config;"
     qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql)
     
     return qres
 
 def set_gch_param(gch, param, value):
-    value = value.replace('"', '&quot;')
-    
     if not param_exists(gch, param):
-        sql = "INSERT INTO config (param, value) VALUES ('%s', '%s');" % (param.strip(), value.strip())
+        sql = "INSERT INTO config (param, value) VALUES (?, ?);"
+        args = param.strip(), value.strip()
     else:
-        sql = "UPDATE config SET \"value\"='%s' WHERE param='%s';" % (value.strip(), param.strip())
+        sql = "UPDATE config SET value=? WHERE param=?;"
+        args = value.strip(), param.strip()
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/gch_config.db' % (cid, gch), sql, *args)
     
     if qres != '':
         return True
@@ -3088,14 +3055,14 @@ def set_gch_param(gch, param, value):
 def get_param(param, oer=''):
     cid = get_client_id()
     
-    sql = "SELECT value FROM config WHERE param='%s';" % (param)
-    qres = sqlquery('dynamic/%s/gbt_config.db' % (cid), sql)
+    sql = "SELECT value FROM config WHERE param=?;"
+    qres = sqlquery('dynamic/%s/gbt_config.db' % (cid), sql, param)
     
     if qres == '':
         return oer
     else:
         if qres:
-            value = qres[0][0].replace('&quot;', '"')
+            value = qres[0][0]
             return value
         else:
             return oer
@@ -3110,9 +3077,11 @@ def get_params():
 
 def set_param(param, value):
     if not param_exists('', param):
-        sql = '''INSERT INTO config (param, value) VALUES ("%s", "%s");''' % (param.strip(), value.strip())
+        sql = "INSERT INTO config (param, value) VALUES (?, ?);"
+        args = param.strip(), value.strip()
     else:
-        sql = '''UPDATE config SET "value"="%s" WHERE param="%s";''' % (value.strip(), param.strip())
+        sql = "UPDATE config SET value=? WHERE param=?;"
+        args = value.strip(), param.strip()
     
     cid = get_client_id()
     
@@ -3158,11 +3127,11 @@ def get_chatroom_info(gch, info, idef=''):
     if gch_exists(gch):
         cid = get_client_id()
         
-        sql = "SELECT %s FROM chatrooms WHERE chatroom='%s';" % (info, gch)
-        qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql)
+        sql = "SELECT %s FROM chatrooms WHERE chatroom=?;" % (info)
+        qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql, gch)
         
         if qres:
-            return qres[0][0].replace('&quot;', '"')
+            return qres[0][0]
     else:
         return idef
 
@@ -3182,16 +3151,14 @@ def get_complete_gchs_info(gchs):
 #------------------------------------------------------------------------------------------
 
 def get_user_access(jid, gch=''):
-    jid = jid.replace('"', '&quot;')
-
-    sql = "SELECT access FROM access WHERE jid='%s';" % (jid)
+    sql = "SELECT access FROM access WHERE jid=?;"
     
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/access.db' % (cid, gch), sql, jid)
     else:
-        qres = sqlquery('dynamic/%s/gaccess.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/gaccess.db' % (cid), sql, jid)
     
     if qres:
         access = qres[0][0]
@@ -3675,12 +3642,10 @@ def dcHnd():
                 sprint(log_error('Exit!'))
                 os._exit(1)
     
-    send_client_state()
     csv('client_state', True)
 
 def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     if not jid:
-        send_client_state('brk')
         csv('client_state', False)
         return
     
@@ -3744,7 +3709,6 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
                     if is_param_set('jid'):
                         os._exit(1)
             
-            send_client_state('brk')
             csv('client_state', False)
 
         return
@@ -3767,7 +3731,6 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     
     if not auth:
         sprint('\Auth Error. Incorrect login/password?\n\Error: %s %s' % (jconn.lastErr, jconn.lastErrCode))
-        send_client_state('brk')
         csv('client_state', False)
 
         return

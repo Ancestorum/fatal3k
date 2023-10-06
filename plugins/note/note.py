@@ -3,7 +3,7 @@
 #  fatal plugin
 #  note plugin
 
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,8 @@ from fatalapi import *
 def get_note_jid(gch, nick):
     cid = get_client_id()
     
-    nick = nick.replace('"', '&quot;')
-    sql = "SELECT jid FROM users WHERE nick='%s';" % (nick)
-    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
+    sql = "SELECT jid FROM users WHERE nick=?;"
+    qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql, nick)
     
     if qres:
         jid = qres[0][0]
@@ -47,11 +46,11 @@ def show_notes(gch, notes, pref='', miff='', start=0, end=10):
     return nosli
     
 def del_note(gch, notes_id, note):
-    del_sql = "DELETE FROM %s WHERE note='%s';" % (notes_id, note)
+    del_sql = "DELETE FROM %s WHERE note=?;" % (notes_id)
     
     cid = get_client_id()
     
-    res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), del_sql)
+    res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), del_sql, note)
     
     return res
     
@@ -74,8 +73,8 @@ def get_notes(gch, notes_id):
 def check_notes_id(gch, notes_id):
     cid = get_client_id()
     
-    sql = "SELECT * FROM notes WHERE id='%s';" % (notes_id)
-    qres = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+    sql = "SELECT * FROM notes WHERE id=?;"
+    qres = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, notes_id)
     
     if qres:
         return False
@@ -85,8 +84,8 @@ def check_notes_id(gch, notes_id):
 def get_notes_id(gch, jid):
     cid = get_client_id()
     
-    sql = "SELECT id FROM notes WHERE jid='%s';" % (jid)
-    notes_id = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+    sql = "SELECT id FROM notes WHERE jid=?;"
+    notes_id = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, jid)
     
     if notes_id:
         return notes_id[0][0]
@@ -95,16 +94,16 @@ def note_add(gch, jid, note, notes_id=''):
     cid = get_client_id()
     
     if not notes_id:
-        notes_id = 'notes%s' % (random.randrange(10000000, 99999999))
+        notes_id = 'notes%s' % (rand10())
         chk_ntsid = check_notes_id(gch, notes_id)
         
         while not chk_ntsid:
-            notes_id = 'notes%s' % (random.randrange(10000000, 99999999))
+            notes_id = 'notes%s' % (rand10())
             chk_ntsid = check_notes_id(gch, notes_id)
         
-        sql = "INSERT INTO notes (jid,id) VALUES ('%s','%s');" % (jid, notes_id)
+        sql = "INSERT INTO notes (jid, id) VALUES (?, ?);"
         
-        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, jid, notes_id)
     
         sql = 'CREATE TABLE %s (ndate varchar not null, note varchar not null, unique(note));' % (notes_id)
         
@@ -112,13 +111,12 @@ def note_add(gch, jid, note, notes_id=''):
         
         sql = 'CREATE UNIQUE INDEX i%s ON %s (note);' % (notes_id, notes_id)
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
-    
-    note = note.replace(r'"', r'&quot;')
+
     date = time.time()
     
-    sql = "INSERT INTO %s (ndate,note) VALUES ('%s','%s');" % (notes_id, date, note)
+    sql = "INSERT INTO %s (ndate,note) VALUES (?, ?);" % (notes_id)
     
-    res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+    res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note)
     
     if res == '':
         sql = 'CREATE TABLE %s (ndate varchar not null, note varchar not null, unique(note));' % (notes_id)
@@ -128,9 +126,9 @@ def note_add(gch, jid, note, notes_id=''):
         sql = 'CREATE UNIQUE INDEX i%s ON %s (note);' % (notes_id, notes_id)
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
         
-        sql = "INSERT INTO %s (ndate,note) VALUES ('%s','%s');" % (notes_id, date, note)
+        sql = "INSERT INTO %s (ndate,note) VALUES (?, ?);" % (notes_id)
         
-        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note)
 
     return res
 
@@ -138,10 +136,10 @@ def get_note_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/notes.db' % (cid, gch)):
-        sql = 'CREATE TABLE notes (jid varchar not null, id varchar not null, unique(jid,id));'
+        sql = 'CREATE TABLE notes (jid varchar not null, id varchar not null, unique(jid, id));'
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
         
-        sql = 'CREATE UNIQUE INDEX inotes ON notes (jid,id);'
+        sql = 'CREATE UNIQUE INDEX inotes ON notes (jid, id);'
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
 
 def handler_notes(type, source, parameters, recover=False, jid='', rcts=''):

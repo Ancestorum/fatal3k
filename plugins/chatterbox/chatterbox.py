@@ -39,7 +39,10 @@ def init_chatterbox_db(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/chatterbox.db' % (cid, gch)):
-        sql = 'CREATE TABLE talkers (talker CHAR(100), msgs INT, since TEXT);'
+        sql = '''CREATE TABLE talkers(talker CHAR(100), 
+                                       msgs INT, 
+                                       since TEXT);'''
+                                       
         sqlquery('dynamic/%s/%s/chatterbox.db' % (cid, gch), sql)
 
         sql = 'CREATE INDEX italkers ON talkers(talker, msgs, since);'
@@ -48,18 +51,20 @@ def init_chatterbox_db(gch):
 def stat_add(talker, gch):
     cid = get_client_id()
 
-    sql = "SELECT * FROM talkers WHERE talker='%s';" % (talker)
-    rep = sqlquery('dynamic/%s/%s/chatterbox.db' % (cid, gch), sql)
+    sql = "SELECT * FROM talkers WHERE talker=?;"
+    rep = sqlquery('dynamic/%s/%s/chatterbox.db' % (cid, gch), sql, talker)
 
     if not rep:
         t = datetime.datetime.now()
         since =t.strftime('%d.%m.%Y, %H:%M')
-        sql = "INSERT INTO talkers (talker, msgs, since) VALUES ('%s', '%s', '%s');" % (talker, 1, since)
-        sqlquery('dynamic/%s/%s/chatterbox.db' % (cid, gch), sql)
+        sql = "INSERT INTO talkers (talker, msgs, since) VALUES (?, 1, ?);"
+        args = talker, since
     else:
         msgs = rep[0][1] + 1
-        sql = "UPDATE talkers SET msgs='%s' WHERE talker='%s';" % (msgs, talker)
-        sqlquery('dynamic/%s/%s/chatterbox.db' % (cid, gch), sql)
+        sql = "UPDATE talkers SET msgs=? WHERE talker=?;"
+        args = msgs, talker
+
+    sqlquery('dynamic/%s/%s/chatterbox.db' % (cid, gch), sql, *args)
 
 def stat_get(gch):
     cid = get_client_id()
