@@ -1765,14 +1765,14 @@ def _get_pl_body(plfile):
 def extr_nested_cmd(expr):
     cn = gcp('comm_nested', '#')
     
-    pat = '%s{1,1}[a-zа-я]{1,}:{2,2}' % (cn)
+    pat = '%s{1,1}[a-z_а-я]{1,}:{2,2}' % (cn)
     sts = []
     
     mit = re.finditer(pat, expr)
     
     for oi in mit:
         sts.append(oi.start())
-   
+    
     for s in sts:
         si = s + 1
         
@@ -1788,7 +1788,7 @@ def rep_nested_cmds(type, source, params):
     cn = gcp('comm_nested', '#')
     
     if not (params.count(cn) % 2) and params.count(cn):
-        frex = '%s{1,1}[a-zа-я]{1,}%s{1,1}' % (cn, cn)
+        frex = '%s{1,1}[a-z_а-я]{1,}%s{1,1}' % (cn, cn)
         
         fcmds = re.findall(frex, params)
         
