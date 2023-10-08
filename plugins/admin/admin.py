@@ -1132,8 +1132,7 @@ def handler_admin_config(type, source, parameters):
         for pmi in pars:
             par = pmi[0]
             val = pmi[1]
-            val = val.replace('&quot;', '"')
-
+            
             parl.append('%s = %s' % (par, val))
 
         nprs = get_num_list(parl)

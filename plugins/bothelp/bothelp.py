@@ -23,8 +23,6 @@ __all__ = []
 from fatalapi import *
 
 def rmv_help_info(cmd):
-    cmd = cmd.replace('"', '&quot;')
-    
     sql = "DELETE FROM help WHERE command=?;"
     
     cid = get_client_id()
@@ -52,8 +50,6 @@ def set_help_list(cmd, lst, toi='ccat'):
     return res
     
 def help_info_exists(cmd):
-    cmd = cmd.replace('"', '&quot;')
-
     cid = get_client_id()
     
     sql = "SELECT * FROM help WHERE command=?;"
@@ -96,14 +92,13 @@ def get_help_info(cmd, toi='desc'):
                 ced = sort_list_dist(ced)
                 
                 info = list_to_str(ced, '&comma;')
-                info = info.replace('&quot;', '"')
                 
             return info
         else:
             info = ''
             
             if qd:
-                info = qd.replace('&quot;', '"')
+                info = qd
                 
                 return info
             
@@ -114,7 +109,7 @@ def get_help_info(cmd, toi='desc'):
         info = ''
         
         if qd:
-            info = qd.replace('&quot;', '"')
+            info = qd
             
             return info
         

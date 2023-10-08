@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2013 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ def is_db_exists(dbpath):
         return True
     return False
 
-def sqlquery(dbpath, query):
+def sqlquery(dbpath, query, *args):
     if query:
         cursor, connection = None, None
         
@@ -57,96 +57,104 @@ def sqlquery(dbpath, query):
         spls = chkq.split()
         hdcmd = spls[0]
         
-        if not is_db_exists(dbpath): 
+        if not is_db_exists(dbpath):
             if hdcmd != 'create':
                 return ''
         
         try:
-            connection=db.connect(dbpath)
+            connection = db.connect(dbpath)
             cursor = connection.cursor()
-            cursor.execute(query)
+            
+            if query.count(';') > 1:
+                cursor.executescript(query)
+            else:
+                if args:
+                    cursor.execute(query, args)
+                else:
+                    cursor.execute(query)
+            
             result = cursor.fetchall()
             connection.commit()
             cursor.close()
             connection.close()
+            
             return result
-        except:
+        except Exception:
             if cursor:
-                cursor.close()
+               cursor.close()
+                
             if connection:
                 connection.commit()
                 connection.close()
     return ''
 
 def alias_exists(alias, gch=''):
-    alias = alias.replace('"','&quot;')
-    
-    sql = 'SELECT * FROM aliasdb WHERE alias="%s";' % (alias)
+    sql = 'SELECT * FROM aliasdb WHERE alias=?;'
     
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql, alias)
     
     if qres:
         return True
     else:
         return False
 
-def set_alias(alias,body,gch=''):
-    alias = alias.replace('"','&quot;')
-    body = body.replace('"','&quot;')
-    
-    if not alias_exists(alias,gch):
-        sql = 'INSERT INTO aliasdb (alias,body,access) VALUES ("%s","%s","");' % (alias.strip(),body.strip())
+def set_alias(alias, body, gch=''):
+    if not alias_exists(alias, gch):
+        sql = "INSERT INTO aliasdb (alias, body, access) VALUES (?, ?, '');"
+        args = alias.strip(), body.strip()
     else:
-        sql = 'UPDATE aliasdb SET "body"="%s" WHERE alias="%s";' % (body.strip(),alias.strip())
+        sql = "UPDATE aliasdb SET body=? WHERE alias=?;"
+        args = body.strip(), alias.strip()
     
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, *args)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql, *args)
     
     return qres
     
-def set_access(alias,access,gch=''):
-    alias = alias.replace('"','&quot;')
+def set_access(alias, access, gch=''):
     access = str(access)
     
     if alias_exists(alias,gch):
-        sql = 'UPDATE aliasdb SET "access"="%s" WHERE alias="%s";' % (access.strip(),alias.strip())
+        sql = "UPDATE aliasdb SET access=? WHERE alias=?;"
     else:
         return
     
+    args = access.strip(), alias.strip()
+    
     cid = get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
+        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, *args)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql)
+        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql, *args)
     
     return qres
     
-def remove_alias(alias,gch=''):
-    sql = 'DELETE FROM aliasdb WHERE alias="%s";' % (alias)
+def remove_alias(alias, gch=''):
+    sql = "DELETE FROM aliasdb WHERE alias=?;"
     
     cid = get_client_id()
     
     if gch:
-        rep = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
+        rep = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
     else:
-        rep = sqlquery('dynamic/%s/alias.db' % (cid), sql)
+        rep = sqlquery('dynamic/%s/alias.db' % (cid), sql, alias)
         
     return rep
 
-def get_alias_list(gch='',oer={}):
+def get_alias_list(gch='', oer={}):
     alias_list = {}
     
-    sql = 'SELECT alias,body FROM aliasdb;'
+    sql = "SELECT alias, body FROM aliasdb;"
     
     cid = get_client_id()
     
@@ -160,8 +168,8 @@ def get_alias_list(gch='',oer={}):
     else:
         if qres:
             for al in qres:
-                alias = al[0].replace('&quot;','"')
-                abody = al[1].replace('&quot;','"')
+                alias = al[0]
+                abody = al[1]
                 alias_list[alias] = abody 
             return alias_list
         else:
@@ -170,7 +178,7 @@ def get_alias_list(gch='',oer={}):
 def get_access_list(gch='',oer={}):
     access_list = {}
     
-    sql = 'SELECT alias,access FROM aliasdb;'
+    sql = "SELECT alias, access FROM aliasdb;"
     
     cid = get_client_id()
     

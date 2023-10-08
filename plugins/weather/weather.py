@@ -35,7 +35,7 @@ def get_weather_info(query):
     if qres:
         info = qres[0][0]
         
-        return info.replace('&quot;', '"')
+        return info
     else:
         return ''
 

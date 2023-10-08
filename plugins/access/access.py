@@ -38,7 +38,7 @@ def getacc_nicks(gch):
     qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
     
     if qres:
-        nicks = [nil[0].replace('&quot;', '"') for nil in qres]
+        nicks = [nil[0] for nil in qres]
         return nicks
     return []
 

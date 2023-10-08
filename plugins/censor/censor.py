@@ -30,8 +30,8 @@ def comp_gcensor_rexps():
         
         for cexp in gqli:
             rid = '%s' % (cexp[0])
-            exp = cexp[1].replace('&quot;', '"')
-            reason = cexp[2].replace('&quot;', '"')
+            exp = cexp[1]
+            reason = cexp[2]
             
             try:
                 exp = re.compile(exp)
@@ -52,8 +52,8 @@ def comp_censor_rexps(gch):
         
         for cexp in qli:
             rid = '%s' % (cexp[0])
-            exp = cexp[1].replace('&quot;', '"')
-            reason = cexp[2].replace('&quot;', '"')
+            exp = cexp[1]
+            reason = cexp[2]
             
             try:
                 exp = re.compile(exp)

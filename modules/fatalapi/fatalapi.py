@@ -2441,7 +2441,7 @@ def get_bot_nick(groupchat):
         bot_nick = get_chatroom_info(groupchat, 'nick', def_nick)
         
         if bot_nick:
-            return bot_nick.replace('&quot;', '"')
+            return bot_nick
         return def_nick
     else:
         return ''

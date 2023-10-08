@@ -221,8 +221,6 @@ def set_tg_chid(chid, gtitle):
     if type(chid) != int:
         return False 
     
-    gtitle = gtitle.replace('"', '&quot;')
-    
     if not chid_exists(chid):
         sql = "INSERT INTO tgchatids (id, gname) VALUES (?, ?);"
         args = chid, gtitle.strip()

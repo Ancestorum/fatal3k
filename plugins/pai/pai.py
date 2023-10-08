@@ -55,7 +55,7 @@ def show_phrases(phrases, start=0, end=10):
         else:
             rng = list(range(end - start))
     
-    nphli = ['%s) %s: %s' % (li + start + 1, phrases[li + start][0], phrases[li + start][1].replace('&quot;', '"')) for li in rng]
+    nphli = ['%s) %s: %s' % (li + start + 1, phrases[li + start][0], phrases[li + start][1]) for li in rng]
             
     return nphli
 
@@ -66,7 +66,7 @@ def get_pai_nicks(gch):
     qres = sqlquery('dynamic/%s/%s/users.db' % (cid, gch), sql)
     
     if qres:
-        nicks = [nil[0].replace('&quot;', '"') for nil in qres]
+        nicks = [nil[0] for nil in qres]
         return nicks
     return []
 
@@ -145,7 +145,6 @@ def count_phrase(gch):
 def save_phrase(phrase, gch):
     cid = get_client_id()
     
-    phrase = phrase.replace(r'"', r'&quot;')
     sql = "INSERT INTO phrases (phrase) VALUES (?);" 
     
     rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase.strip())
@@ -199,7 +198,7 @@ def get_reply(phrase, gch):
 
     cid = get_client_id()
 
-    sql = "SELECT * FROM phrases WHERE phrase LIKE ? ORDER BY RANDOM() LIMIT 1;" % (keyword)
+    sql = "SELECT * FROM phrases WHERE phrase LIKE ? ORDER BY RANDOM() LIMIT 1;"
     rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, '%{}%'.format(keyword))
     
     if rep:

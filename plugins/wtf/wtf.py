@@ -449,7 +449,7 @@ def find_ent_def(gch, key):
     sql = "SELECT entity FROM defs WHERE entity LIKE ? ORDER BY entity;"
     ent_res = sqlquery('dynamic/%s/%s/def.db', sql, '%{}%'.format(key))
     
-    sql = "SELECT entity FROM defs WHERE def LIKE ? ORDER BY entity;" % (key)
+    sql = "SELECT entity FROM defs WHERE def LIKE ? ORDER BY entity;"
     def_res = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, '%{}%'.format(key))
     
     ent_list = []
@@ -552,9 +552,9 @@ def handler_wtf(type, source, parameters):
                 suff = ' [...'
             
             if pref or suff:
-                rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0].replace('&quot;', '"'), suff)
+                rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0], suff)
             else:
-                rep = l('Article (title: %s): %s') % (entity, prt[0].replace('&quot;', '"'))
+                rep = l('Article (title: %s): %s') % (entity, prt[0])
 
             return reply(type, source, rep)
         else:
@@ -609,14 +609,14 @@ def handler_prev(type, source, parameters):
         
         if not rnow:
             if pref or suff:
-                rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0].replace('&quot;', '"'), suff)
+                rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0], suff)
             else:
-                rep = l('Article (title: %s): %s') % (entity, prt[0].replace('&quot;', '"'))
+                rep = l('Article (title: %s): %s') % (entity, prt[0])
         else:
             if pref or suff:
-                rep = '- %s/%s -\n%s%s%s\n- %s/%s -' % (prt[1], prt[3], pref, prt[0].replace('&quot;', '"'), suff, prt[1], prt[3])
+                rep = '- %s/%s -\n%s%s%s\n- %s/%s -' % (prt[1], prt[3], pref, prt[0], suff, prt[1], prt[3])
             else:
-                rep = l('Article (title: %s): %s') % (entity, prt[0].replace('&quot;', '"'))
+                rep = l('Article (title: %s): %s') % (entity, prt[0])
         
         return rep
             
@@ -735,14 +735,14 @@ def handler_next(type, source, parameters):
         
         if not rnow:
             if pref or suff:
-                rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0].replace('&quot;', '"'), suff)
+                rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0], suff)
             else:
-                rep = l('Article (title: %s): %') % (entity, prt[0].replace('&quot;', '"'))
+                rep = l('Article (title: %s): %') % (entity, prt[0])
         else:
             if pref or suff:
-                rep = '- %s/%s -\n%s%s%s\n- %s/%s -' % (prt[1], prt[3], pref, prt[0].replace('&quot;', '"'), suff, prt[1], prt[3])
+                rep = '- %s/%s -\n%s%s%s\n- %s/%s -' % (prt[1], prt[3], pref, prt[0], suff, prt[1], prt[3])
             else:
-                rep = l('Article (title: %s): %') % (entity, prt[0].replace('&quot;', '"'))
+                rep = l('Article (title: %s): %') % (entity, prt[0])
         
         return rep
             
@@ -1087,9 +1087,9 @@ def handler_rnd(type, source, parameters):
                 suff = ' [...'
             
             if pref or suff:
-                rep = l('Random article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0].replace('&quot;', '"'), suff)
+                rep = l('Random article (title: %s; page: %s of %s): %s%s%s') % (entity, prt[1], prt[3], pref, prt[0], suff)
             else:
-                rep = l('Random article (title: %s): %s') % (entity, prt[0].replace('&quot;', '"'))
+                rep = l('Random article (title: %s): %s') % (entity, prt[0])
                 
             return reply(type, source, rep)
         else:
@@ -1147,9 +1147,9 @@ def handler_search(type, source, parameters):
             suff = ' [...'
         
         if pref or suff:
-            rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, part, qofparts, pref, pgdef.replace('&quot;', '"'), suff)
+            rep = l('Article (title: %s; page: %s of %s): %s%s%s') % (entity, part, qofparts, pref, pgdef, suff)
         else:
-            rep = l('Article (title: %s): %s') % (entity, pgdef.replace('&quot;', '"'))
+            rep = l('Article (title: %s): %s') % (entity, pgdef)
         
         return rep
             
@@ -1241,7 +1241,7 @@ def handler_get_wtf(type, source, parameters):
         gdef = get_def(groupchat, entity)
         
         if gdef:
-            data = gdef[0].replace('&quot;', '"')
+            data = gdef[0]
             entity = gdef[1]
         else:
             return reply(type, source, l('Article with title "%s" not found!') % (entity))

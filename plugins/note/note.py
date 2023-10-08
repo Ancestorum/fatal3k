@@ -41,7 +41,7 @@ def show_notes(gch, notes, pref='', miff='', start=0, end=10):
         else:
             rng = list(range(end - start))
         
-    nosli = ['%s) %s%s%s%s:\n%s' % (li + start + 1, pref, time.strftime('%d.%m.%Y', time.localtime(float(notes[li + start][0]))), miff, time.strftime('%H:%M:%S', time.localtime(float(notes[li + start][0]))), notes[li + start][1].replace('&quot;', '"')) for li in rng]
+    nosli = ['%s) %s%s%s%s:\n%s' % (li + start + 1, pref, time.strftime('%d.%m.%Y', time.localtime(float(notes[li + start][0]))), miff, time.strftime('%H:%M:%S', time.localtime(float(notes[li + start][0]))), notes[li + start][1]) for li in rng]
             
     return nosli
     
@@ -105,28 +105,28 @@ def note_add(gch, jid, note, notes_id=''):
         
         res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, jid, notes_id)
     
-        sql = 'CREATE TABLE %s (ndate varchar not null, note varchar not null, unique(note));' % (notes_id)
+        sql = 'CREATE TABLE %s (ndate VARCHAR NOT NULL, note VARCHAR NOT NULL, UNIQUE(note));' % (notes_id)
         
         res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX i%s ON %s (note);' % (notes_id, notes_id)
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
 
-    date = time.time()
+    date = trunc(time.time())
     
-    sql = "INSERT INTO %s (ndate,note) VALUES (?, ?);" % (notes_id)
+    sql = "INSERT INTO %s (ndate, note) VALUES (?, ?);" % (notes_id)
     
     res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note)
     
     if res == '':
-        sql = 'CREATE TABLE %s (ndate varchar not null, note varchar not null, unique(note));' % (notes_id)
+        sql = 'CREATE TABLE %s (ndate VARCHAR NOT NULL, note VARCHAR NOT NULL, UNIQUE(note));' % (notes_id)
         
         res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX i%s ON %s (note);' % (notes_id, notes_id)
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
         
-        sql = "INSERT INTO %s (ndate,note) VALUES (?, ?);" % (notes_id)
+        sql = "INSERT INTO %s (ndate, note) VALUES (?, ?);" % (notes_id)
         
         res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note)
 
@@ -136,7 +136,7 @@ def get_note_state(gch):
     cid = get_client_id()
     
     if not is_db_exists('dynamic/%s/%s/notes.db' % (cid, gch)):
-        sql = 'CREATE TABLE notes (jid varchar not null, id varchar not null, unique(jid, id));'
+        sql = 'CREATE TABLE notes (jid VARCHAR NOT NULL, id VARCHAR NOT NULL, UNIQUE(jid, id));'
         sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
         
         sql = 'CREATE UNIQUE INDEX inotes ON notes (jid, id);'
