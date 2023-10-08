@@ -3128,11 +3128,12 @@ def get_chatroom_info(gch, info, idef=''):
     if gch_exists(gch):
         cid = get_client_id()
         
-        sql = "SELECT %s FROM chatrooms WHERE chatroom=?;" % (info)
+        sql = "SELECT * FROM chatrooms WHERE chatroom=?;"
         qres = sqlquery('dynamic/%s/chatrooms.db' % (cid), sql, gch)
         
         if qres:
-            return qres[0][0]
+            idic = {'chatroom': qres[0][0], 'nick': qres[0][1], 'pass': qres[0][2]}
+            return idic[info]
     else:
         return idef
 

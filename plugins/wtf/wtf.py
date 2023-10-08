@@ -27,7 +27,7 @@ def wr_op_file(path, data):
 
 def si_request(frm, fjid, sid, name, size, entity=''):
     iq = xmpp.Protocol(name='iq', to=fjid, typ='set')
-    Id = 'si%s' % (time.time())
+    Id = 'si%s' % (rand10())
     iq.setID(Id)
     si = iq.setTag('si')
     si.setNamespace(xmpp.NS_SI)
@@ -232,14 +232,17 @@ def save_pos(gch, jid, entity, last, part, spart, qop, reader_id=''):
         sql = 'CREATE UNIQUE INDEX i%s ON %s (entity);' % (reader_id, reader_id)
         sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
     
-    sql = "INSERT INTO %s (entity, part, spart, qop, last) VALUES (?, ?, ?, ?, ?);" % (reader_id)
+    sql = "SELECT * FROM %s WHERE entity=?" % (reader_id)
+    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity)
     
-    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity, part, spart, qop, last)
+    if not res:
+        sql = "INSERT INTO %s (entity, part, spart, qop, last) VALUES (?, ?, ?, ?, ?);" % (reader_id)
+        args = entity, part, spart, qop, last
+    else:
+        sql = "UPDATE %s SET part=?, spart=?, qop=?, last=? WHERE entity=?;" % (reader_id)
+        args = part, spart, qop, last, entity
     
-    if res == '':
-        upd_sql = "UPDATE %s SET part=?, spart=?, qop=?, last=? WHERE entity=?;" % (reader_id)
-        
-        res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), upd_sql, part, spart, qop, last, entity)
+    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, *args)
     
     if res == '':
         sql = '''CREATE TABLE %s(entity VARCHAR NOT NULL, 
@@ -270,7 +273,7 @@ def get_part_list(entli, part, quantity):
         qofparts = 1
         quantity = qtt
     else:
-        qofparts = qtt / quantity
+        qofparts = qtt // quantity
         isadparts = qtt % quantity
          
         if isadparts:
@@ -322,7 +325,7 @@ def get_part(gdef, part, spart=2000):
         qofparts = 1
         spart = qtt
     else:
-        qofparts = qtt / spart
+        qofparts = qtt // spart
         isadparts = qtt % spart
          
         if isadparts:
@@ -538,7 +541,7 @@ def handler_wtf(type, source, parameters):
             reader_id = get_reader_id(groupchat, jid)
             
             if prt[3] > 1:
-                save_pos(groupchat, jid, entity, time.time(), prt[1], spart, prt[3], reader_id)
+                save_pos(groupchat, jid, entity, trunc(time.time()), prt[1], spart, prt[3], reader_id)
             
             pref = ''
             suff = ''
@@ -594,7 +597,7 @@ def handler_prev(type, source, parameters):
         prt = get_part(gdef, part, spart)
         
         if prt[1] != 1 or force:
-            save_pos(groupchat, jid, entity, time.time(), prt[1], spart, prt[3], reader_id)
+            save_pos(groupchat, jid, entity, trunc(time.time()), prt[1], spart, prt[3], reader_id)
         
         pref = ''
         suff = ''
@@ -676,9 +679,9 @@ def handler_prev(type, source, parameters):
     else:
         entity = last_wtf[0]
         
-        currtm = time.time()
-        last = float(last_wtf[4])
-        tmlong = int(round(currtm - last))
+        currtm = trunc(time.time())
+        last = int(last_wtf[4])
+        tmlong = currtm - last
         
         part = int(last_wtf[1])
         
@@ -718,7 +721,7 @@ def handler_next(type, source, parameters):
         prt = get_part(gdef, part, spart)
         
         if prt[3] != prt[1] or force:
-            save_pos(groupchat, jid, entity, time.time(), prt[1], spart, prt[3], reader_id)
+            save_pos(groupchat, jid, entity, trunc(time.time()), prt[1], spart, prt[3], reader_id)
         else:
             del_exp_wtf(groupchat, entity, reader_id)
         
@@ -799,9 +802,9 @@ def handler_next(type, source, parameters):
     else:
         entity = last_wtf[0]
         
-        currtm = time.time()
-        last = float(last_wtf[4])
-        tmlong = int(round(currtm - last))
+        currtm = trunc(time.time())
+        last = int(last_wtf[4])
+        tmlong = currtm - last
         
         part = int(last_wtf[1])
         
@@ -1073,7 +1076,7 @@ def handler_rnd(type, source, parameters):
             reader_id = get_reader_id(groupchat, jid)
             
             if prt[3] > 1:
-                save_pos(groupchat, jid, entity, time.time(), prt[1], 2000, prt[3], reader_id)
+                save_pos(groupchat, jid, entity, trunc(time.time()), prt[1], 2000, prt[3], reader_id)
             
             pref = ''
             suff = ''
@@ -1133,7 +1136,7 @@ def handler_search(type, source, parameters):
     
     def out_part(groupchat, jid, entity, pgdef, part, qofparts, reader_id):
         if qofparts != part:
-            save_pos(groupchat, jid, entity, time.time(), part, 2000, qofparts, reader_id)
+            save_pos(groupchat, jid, entity, trunc(time.time()), part, 2000, qofparts, reader_id)
         
         pref = ''
         suff = ''
@@ -1248,7 +1251,7 @@ def handler_get_wtf(type, source, parameters):
         if not to:
             return reply(type, source, l('Internal error, unable to perform operation!'))
         
-        sid = 'file%s' % (time.time())
+        sid = 'file%s' % (rand10())
         name = '%s.txt' % (sid)
         
         cid = get_client_id()
