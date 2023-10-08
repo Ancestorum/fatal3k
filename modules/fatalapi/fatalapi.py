@@ -236,6 +236,7 @@ def _app_file(filename, data):
         log_exc_error()
 
 def tms_to_str(tmstm=time.time(), pat='%d.%m.%Y/%H:%M:%S'):
+    tmstm = time.time()
     return time.strftime(pat, time.localtime(tmstm))
 
 def iso_to_tms(isof):
@@ -3085,7 +3086,7 @@ def set_param(param, value):
     
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/gbt_config.db' % (cid), sql)
+    qres = sqlquery('dynamic/%s/gbt_config.db' % (cid), sql, *args)
     
     if qres != '':
         return True

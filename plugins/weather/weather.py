@@ -29,8 +29,8 @@ def get_weather_info(query):
     qres = sqlquery('static/weather.db', sql, ccode)
     
     if not qres:
-        sql = "SELECT ccode FROM weather WHERE desc LIKE '?%%';"
-        qres = sqlquery('static/weather.db', sql, query)
+        sql = "SELECT ccode FROM weather WHERE desc LIKE ?;"
+        qres = sqlquery('static/weather.db', sql, '{}%'.format(ccode))
     
     if qres:
         info = qres[0][0]

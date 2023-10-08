@@ -28,8 +28,8 @@ def get_tld_info(query):
     qres = sqlquery('static/tlds.db', sql, query)
     
     if not qres:
-        sql = "SELECT tld FROM tlds WHERE info LIKE ?%;"
-        qres = sqlquery('static/tlds.db', sql, query)
+        sql = "SELECT tld FROM tlds WHERE info LIKE ?;"
+        qres = sqlquery('static/tlds.db', sql, '{}%'.format(query))
     
     if qres:
         info = qres[0][0]

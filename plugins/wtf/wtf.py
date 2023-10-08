@@ -414,8 +414,8 @@ def del_def(gch, entity):
 def get_def(gch, entity):
     cid = get_client_id()
     
-    sql = "SELECT def, entity FROM defs WHERE entity LIKE '?%%' ORDER BY entity LIMIT 1;"
-    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, entity)
+    sql = "SELECT def, entity FROM defs WHERE entity LIKE ? ORDER BY entity LIMIT 1;"
+    qres = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, '{}%'.format(entity))
     
     if qres:
         gdef = qres[0][0]
@@ -443,11 +443,11 @@ def get_rnd_def(gch):
 def find_ent_def(gch, key):
     cid = get_client_id()
     
-    sql = "SELECT entity FROM defs WHERE entity LIKE '%%?%%' ORDER BY entity;"
-    ent_res = sqlquery('dynamic/%s/%s/def.db', sql, key)
+    sql = "SELECT entity FROM defs WHERE entity LIKE ? ORDER BY entity;"
+    ent_res = sqlquery('dynamic/%s/%s/def.db', sql, '%{}%'.format(key))
     
-    sql = "SELECT entity FROM defs WHERE def LIKE '%%?%%' ORDER BY entity;"
-    def_res = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, key)
+    sql = "SELECT entity FROM defs WHERE def LIKE ? ORDER BY entity;" % (key)
+    def_res = sqlquery('dynamic/%s/%s/def.db' % (cid, gch), sql, '%{}%'.format(key))
     
     ent_list = []
     def_list = []

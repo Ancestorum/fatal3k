@@ -168,17 +168,17 @@ def del_phrase(phrase_id, gch):
         
         return rep
     else:
-        sql = "SELECT COUNT(id) FROM phrases WHERE phrase LIKE %%?%%;"
+        sql = "SELECT COUNT(id) FROM phrases WHERE phrase LIKE ?;"
         
-        qres = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase_id)
+        qres = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, '%{}%'.format(phrase_id))
         
         if qres:
             cnt = qres[0][0]
             
             if cnt:
-                sql = "DELETE FROM phrases WHERE phrase LIKE '%%?%%';"
+                sql = "DELETE FROM phrases WHERE phrase LIKE ?;"
                 
-                sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, phrase_id)
+                sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, '%{}%'.format(phrase_id))
                 
             return cnt
         else:
@@ -199,8 +199,8 @@ def get_reply(phrase, gch):
 
     cid = get_client_id()
 
-    sql = "SELECT * FROM phrases WHERE phrase LIKE '%%?%%' ORDER BY RANDOM() LIMIT 1;"
-    rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, keyword)
+    sql = "SELECT * FROM phrases WHERE phrase LIKE ? ORDER BY RANDOM() LIMIT 1;" % (keyword)
+    rep = sqlquery('dynamic/%s/%s/pai_phrases.db' % (cid, gch), sql, '%{}%'.format(keyword))
     
     if rep:
         rep = list(rep[0])
