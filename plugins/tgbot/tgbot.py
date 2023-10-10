@@ -364,6 +364,9 @@ def handle_photo_content(message):
 
     cid = get_client_id()
     
+    if is_var_set(cid, 'tgalbum_flag'): 
+        return
+    
     tbot = get_fatal_var(cid, 'tgbot')
     chatid = message.chat.id
     messid = message.message_id
@@ -473,6 +476,9 @@ def handle_video_content(message):
         return
     
     cid = get_client_id()
+    
+    if is_var_set(cid, 'tgalbum_flag'): 
+        return
     
     tbot = get_fatal_var(cid, 'tgbot')
     chatid = message.chat.id
@@ -1057,19 +1063,89 @@ def tgbot_polling_proc():
     except Exception:
         log_exc_error()     
 
-def listener(messages):
+def album_worker(msgs):
     cid = get_client_id()
     
-    if len(messages) >= 2:
-        set_fatal_var(cid, 'tgmult_flag', 1)
-    else:
-        set_fatal_var(cid, 'tgmult_flag', 0)
+    if not is_var_set(cid, 'tgm_msg_buf'):
+        set_fatal_var(cid, 'tgm_msg_buf', [])
     
-    set_fatal_var(cid, 'last_tg_msgs', messages)
+    for m in msgs:
+        tbot = get_fatal_var(cid, 'tgbot')
+        chatid = m.chat.id
+        messid = m.message_id
+        caption = m.caption
+        fname = m.from_user.first_name
+        usern = m.from_user.username 
+        
+        file_id, file_uid = None, None
+        
+        if m.photo:
+            file_id = m.photo[-1].file_id
+            file_uid = m.photo[-1].file_unique_id
+        elif m.video:
+            if m.video.file_size > 20000000:
+                file_id = m.video.thumb.file_id
+                file_uid = m.video.thumb.file_unique_id
+            else:    
+                file_id = m.video.file_id
+                file_uid = m.video.file_unique_id
+    
+        file_url = tbot.get_file_url(file_id)
+    
+        if not tgfile_exists(file_uid):
+            save_and_upload(file_url)
+        else:
+            filename = get_tg_file(file_uid)
+            
+            if not is_var_set(cid, 'tgm_pen_up_fls'):
+                set_fatal_var(cid, 'tgm_pen_up_fls', [filename])
+            else:
+                pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
+                pupf.append(filename)
+        
+        if (m.chat.type != 'private') and (is_var_set(cid, 'watchers', chatid)):
+            pupf = get_fatal_var(cid, 'tgm_pen_up_fls')
+            
+            filename = pupf[-1]
+            pupf.remove(filename)
+            
+            purl = get_cfg_param('tgurl_prefix')
+            rmsg = '%s%s' %(purl, filename)
+            ndt = m.date
+            
+            set_tg_file(file_uid, filename)
+            
+            tgmb = get_fatal_var(cid, 'tgm_msg_buf')
+            
+            thrn = '%s/tgm_msg_handler' % (cid)
+
+            if tgmb:
+                tgmb.append((ndt, caption, rmsg))
+                
+                mtime = round(time.time(), 2)
+                set_fatal_var(cid, 'tgm_mtime', mtime)
+            else:
+                tgmb.append((ndt, caption, rmsg))
+               
+                mtime = round(time.time(), 2)
+                set_fatal_var(cid, 'tgm_mtime', mtime)
+
+    msg_worker(msgs[0], True)
+    rmv_fatal_var(cid, 'tgalbum_flag')
+    
+def listener(msgs):
+    cid = get_client_id()
+    
+    if len(msgs) > 1:
+        set_fatal_var(cid, 'tgalbum_flag', 1)
+        thrn = '%s/tgm_album_handler' % (cid)
+        call_in_sep_thr(thrn, album_worker, msgs)
+    
+    set_fatal_var(cid, 'last_tg_msgs', msgs)
     
     if is_param_seti('tglog_json'):
-        for msg in messages:
-            json_str = msg.json
+        for m in msgs:
+            json_str = m.json
             bfjs = '\n' +  json.dumps(json_str, indent=4) + '\n\n' + '=' * 80 + '\n'
             log_null_cmdr(bfjs, 'syslogs/json.log')
     
@@ -1087,14 +1163,14 @@ def init_tgm_bot():
         
         call_in_sep_thr(cid + '/init_tgm_bot', tgbot_polling_proc)
         
+        tbot.set_update_listener(listener)
+        
         tbot.register_message_handler(handler_tgaccess, commands=['tgaccess'])
         tbot.register_message_handler(command_messages, content_types=['text'])
         tbot.register_message_handler(handle_photo_content, content_types=['photo', 'document', 'animation'])
         tbot.register_message_handler(handle_video_content, content_types=['video', 'video_note'])
         tbot.register_message_handler(handle_audio_content, content_types=['audio', 'voice'])
         tbot.register_message_handler(handle_sticker_content, content_types=['sticker'])
-        
-        tbot.set_update_listener(listener)
 
 def check_expired_tg_files():
     add_fatal_task('rmv_exp_tg_files', rmv_exp_tg_files, ival=3600)

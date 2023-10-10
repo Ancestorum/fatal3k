@@ -117,7 +117,7 @@ def sprint(*args):
         log_exc_error()
         log_error(str(args), 'syslogs/output.log')
 
-def dgch(file=''):
+def dc(file=''):
     curr_thrn = get_curr_thr_name()
     gch = cgv(curr_thrn, 'called_from')
 
