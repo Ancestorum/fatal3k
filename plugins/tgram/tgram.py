@@ -41,7 +41,7 @@ async def new_message_handler(event):
     try:
         if event.sender_id == user_id and event.is_private:
             csv('tgram_fav_event', event)
-            log_null_cmdr(event.message.message + '\n', 'syslogs/tgfav.log')
+            log_null_cmdr(event.text + '\n', 'syslogs/tgfav.log')
             #await client.download_media(event.message.media, 'dynamic/files')
     except Exception:
         log_exc_error()

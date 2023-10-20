@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -38,6 +38,8 @@ def handler_sg_get(type, source, parameters):
         
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(iq, first_handler_sg, {'parameters': parameters, 'type': type, 'source': source, 'sId': Id})
+    
+    return '[info]'
 
 @handle_xmpp_exc('Unknown error!')
 def first_handler_sg(coze, res, parameters, type, source, sId):

@@ -31,7 +31,7 @@ import types
 import locale
 import re
 import random
-import imp
+import importlib
 import socket
 import select
 import urllib.request, urllib.parse, urllib.error
@@ -342,11 +342,13 @@ def _get_core_body():
     else:
         return ''
 
-def rand10():
-    rstr = str(random.randrange(1, 9))
+def rand10(ln=10):
+    random.seed()
     
-    for i in range(9):
-        rstr += str(random.randrange(0, 9))
+    rstr = str(random.randrange(1, 10))
+    
+    for i in range(ln-1):
+        rstr += str(random.randrange(0, 10))
     
     return rstr
 
@@ -1561,7 +1563,7 @@ def chk_md5_and_reload():
             jconn.send(prs)
         
         time.sleep(3)
-        sprint('\Restarting...')
+        sprint('\\Restarting...')
         restart_bot()
     
     if ocfg_md5 != ncfg_md5:
@@ -1603,7 +1605,7 @@ def _reload(plugin):
     load_hlp_msgs(locale, dpath)
     
     try:
-        imp.load_source(plugin, plfile)
+        importlib.reload(sys.modules['%s.%s' % (plugin, plugin)])
     except Exception:
         log_exc_error()
 
@@ -1703,11 +1705,11 @@ def load_plugins():
         sprint()
     
     if loadedpl:
-        sprint('\n\Loaded plugins (%.2f) (total: %d).' % (round(tldt, 2), len(loadedpl)))
+        sprint('\n\\Loaded plugins (%.2f) (total: %d).' % (round(tldt, 2), len(loadedpl)))
     
     if chkddpl:
         chkddpl.sort()
-        sprint('\n\Disabled plugins (d) (total: %d):' % (len(chkddpl)))
+        sprint('\n\\Disabled plugins (d) (total: %d):' % (len(chkddpl)))
         displ = ', '.join(chkddpl)
         
         if is_var_set('cle'):
@@ -1717,7 +1719,7 @@ def load_plugins():
     
     if failedpl:
         failedpl.sort()
-        sprint('\n\Failed to load plugins (f) (total: %d):' % (len(failedpl)))
+        sprint('\n\\Failed to load plugins (f) (total: %d):' % (len(failedpl)))
         invp = ', '.join(failedpl)
         
         if is_var_set('cle'):
@@ -1736,7 +1738,7 @@ def load_plugins():
         
         sprint()
     else:
-        sprint('\n\There are no plugins to load!\n')
+        sprint('\n\\There are no plugins to load!\n')
         
 def _base64dec(target):
     decrypted = base64.decodestring(target)
@@ -1816,9 +1818,10 @@ def rep_nested_cmds(type, source, params):
                 if cnm in cmdl:
                     if check_access(type, source, cnm):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
-                        res = str(cmd_hnd(type, source, par))
-                    
-                        params = params.replace(fcmd, res, 1)
+                        
+                        res = cmd_hnd(type, source, par)
+
+                        params = params.replace(fcmd, str(res), 1)
                     else:
                         return params
                 else:
@@ -2664,7 +2667,7 @@ def msg(target, body, chatid=0):
     
     mess = xmpp.Message(target)
     
-    Id = 'msg%s' % (time.time())
+    Id = 'msg%s' % (rand10())
     mess.setID(Id)
     
     if is_groupchat(target):
@@ -2702,7 +2705,6 @@ def msg(target, body, chatid=0):
     return body
 
 def reply(ltype, source, body):
-    cid = get_client_id()
     groupchat = source[1]
     nick = source[2]
     fjid = source[0]
@@ -2727,7 +2729,7 @@ def reply(ltype, source, body):
         msg('telegram', body, chatid)
         return body    
     elif ltype == 'null':
-        set_fatal_var(cid, source[0], 'last_cmd_result', body)
+        set_client_var(source[0], 'last_cmd_result', body)
         log_null_cmdr(body)
         return body
 
@@ -3177,15 +3179,15 @@ def keep_alive_check():
     if get_int_fatal_var(bjid, 'keep_alive_checks') >= ptrs:
         sprint('\nKeep alive timed out.')
         time.sleep(3)
-        sprint('\Try to reconnect...')
+        sprint('\\Try to reconnect...')
         
-        psw = get_fatal_var(bjid, 'passwd')
-        rsc = get_fatal_var(bjid, 'rsrc')
-        prt = get_fatal_var(bjid, 'port')
-        tls = get_fatal_var(bjid, 'tlssl')
+        psw = get_client_var('passwd')
+        rsc = get_client_var('rsrc')
+        prt = get_client_var('port')
+        tls = get_client_var('tlssl')
 
         dec_fatal_var('connected_count') 
-        set_fatal_var(bjid, 'keep_alive_checks', 0)
+        set_client_var('keep_alive_checks', 0)
         
         reconnect(bjid, psw, rsc, prt, tls)
         
@@ -3197,22 +3199,22 @@ def keep_alive_check():
     iq.setID(Id)
     iq.addChild('ping', {}, [], 'urn:xmpp:ping')
     
-    inc_fatal_var(bjid, 'keep_alive_checks')
+    inc_client_var('keep_alive_checks')
 
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(iq, keep_alive_check_answ, {'sId': Id})
 
 @handle_xmpp_exc(quiet=True)
 def keep_alive_check_answ(coze, res, sId):
-    cid = get_client_id()
-    
     if res:
         Id = res.getID()
         
+        coze.getFuncRes(sId)
+       
         if Id != sId:
             return
-        
-        set_fatal_var(cid, 'keep_alive_checks', 0)
+                
+        set_client_var('keep_alive_checks', 0)
 
 #------------------------------------------------------------------------------
 
@@ -3624,16 +3626,16 @@ def reconnect(jid, password, resource, port=5222, tlssl=1):
 def dcHnd():
     cid = get_client_id()
     
-    if not is_var_set(cid, 'disconnected') and is_param_seti('auto_reconnect'):
-        sprint('\nDisconnected.\n\Reconnecting...')
+    if not is_cvar_set('disconnected') and is_param_seti('auto_reconnect'):
+        sprint('\nDisconnected.\n\\Reconnecting...')
         
         dec_fatal_var('connected_count') 
-        set_fatal_var(cid, 'keep_alive_checks', 0)
+        set_client_var('keep_alive_checks', 0)
 
-        psw = get_fatal_var(cid, 'passwd')
-        rsc = get_fatal_var(cid, 'rsrc')
-        port = get_fatal_var(cid, 'port')
-        tlssl = get_fatal_var(cid, 'tlssl')
+        psw = get_client_var('passwd')
+        rsc = get_client_var('rsrc')
+        port = get_client_var('port')
+        tlssl = get_client_var('tlssl')
 
         call_in_sep_thr(cid + '/start', reconnect, cid, psw, rsc, port, tlssl)
     else:
@@ -3644,20 +3646,20 @@ def dcHnd():
                 sprint(log_error('Exit!'))
                 os._exit(1)
     
-    csv('client_state', True)
+    set_client_var('client_state', True)
 
 def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     if not jid:
-        csv('client_state', False)
+        set_client_var('client_state', False)
         return
     
     username = get_usernode(jid)
     server = get_domain(jid)
 
-    set_fatal_var(jid, 'passwd', password)
-    set_fatal_var(jid, 'rsrc', resource)
-    set_fatal_var(jid, 'port', port)
-    set_fatal_var(jid, 'tlssl', tlssl)
+    set_client_var('passwd', password)
+    set_client_var('rsrc', resource)
+    set_client_var('port', port)
+    set_client_var('tlssl', tlssl)
     
     dbg_mode = get_int_cfg_param('debug_mode')
     
@@ -3668,7 +3670,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     
     set_fatal_var('clconns', jid, jconn)
     
-    set_fatal_var(jid, 'jconn', jconn)
+    set_client_var('jconn', jconn)
     
     init_dynamic(jid)
     load_locale(jid)
@@ -3690,36 +3692,36 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
         if get_int_fatal_var(jid, 'reconnects') > 0:
             wait_for_try = get_int_fatal_var(jid, 'wait_for_try')
             
-            sprint("\Couldn't connect!\n\Wait %s seconds for next try..." % (wait_for_try))
+            sprint("\\Couldn't connect!\n\\Wait %s seconds for next try..." % (wait_for_try))
             
             time.sleep(wait_for_try)
             
             call_in_sep_thr(jid + '/start', reconnect, jid, password, resource, port, tlssl)
             
             if not is_param_seti('reconnect_forever'):
-                dec_fatal_var(jid, 'reconnects')
+                dec_client_var('reconnects')
             
-            inc_fatal_var(jid, 'wait_for_try', 3)
+            inc_client_var('wait_for_try', 3)
         else:
-            set_fatal_var(jid, 'reconnects', 5)
-            set_fatal_var(jid, 'wait_for_try', 3)
+            set_client_var('reconnects', 5)
+            set_client_var('wait_for_try', 3)
 
-            sprint("\Couldn't find proper connection with server!")
+            sprint("\\Couldn't find proper connection with server!")
             
             if not get_int_cfg_param('reconnect_forever'):
                 if not is_var_set('connected_count'):
                     if is_param_set('jid'):
                         os._exit(1)
             
-            csv('client_state', False)
+            set_client_var('client_state', False)
 
         return
     else:
-        sprint('\Connected using %s.' % (jconn.isConnected().upper()))
+        sprint('\\Connected using %s.' % (jconn.isConnected().upper()))
 
     inc_fatal_var('connected_count')
-    set_fatal_var(jid, 'reconnects', 5)
-    set_fatal_var(jid, 'wait_for_try', 3)
+    set_client_var('reconnects', 5)
+    set_client_var('wait_for_try', 3)
 
     sprint('Try to authenticate...')
     
@@ -3732,17 +3734,17 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     auth = jconn.auth(username, password, resource)
     
     if not auth:
-        sprint('\Auth Error. Incorrect login/password?\n\Error: %s %s' % (jconn.lastErr, jconn.lastErrCode))
-        csv('client_state', False)
+        sprint('\\Auth Error. Incorrect login/password?\n\\Error: %s %s' % (jconn.lastErr, jconn.lastErrCode))
+        set_client_var('client_state', False)
 
         return
     else:
-        sprint('\Successfully.')
+        sprint('\\Successfully.')
     
-    if not is_var_set(jid, 'info', 'ss'):
-        set_fatal_var(jid, 'info', 'ss', 1)
+    if not is_cvar_set('info', 'ss'):
+        set_client_var('info', 'ss', 1)
     else:
-        inc_fatal_var(jid, 'info', 'ss')
+        inc_client_var('info', 'ss')
 
     if get_int_cfg_param('privacy_lists', 1):
         jconn.RegisterHandler('iq', setPrivacyHandler, 'set', ns=xmpp.NS_PRIVACY)
@@ -3791,14 +3793,14 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
 
     call_in_sep_thr(jid + '/connect_client', call_stage0_init_handlers)
 
-    if not is_var_set(jid, 'last', 't'):
-        set_fatal_var(jid, 'last', 't', time.time())
+    if not is_cvar_set('last', 't'):
+        set_client_var('last', 't', time.time())
 
-    set_fatal_var(jid, 'roster', roster)
+    set_client_var('roster', roster)
     
     set_init_status()
     
-    if not is_var_set(jid, 'reconnect'):
+    if not is_cvar_set('reconnect'):
         tname = make_thr_name(jid, 'connect_client', 'task_manager')
         start_scheduler(tname)
 
@@ -3808,7 +3810,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
         gchs = get_complete_gchs_info(groupchats)
         
         if groupchats:
-            aliaso = get_fatal_var(jid, 'alias')
+            aliaso = get_client_var('alias')
             
             if get_int_cfg_param('privacy_lists', 1):
                 add_jids_to_privacy(groupchats)
@@ -3825,9 +3827,9 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
                     try:                        
                         join_groupchat(groupchat, gchs[groupchat]['nick'] if gchs[groupchat]['nick'] else get_cfg_param('default_nick'), gchs[groupchat]['pass'])
                         
-                        sprint('\%s' % (groupchat))
+                        sprint('\\%s' % (groupchat))
                     except Exception:
-                        sprint('\Can\'t join: %s.\n' % (groupchat))
+                        sprint('\\Can\'t join: %s.\n' % (groupchat))
                         log_exc_error()
         
         del gchs
@@ -3841,11 +3843,11 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
         if qres != '':
             add_chatroom()
     
-    set_fatal_var(jid, 'info', 'ses', time.time())
-    set_fatal_var(jid, 'info', 'msg', 0)
-    set_fatal_var(jid, 'info', 'iq', 0)
-    set_fatal_var(jid, 'info', 'prs', 0)
-    set_fatal_var(jid, 'info', 'cmd', 0)
+    set_client_var('info', 'ses', time.time())
+    set_client_var('info', 'msg', 0)
+    set_client_var('info', 'iq', 0)
+    set_client_var('info', 'prs', 0)
+    set_client_var('info', 'cmd', 0)
     
     call_in_sep_thr(jid + '/connect_client', call_stage2_init_handlers)
     
@@ -3864,10 +3866,10 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     mn_xmpp_thr.start()
     threading.stack_size(stk_size)
     
-    set_fatal_var(jid, 'main_xmpp_stanza_pc', mn_xmpp_thr)
-    set_fatal_var(jid, 'reconnect', 0)
+    set_client_var('main_xmpp_stanza_pc', mn_xmpp_thr)
+    set_client_var('reconnect', 0)
     
-    csv('client_state', True)
+    set_client_var('client_state', True)
     set_fatal_event('client_event')
     
     if is_param_seti('show_console') and is_var_set('con_last_prompt'):
@@ -3885,38 +3887,38 @@ def main_xmpp_stanza_pc():
     
     thrn = get_curr_thr_name()
 
-    set_fatal_var(cid, thrn, 'cnt', 0)
+    set_client_var(thrn, 'cnt', 0)
 
     try:
         jconn = get_client_conn()
         
         while True:
-            set_fatal_var(cid, thrn, 'rtm', time.time())
+            set_client_var(thrn, 'rtm', time.time())
 
             if not is_var_set(cid):
                 return
          
             pdata = jconn.Process(8)
             
-            if is_var_set(cid, thrn):
-                rtm = get_fatal_var(cid, thrn, 'rtm')
+            if is_cvar_set(thrn):
+                rtm = get_client_var(thrn, 'rtm')
                 lst = time.time() - rtm
 
                 if lst < 1:
-                    inc_fatal_var(cid, thrn, 'cnt')
+                    inc_client_var(thrn, 'cnt')
                 else:
-                    set_fatal_var(cid, thrn, 'cnt', 0)
+                    set_client_var(thrn, 'cnt', 0)
 
-                cnt = get_fatal_var(cid, thrn, 'cnt')
+                cnt = get_client_var(thrn, 'cnt')
 
                 if cnt >= 10000:
-                    rmv_fatal_var(cid, thrn)
+                    rmv_client_var(thrn)
                     sprint(log_error('\nInfinite loop has been detected, exit that loop!\n'))
                     return
 
             if pdata and pdata != '0':
-                inc_fatal_var(cid, 'info', 'btraffic', len(pdata))
-                inc_fatal_var(cid, 'info', 'pcycles')
+                inc_client_var('info', 'btraffic', len(pdata))
+                inc_client_var('info', 'pcycles')
     except Exception:
         mstk_size = get_int_cfg_param('main_proc_stk_size', 1048576)
         stk_size = get_int_cfg_param('def_stk_size', 524288)
@@ -3935,9 +3937,7 @@ def findPresenceItem(node):
             return p
 
 def is_ruser_prsnt(jid):
-    cid = get_client_id()
-    
-    roster = get_fatal_var(cid, 'roster')
+    roster = get_client_var('roster')
     
     ritm = roster.getItem(jid)
     
@@ -3978,7 +3978,7 @@ def register_adhoc_command(name, title, discohnd=None, cmdhnd=None):
             command.setAttr('node', name)
             command.setAttr('status', 'completed')
             
-            sesId = time.time()
+            sesId = rand10()
             command.setAttr('sessionid', sesId)
             
             dform = create_result_dform(title, ['This is default template of Ad-Hoc command handler.'])

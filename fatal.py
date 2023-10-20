@@ -91,7 +91,7 @@ def main():
         
         sttm = time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(sttm))
 
-        sprint('\Starting time: %s\n' % (sttm))
+        sprint('\\Starting time: %s\n' % (sttm))
         
         if is_param_seti('reload_code'):
             cr_md5 = core_md5('fatal.py')

@@ -54,6 +54,8 @@ def handler_vcardget(type, source, parameters):
     vcard_iq.setTo(jid)
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(vcard_iq, handler_vcardget_answ, {'type': type, 'source': source, 'nick': nick, 'sId': Id})
+    
+    return '[vcard]'
 
 @handle_xmpp_exc('Unknown error!')
 def handler_vcardget_answ(coze, res, type, source, nick, sId):

@@ -74,7 +74,7 @@ def handler_python_ssh(type, source, parameters):
     parameters = shell_del_specs_sym(parameters)
     return handler_python_sh(type, source, parameters)
 
-def handler_python_eval(type, source, parameters):
+def handler_python_eval(ttype, source, parameters):
     gch = source[1]
     
     try:
@@ -83,9 +83,9 @@ def handler_python_eval(type, source, parameters):
         set_fatal_var(cid, 'eval_result', result)
     except Exception:
         return_value = '%s - %s.' % (sys.exc_info()[0], sys.exc_info()[1])
-    return reply(type, source, return_value.strip())
+    return reply(ttype, source, return_value.strip())
 
-def handler_python_exec(type, source, parameters):
+def handler_python_exec(ttype, source, parameters):
     gch = source[1]
     
     if '\n' in parameters and parameters[-1] != '\n':
@@ -93,12 +93,12 @@ def handler_python_exec(type, source, parameters):
     try:
         exec(str(parameters), globals())
         
-        if type == 'null':
-            return reply(type, source, '')
-        return reply(type, source, l('Executed!'))
+        if ttype == 'null':
+            return reply(ttype, source, '')
+        return reply(ttype, source, l('Executed!'))
     except Exception:
         rep = '%s - %s' % (sys.exc_info()[0], sys.exc_info()[1])
-        return reply(type, source, rep.strip())
+        return reply(ttype, source, rep.strip())
 
 def handler_python_sh(type, source, parameters):
     return_value = ''

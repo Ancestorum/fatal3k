@@ -107,9 +107,11 @@ def gch_keepalive_check_answ(coze, res, sId):
     if res:        
         Id = res.getID()
         
+        coze.getFuncRes(sId)
+        
         if not Id == sId:
             return
-        
+                
         gch, error = get_stripped(res.getFrom()), res.getErrorCode()
         
         if error in ['405', None]:

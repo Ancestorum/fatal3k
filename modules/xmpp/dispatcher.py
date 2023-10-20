@@ -21,7 +21,7 @@ Contains one tunable attribute: DefaultTimeout (25 seconds by default). It defin
 Dispatcher.SendAndWaitForResponce method will wait for reply stanza before giving up.
 """
 
-import time,sys
+import time, sys
 from . import simplexml
 from .protocol import *
 from .client import PlugIn
@@ -36,6 +36,7 @@ class Dispatcher(PlugIn):
         PlugIn.__init__(self)
         DBG_LINE='dispatcher'
         self.handlers={}
+        self._func_res={}
         self._expected={}
         self._defaultHandler=None
         self._pendingExceptions=[]
@@ -45,7 +46,24 @@ class Dispatcher(PlugIn):
         self.RegisterEventHandler,self.UnregisterCycleHandler,self.RegisterCycleHandler,\
         self.RegisterHandlerOnce,self.UnregisterHandler,self.RegisterProtocol,\
         self.WaitForResponse,self.SendAndWaitForResponse,self.send,self.disconnect,\
-        self.SendAndCallForResponse, ]
+        self.SendAndCallForResponse,self.getFuncRes,]
+
+    def getFuncRes(self, Id=None):
+        if Id:
+            try:
+                res = self._func_res[Id]['tx']
+                
+                klst = tuple(self._func_res.keys())
+                
+                for ki in klst:
+                    tt = self._func_res[ki]['tt']
+                    
+                    if round(time.time()) - tt > 25:
+                        del self._func_res[ki]
+                return res
+            except Exception as e:
+                return None
+        return self._func_res
 
     def dumpHandlers(self):
         """ Return set of user-registered callbacks in it's internal format.
@@ -292,9 +310,17 @@ class Dispatcher(PlugIn):
         if ID in session._expected:
             user=0
             if type(session._expected[ID])==type(()):
-                cb,args=session._expected[ID]
-                session.DEBUG("Expected stanza arrived. Callback %s(%s) found!"%(cb,args),'ok')
-                try: cb(session,stanza,**args)
+                cb,kwargs=session._expected[ID]
+                session.DEBUG("Expected stanza arrived. Callback %s(%s) found!"%(cb,kwargs),'ok')
+                try: 
+                    self._func_res[ID] = {'tx': None, 'tt': round(time.time())}
+                    
+                    res = cb(session, stanza, **kwargs)
+                    
+                    if res:
+                        self._func_res[ID]['tx'] = res
+                    else:
+                        del self._func_res[ID]
                 except Exception as typ:
                     if typ.__class__.__name__!='NodeProcessed': raise
             else:
@@ -338,7 +364,8 @@ class Dispatcher(PlugIn):
 
     def SendAndWaitForResponse(self, stanza, timeout=DefaultTimeout):
         """ Put stanza on the wire and wait for recipient's response to it. """
-        return self.WaitForResponse(self.send(stanza),timeout)
+        resp = self.WaitForResponse(self.send(stanza),timeout)
+        return resp
 
     def SendAndCallForResponse(self, stanza, func, args={}):
         """ Put stanza on the wire and call back when recipient replies.

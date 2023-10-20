@@ -4,7 +4,7 @@
 #  xepidle plugin
 
 #  Initial Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@ from fatalapi import *
 
 def handler_idle(type, source, parameters):
     idle_iq = xmpp.Iq('get')
-    Id = 'idle%s' % (time.time())
+    Id = 'idle%s' % (rand10())
     idle_iq.setID(Id)
     idle_iq.setNamespace('')
     idle_ch = idle_iq.addChild('query')
@@ -40,6 +40,8 @@ def handler_idle(type, source, parameters):
 
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(idle_iq, handler_idle_answ, {'type': type, 'source': source, 'param': param, 'sId': Id})
+    
+    return '[uptime]'
 
 @handle_xmpp_exc('Unknown error!')
 def handler_idle_answ(coze, res, type, source, param, sId):
@@ -64,7 +66,10 @@ def handler_idle_answ(coze, res, type, source, param, sId):
                 sec = p.getAttrs()['seconds']
                 
                 if not sec == '0':
-                    rep = l('Resource run statistics: %s works %s.') % (param, timeElapsed(int(sec)))
+                    if type != 'null':
+                        rep = l('Resource run statistics: %s works %s.') % (param, timeElapsed(int(sec)))
+                    else:
+                        rep = sec
     else:
         rep = l('Unknown error!')
         

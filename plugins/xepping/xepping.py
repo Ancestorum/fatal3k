@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@ def handler_ping(type, source, parameters):
     param = ''
     
     iq = xmpp.Iq('get')
-    Id = 'up%s' % (rand10())
+    Id = 'ping%s' % (rand10())
     iq.setID(Id)
     iq.addChild('ping', {}, [], 'urn:xmpp:ping')
     
@@ -48,13 +48,16 @@ def handler_ping(type, source, parameters):
     
     t0 = time.time()
     jconn = get_client_conn()
+    
     jconn.SendAndCallForResponse(iq, handler_ping_answ, {'t0': t0, 'type': type, 'source': source, 'param': param, 'sId': Id})
-
+    
+    return '[ping]'
+    
 @handle_xmpp_exc('Unknown error!')
 def handler_ping_answ(coze, res, t0, type, source, param, sId):
     if res:
         Id = res.getID()
-        
+                
         if Id != sId:
             return reply(type, source, l('Unknown error!'))
         
@@ -74,4 +77,3 @@ def handler_ping_answ(coze, res, t0, type, source, param, sId):
         return reply(type, source, rep)
     
 register_command_handler(handler_ping, 'ping')
-

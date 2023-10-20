@@ -71,6 +71,8 @@ def handler_disco(type, source, parameters):
 
         jconn = get_client_conn()
         jconn.SendAndCallForResponse(iq, handler_disco_ext, {'type': type, 'source': source, 'stop': stop, 'srch': srch, 'tojid': tojid, 'sId': Id})
+        
+        return '[disco]'
     else:
         return reply(type, source, l('Invalid syntax!'))
 

@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 Als <Als@exploit.in>
 #  Modifications Copyright © 2007 dimichxp <dimichxp@gmail.com>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -41,11 +41,13 @@ def handler_gettime_xep_disco(type, source, parameters):
     
     iq = xmpp.Iq('get')
     iq.setTo(jid)
-    Id = 'info%s' % (time.time())
+    Id = 'info%s' % (rand10())
     iq.setID(Id)
     iq.addChild('query', {}, [], 'http://jabber.org/protocol/disco#info')
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(iq, handler_gettime_xep_disco_answ, {'type': type, 'source': source, 'parameters': parameters, 'jid': jid, 'sId': Id})
+    
+    return '[time]'
 
 @handle_xmpp_exc('Unknown error!')
 def handler_gettime_xep_disco_answ(coze, res, type, source, parameters, jid, sId):
@@ -93,7 +95,7 @@ def gettime_xep0090(type, source, jid, param=''):
         nick = source[2]
         
     time_iq = xmpp.Iq('get')
-    Id = 'time%s' % (time.time())
+    Id = 'time%s' % (rand10())
     time_iq.setID(Id)
     time_iq.addChild('query', {}, [], 'jabber:iq:time')
     time_iq.setTo(jid)
@@ -136,7 +138,7 @@ def gettime_xep0202(type, source, jid, param=''):
         nick = param
         
     time_iq = xmpp.Iq('get')
-    Id = 'time%s' % (time.time())
+    Id = 'time%s' % (rand10())
     time_iq.setID(Id)
     time_iq.addChild('time', {}, [], 'urn:xmpp:time')
     time_iq.setTo(jid)

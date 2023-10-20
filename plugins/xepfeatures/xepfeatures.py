@@ -4,7 +4,7 @@
 #  features plugin
 
 #  Initial Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -113,6 +113,8 @@ def handler_features_get(type, source, parameters):
     
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(iq, handler_features_answ, {'type': type, 'source': source, 'nick': nick, 'sId': Id})
+    
+    return '[xeps]'
 
 @handle_xmpp_exc('Unknown error!')
 def handler_features_answ(coze, res, type, source, nick, sId):
@@ -154,7 +156,7 @@ def handler_features_answ(coze, res, type, source, nick, sId):
             if type == 'public':
                 reply(type, source, l('Look in private!'))
                 
-            if type == 'console':
+            if type in ('console', 'null'):
                 return reply(type, source, answ)
             else:
                 return reply('private', source, answ)

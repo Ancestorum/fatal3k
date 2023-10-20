@@ -458,6 +458,15 @@ def rel_fatal_config():
 def enum_cfg_params():
     return _fatalConfig.Params()
 
+def is_event_set(ename):
+    cid = get_client_id()    
+    
+    evnt = _fatalVars.getVar(cid, ename, 'evnt')
+    
+    if evnt.is_set():
+        return True
+    return False
+
 def is_event_init(ename):
     cid = get_client_id()    
     
@@ -512,6 +521,10 @@ def cgv(*args):
     cid = get_client_id()
     return get_fatal_var(cid, *args)
 
+def get_client_var(*args):
+    cid = get_client_id()
+    return get_fatal_var(cid, *args)
+
 def find_fatal_var(patt):
     return _fatalVars.findVar(patt)
 
@@ -542,11 +555,19 @@ def get_list_fatal_var(*args):
 def csv(*args):
     cid = get_client_id()
     set_fatal_var(cid, *args)
-    
+ 
+def set_client_var(*args):
+    cid = get_client_id()
+    set_fatal_var(cid, *args)
+ 
 def set_fatal_var(*args):
     _fatalVars.setVar(*args)
 
 def rcv(*args):
+    cid = get_client_id()
+    return rmv_fatal_var(cid, *args)
+
+def rmv_client_var(*args):
     cid = get_client_id()
     return rmv_fatal_var(cid, *args)
     
@@ -557,6 +578,10 @@ def rmv_fatal_var(*args):
 
 def add_fatal_var(var, value={}):
     return _fatalVars.addVar(var, value)
+
+def inc_client_var(*args):
+    cid = get_client_id()
+    return inc_fatal_var(cid, *args)
 
 def inc_fatal_var(*args):
     incto = 1
@@ -580,6 +605,10 @@ def inc_fatal_var(*args):
     
         return vval
     return 0
+
+def dec_client_var(*args):
+    cid = get_client_id()
+    return dec_fatal_var(cid, *args)
 
 def dec_fatal_var(*args):
     decto = 1
@@ -608,6 +637,10 @@ def enum_fatal_vars():
     return _fatalVars.Vars()
 
 def iscvs(*args):
+    cid = get_client_id()
+    return is_var_set(cid, *args)
+
+def is_cvar_set(*args):
     cid = get_client_id()
     return is_var_set(cid, *args)
 

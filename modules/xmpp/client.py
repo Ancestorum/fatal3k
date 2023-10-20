@@ -22,6 +22,7 @@ These classes can be used for simple applications "AS IS" though.
 """
 
 import socket
+from ssl import SSLError
 from . import debug
 Debug=debug
 Debug.DEBUGGING_IS_ON=1
@@ -186,7 +187,7 @@ class CommonClient:
             try:               # FIXME. This should be done in transports.py
                 transports.TLS().PlugIn(self,now=1)
                 self.connected='ssl'
-            except socket.sslerror:
+            except SSLError:
                 return
         dispatcher.Dispatcher().PlugIn(self)
         while self.Dispatcher.Stream._document_attrs is None:

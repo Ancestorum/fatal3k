@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2009-2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -51,6 +51,8 @@ def handler_version(type, source, parameters):
     iq.setTo(jid)    
     jconn = get_client_conn()
     jconn.SendAndCallForResponse(iq, handler_version_answ, {'type': type, 'source': source, 'src': src, 'jid': jid, 'sId': Id})
+    
+    return '[version]'
 
 @handle_xmpp_exc('Unknown error!')
 def handler_version_answ(coze, res, type, source, src, jid, sId):
