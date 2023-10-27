@@ -44,6 +44,7 @@ import sqlite3 as db
 import xmpp
 from xmpp import features
 from xmpp import simplexml
+from xml.parsers.expat import ExpatError
 
 from fatalvar import *
 from fataldmn import *
@@ -1117,7 +1118,7 @@ def is_db_exists(dbpath):
         return True
     return False
 
-def sqlquery(dbpath, query, *args):
+def sqlquery(dbpath, query, *args, qer=False):
     if query:
         cursor, connection = None, None
         
@@ -1148,7 +1149,8 @@ def sqlquery(dbpath, query, *args):
             
             return result
         except db.Error as e:
-            log_error('SQLite3 error (%s) [%s] ---> %s' % (dbpath, query, e.args[0]))
+            if not qer:
+                log_error('SQLite3 error (%s) [%s] ---> %s' % (dbpath, query, e.args[0]))
             
             if cursor:
                cursor.close()
@@ -1765,6 +1767,42 @@ def _get_pl_body(plfile):
     else:
         return ''
 
+def xmpp_nested_rtns(stanza):
+    jconn = get_client_conn()
+    
+    xml=''
+    rcv = ''
+    
+    jconn.send(stanza)
+    
+    unid = 'spf%s' % (rand10())
+    
+    while True:
+        while rcv == '':
+            rcv = jconn._owner.Connection.receive()
+            
+            if is_cvar_set(unid): break
+        
+        try:
+            if rcv == '':
+                break
+            
+            xmpp.simplexml.XML2Node(rcv)
+            xml = rcv
+            break
+        except ExpatError:
+            set_client_var(unid, 1)
+            
+            if rcv != '':
+                xml += rcv.decode()
+            else: break
+           
+            rcv = ''
+    
+    rmv_client_var(unid)
+
+    return xml
+
 def extr_nested_cmd(expr):
     cn = gcp('comm_nested', '#')
     
@@ -1787,7 +1825,7 @@ def extr_nested_cmd(expr):
             return [expr[s:fe+1]]
     return []
 
-def rep_nested_cmds(type, source, params):
+def rep_nested_cmds(ttype, source, params):
     cn = gcp('comm_nested', '#')
     
     if not (params.count(cn) % 2) and params.count(cn):
@@ -1816,10 +1854,10 @@ def rep_nested_cmds(type, source, params):
                     cnm = com
                 
                 if cnm in cmdl:
-                    if check_access(type, source, cnm):
+                    if check_access(ttype, source, cnm):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
                         
-                        res = cmd_hnd(type, source, par)
+                        res = cmd_hnd(ttype, source, par)
 
                         params = params.replace(fcmd, str(res), 1)
                     else:
@@ -1836,9 +1874,9 @@ def rep_nested_cmds(type, source, params):
                     cnm = com
                 
                 if cnm in cmdl:
-                    if check_access(type, source, cnm):
+                    if check_access(ttype, source, cnm):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
-                        res = str(cmd_hnd(type, source, ''))
+                        res = str(cmd_hnd(ttype, source, ''))
                         
                         params = params.replace(fcmd, res, 1)
                     else:
@@ -1846,7 +1884,7 @@ def rep_nested_cmds(type, source, params):
                 else:
                     return params
                 
-            return rep_nested_cmds(type, source, params)
+            return rep_nested_cmds(ttype, source, params)
     
     return params
 
@@ -2116,15 +2154,15 @@ def call_command_handlers(command, type, source, parameters, callee):
         if not is_bot_admin(jid):
             return
 
-    cmdl = ('acomm', 'ctask', 'remind', 'alias_add', 'galias_add') 
-
-    if not command in cmdl:
-        parameters = rep_nested_cmds('null', source, parameters)
-
     if is_var_set('command_handlers', command):
         cmd_hnd = get_fatal_var('command_handlers', command)
         
         if check_access(type, source, command):
+            cmdl = ('acomm', 'ctask', 'remind', 'alias_add', 'galias_add') 
+
+            if not command in cmdl:
+                parameters = rep_nested_cmds('null', source, parameters)
+            
             if not is_bot_admin(jid):
                 log_cmd_run(callee, parameters, guser, jid)
             
@@ -2546,16 +2584,16 @@ def set_init_status():
 
 def join_groupchat(groupchat='', nick='', passw=''):
     cprfx = get_comm_prefix()
-         
+    
     if not groupchat:
         groupchat = get_cfg_param('default_chatroom')
-        
+    
+    if not nick:
+        nick = get_chatroom_info(groupchat, 'nick')
+    
     if not nick:
         nick = get_cfg_param('default_nick')
 
-    if not nick:
-        nick = get_chatroom_info(groupchat, 'nick')
-        
         if not nick:
             nick = 'fatal-bot'
     
@@ -3221,7 +3259,7 @@ def keep_alive_check_answ(coze, res, sId):
 @handle_xmpp_exc(quiet=True)
 def messageHnd(conn, msg):
     cid = get_client_id()
-    
+
     msgtype = msg.getType()
     fromjid = msg.getFrom()
     subject = msg.getSubject()
@@ -3299,9 +3337,10 @@ def messageHnd(conn, msg):
             time.sleep(0.6)
             conn.send(xmpp.Message(fromjid, body, 'groupchat'))
         elif ecode == '406':
-            join_groupchat(gch_jid, get_cfg_param('default_nick', 'fatal-bot'))
-            time.sleep(0.6)
-            conn.send(xmpp.Message(fromjid, body, 'groupchat'))
+            if not is_cvar_set('disconnected'):
+                join_groupchat(gch_jid, '')
+                time.sleep(0.6)
+                conn.send(xmpp.Message(fromjid, body, 'groupchat'))
         return
     else:
         mtype = 'private'
@@ -3824,10 +3863,13 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
                     
                     call_in_sep_thr(jid + '/connect_client', call_stage1_init_handlers, groupchat)
                     
-                    try:                        
-                        join_groupchat(groupchat, gchs[groupchat]['nick'] if gchs[groupchat]['nick'] else get_cfg_param('default_nick'), gchs[groupchat]['pass'])
+                    try:            
+                        gnick = gchs[groupchat]['nick']
+                        passw = gchs[groupchat]['pass']
                         
-                        sprint('\\%s' % (groupchat))
+                        join_groupchat(groupchat, gnick, passw)
+                        
+                        sprint('\\%s::%s' % (groupchat, gnick))
                     except Exception:
                         sprint('\\Can\'t join: %s.\n' % (groupchat))
                         log_exc_error()
@@ -3882,6 +3924,19 @@ def get_curr_thr_name():
     thr_name = curr_thr.getName()
     return thr_name
 
+def rstrt_main_xmpp_pc():
+    cid = get_client_id()
+
+    mstk_size = get_int_cfg_param('main_proc_stk_size', 1048576)
+    stk_size = get_int_cfg_param('def_stk_size', 524288)
+    
+    threading.stack_size(mstk_size)
+
+    mn_xmpp_thr = init_fatal_thr(cid + '/main_xmpp_stanza_pc', main_xmpp_stanza_pc)
+    mn_xmpp_thr.ttype = 'sys'
+    mn_xmpp_thr.start()
+    threading.stack_size(stk_size)
+
 def main_xmpp_stanza_pc():
     cid = get_client_id()
     
@@ -3919,6 +3974,10 @@ def main_xmpp_stanza_pc():
             if pdata and pdata != '0':
                 inc_client_var('info', 'btraffic', len(pdata))
                 inc_client_var('info', 'pcycles')
+            
+            if is_cvar_set('raise_exc_flag'):
+                rmv_client_var('raise_exc_flag')
+                raise Exception
     except Exception:
         mstk_size = get_int_cfg_param('main_proc_stk_size', 1048576)
         stk_size = get_int_cfg_param('def_stk_size', 524288)

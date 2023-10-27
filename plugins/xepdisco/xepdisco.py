@@ -21,13 +21,13 @@ __all__ = []
 
 from fatalapi import *
 
-def handler_disco(type, source, parameters):
+def handler_disco(ttype, source, parameters):
     if parameters:
         parst = parameters.split(' ', 2)
         stop, srch, tojid = '', '', parst[0]
         
         if len(parst) == 1:
-            if type == 'public': 
+            if ttype == 'public': 
                 stop = 10
             else: 
                 stop = 50
@@ -44,12 +44,12 @@ def handler_disco(type, source, parameters):
             except Exception:
                 srch = parst[1]
                 
-                if type == 'public': 
+                if ttype == 'public': 
                     stop = 10
                 else: 
                     stop = 50
             
-            if type == 'public':
+            if ttype == 'public':
                 if stop > 50: 
                     stop = '50'
             else:
@@ -57,7 +57,7 @@ def handler_disco(type, source, parameters):
                     stop = '250'
         
         iq = xmpp.Iq('get')
-        Id = 'disco%s' % (time.time())
+        Id = 'disco%s' % (rand10())
         iq.setID(Id)
         query = iq.addChild('query', {}, [], xmpp.NS_DISCO_ITEMS)
         
@@ -68,16 +68,39 @@ def handler_disco(type, source, parameters):
             iq.setTo(tojid)
         
         add_jid_to_privacy(tojid)
+    
+        if ttype != 'null':
+            jconn = get_client_conn()
+            jconn.SendAndCallForResponse(iq, handler_disco_ext, {'ttype': ttype, 'source': source, 'stop': stop, 'srch': srch, 'tojid': tojid, 'sId': Id})
+        else:
+            xml = xmpp_nested_rtns(iq)
+            
+            node = xmpp.simplexml.XML2Node(xml)
 
-        jconn = get_client_conn()
-        jconn.SendAndCallForResponse(iq, handler_disco_ext, {'type': type, 'source': source, 'stop': stop, 'srch': srch, 'tojid': tojid, 'sId': Id})
-        
-        return '[disco]'
+            if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+                qrtg = node.getTag('query')
+                itags = qrtg.getTags('item')
+               
+                if itags[0].getAttr('name'):
+                    itags = [(li.getAttr('jid'), li.getAttr('name')) for li in itags]
+                else:
+                    itags = [li.getAttr('jid') for li in itags]
+               
+                return tuple(itags)
+            elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+                ertg = node.getTag('error')
+                erco = ertg.getAttr('code')
+                
+                if not erco:
+                    erco = '503'
+                
+                return '-%s' % (erco)
+            return '-1'
     else:
-        return reply(type, source, l('Invalid syntax!'))
+        return reply(ttype, source, l('Invalid syntax!'))
 
 @handle_xmpp_exc('Unknown error!')
-def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
+def handler_disco_ext(coze, res, ttype, source, stop, srch, tojid, sId):
     disco = []
     rep, trig = '', 0
     
@@ -85,7 +108,7 @@ def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
         Id = res.getID()
         
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
         
         if res.getType() == 'result':
             res = xmpp.Iq(node=res)
@@ -119,7 +142,7 @@ def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
                     else:
                         disco.append([att['jid']])
             else:
-                return reply(type, source, l('Unable to execute query!'))
+                return reply(ttype, source, l('Unable to execute query!'))
             
             disco_c = []
             
@@ -130,15 +153,15 @@ def handler_disco_ext(coze, res, type, source, stop, srch, tojid, sId):
             disco = disco_c
                                    
             if disco:
-                return handler_disco_answ(type, source, stop, disco, srch)
+                return handler_disco_answ(ttype, source, stop, disco, srch)
             else:
-                return reply(type, source, l('Not found!'))
+                return reply(ttype, source, l('Not found!'))
         else:
             rep = l('Unable to execute query!')
     else:
         rep = l('Unknown error!')
     
-    return reply(type, source, rep)
+    return reply(ttype, source, rep)
     
 def handler_disco_answ(type, source, stop, disco, srch):
     total = 0

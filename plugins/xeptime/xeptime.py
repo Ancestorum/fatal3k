@@ -21,7 +21,7 @@ __all__ = []
     
 from fatalapi import *
     
-def handler_gettime_xep_disco(type, source, parameters):
+def handler_gettime_xep_disco(ttype, source, parameters):
     gch_jid = source[1]
     nick = source[2]
 
@@ -44,13 +44,20 @@ def handler_gettime_xep_disco(type, source, parameters):
     Id = 'info%s' % (rand10())
     iq.setID(Id)
     iq.addChild('query', {}, [], 'http://jabber.org/protocol/disco#info')
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(iq, handler_gettime_xep_disco_answ, {'type': type, 'source': source, 'parameters': parameters, 'jid': jid, 'sId': Id})
     
-    return '[time]'
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(iq, handler_gettime_xep_disco_answ, {'ttype': ttype, 'source': source, 'parameters': parameters, 'jid': jid, 'sId': Id})
+    else:
+        res = gettime_xep0202(ttype, source, jid, parameters)
 
+        if res == '-1':
+            res = gettime_xep0090(ttype, source, jid, '')
+            
+        return res
+    
 @handle_xmpp_exc('Unknown error!')
-def handler_gettime_xep_disco_answ(coze, res, type, source, parameters, jid, sId):
+def handler_gettime_xep_disco_answ(coze, res, ttype, source, parameters, jid, sId):
     groupchat = source[1]
     nick = source[2]
     rep = ''
@@ -59,15 +66,15 @@ def handler_gettime_xep_disco_answ(coze, res, type, source, parameters, jid, sId
         Id = res.getID()
         
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
         
         if not res.getType() == 'result':
             ecode = res.getErrorCode()
             
             if ecode == '404':
-                return reply(type, source, l('User not found!'))
+                return reply(ttype, source, l('User not found!'))
             else:
-                return reply(type, source, l('Unknown error!'))
+                return reply(ttype, source, l('Unknown error!'))
         
         res = xmpp.Iq(node=res)
         res = res.getQueryChildren()
@@ -79,14 +86,14 @@ def handler_gettime_xep_disco_answ(coze, res, type, source, parameters, jid, sId
                 att = att['var']
                 
                 if att == 'urn:xmpp:time':                            
-                    gettime_xep0202(type, source, jid, parameters)
+                    gettime_xep0202(ttype, source, jid, parameters)
                     return
         
-        gettime_xep0090(type, source, jid, parameters)
+        gettime_xep0090(ttype, source, jid, parameters)
     else:
-        return reply(type, source, l('Timeout has expired!'))
+        return reply(ttype, source, l('Timeout has expired!'))
 
-def gettime_xep0090(type, source, jid, param=''):
+def gettime_xep0090(ttype, source, jid, param=''):
     nick = ''
     
     if param:
@@ -99,21 +106,36 @@ def gettime_xep0090(type, source, jid, param=''):
     time_iq.setID(Id)
     time_iq.addChild('query', {}, [], 'jabber:iq:time')
     time_iq.setTo(jid)
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(time_iq, gettime_xep0090_answ, {'type': type, 'source': source, 'nick': nick, 'sId': Id})
+    
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(time_iq, gettime_xep0090_answ, {'ttype': ttype, 'source': source, 'nick': nick, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(time_iq)
+        node = xmpp.simplexml.XML2Node(xml)
+        
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            qrtg = node.getTag('query')
+            utdt = qrtg.getTagData('utc')
+            tzdt = qrtg.getTagData('tz')
+                                    
+            tms = round(iso_to_tms(utdt))
+           
+            return tms
+        return '-1'
 
 @handle_xmpp_exc('Unknown error!')
-def gettime_xep0090_answ(coze, res, nick, type, source, sId):
+def gettime_xep0090_answ(coze, res, nick, ttype, source, sId):
     Id = res.getID()
     
     if Id != sId:
-        return reply(type, source, l('Unknown error!'))
+        return reply(ttype, source, l('Unknown error!'))
     
     ptype = res.getType()
     
     if res:
         if ptype == 'error':
-            return reply(type, source, l('Not supported by user client!'))
+            return reply(ttype, source, l('Not supported by user client!'))
         elif ptype == 'result':
             time = ''
             res = xmpp.Iq(node=res)
@@ -125,13 +147,13 @@ def gettime_xep0090_answ(coze, res, nick, type, source, sId):
             
             if time:
                 if nick:
-                    return reply(type, source, l('Current time of %s: %s.') % (nick, time))
+                    return reply(ttype, source, l('Current time of %s: %s.') % (nick, time))
                 else:
-                    return reply(type, source, l('Current time: %s.') % (time))
+                    return reply(ttype, source, l('Current time: %s.') % (time))
         else:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
 
-def gettime_xep0202(type, source, jid, param=''):
+def gettime_xep0202(ttype, source, jid, param=''):
     nick = ''
     
     if param:
@@ -142,21 +164,43 @@ def gettime_xep0202(type, source, jid, param=''):
     time_iq.setID(Id)
     time_iq.addChild('time', {}, [], 'urn:xmpp:time')
     time_iq.setTo(jid)
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(time_iq, gettime_xep0202_answ, {'type': type, 'source': source, 'nick': nick, 'sId': Id})
+    
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(time_iq, gettime_xep0202_answ, {'ttype': ttype, 'source': source, 'nick': nick, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(time_iq)
+        
+        node = xmpp.simplexml.XML2Node(xml)
+        
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            tmtg = node.getTag('time')
+            utdt = tmtg.getTagData('utc')
+            tzdt = tmtg.getTagData('tzo')
+            
+            sptz = tzdt.split(':', 1) 
+            
+            hors = int(sptz[0])
+            mins = int(sptz[1])
+            secs = (hors * 3600) + (mins * 60)
+            
+            tms = round(iso_to_tms(utdt) + secs)
+           
+            return tms
+        return '-1'
 
 @handle_xmpp_exc('Unknown error!')
-def gettime_xep0202_answ(coze, res, nick, type, source, sId):
+def gettime_xep0202_answ(coze, res, nick, ttype, source, sId):
     if res:
         Id = res.getID()
-        
+
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
         
         ptype = res.getType()    
         
         if ptype == 'error':
-            return reply(type, source, l('Not supported by user client!'))
+            return reply(ttype, source, l('Not supported by user client!'))
         elif ptype == 'result':
             utc, tzo = '', ''
             props = res.getChildren()
@@ -177,12 +221,12 @@ def gettime_xep0202_answ(coze, res, nick, type, source, sId):
                 rtdt = time.strftime('%d.%m.%Y', time.localtime(rsec))
                 
                 if nick:
-                    return reply(type, source, l('Current time of %s: %s (%s).') % (nick, rttm, rtdt))
+                    return reply(ttype, source, l('Current time of %s: %s (%s).') % (nick, rttm, rtdt))
                 else:
-                    return reply(type, source, l('Current time: %s (%s).') % (rttm, rtdt))
+                    return reply(ttype, source, l('Current time: %s (%s).') % (rttm, rtdt))
             else:
-                return reply(type, source, l('Not supported by user client!'))
+                return reply(ttype, source, l('Not supported by user client!'))
     else:
-        return reply(type, source, l('Unknown error!'))
+        return reply(ttype, source, l('Unknown error!'))
 
 register_command_handler(handler_gettime_xep_disco, 'time', 10)

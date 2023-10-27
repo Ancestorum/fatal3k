@@ -20,7 +20,7 @@ __all__ = []
 
 from fatalapi import *
 
-def handler_idle(type, source, parameters):
+def handler_idle(ttype, source, parameters):
     idle_iq = xmpp.Iq('get')
     Id = 'idle%s' % (rand10())
     idle_iq.setID(Id)
@@ -38,42 +38,55 @@ def handler_idle(type, source, parameters):
     
     add_jid_to_privacy(param)
 
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(idle_iq, handler_idle_answ, {'type': type, 'source': source, 'param': param, 'sId': Id})
-    
-    return '[uptime]'
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(idle_iq, handler_idle_answ, {'ttype': ttype, 'source': source, 'param': param, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(idle_iq)
+        node = xmpp.simplexml.XML2Node(xml)
+        
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            qtag = node.getTag('query')
+            
+            return qtag.getAttr('seconds')
+        elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+            ertg = node.getTag('error')
+            erco = ertg.getAttr('code')
+            
+            if not erco:
+                erco = '503'
+            
+            return '-%s' % (erco)
+        return '-1'
 
 @handle_xmpp_exc('Unknown error!')
-def handler_idle_answ(coze, res, type, source, param, sId):
+def handler_idle_answ(coze, res, ttype, source, param, sId):
     rep = ''
     
     if res:
         Id = res.getID()
         
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
         
         if res.getType() == 'error':
-            return reply(type, source, l('Not found!'))
+            return reply(ttype, source, l('Not found!'))
         elif res.getType() == 'result':
             sec = ''
             props = res.getPayload()
             
             if not props:
-                return reply(type, source, l('Not found!'))
+                return reply(ttype, source, l('Not found!'))
             
             for p in props:
                 sec = p.getAttrs()['seconds']
                 
                 if not sec == '0':
-                    if type != 'null':
-                        rep = l('Resource run statistics: %s works %s.') % (param, timeElapsed(int(sec)))
-                    else:
-                        rep = sec
+                    rep = l('Resource run statistics: %s works %s.') % (param, timeElapsed(int(sec)))
     else:
         rep = l('Unknown error!')
         
-    return reply(type, source, rep)
+    return reply(ttype, source, rep)
 
 def handler_userinfo_idle(type, source, parameters):
     cid = get_client_id()

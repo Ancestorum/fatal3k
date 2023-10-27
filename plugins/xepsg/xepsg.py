@@ -21,9 +21,9 @@ __all__ = []
 
 from fatalapi import *
 
-def handler_sg_get(type, source, parameters):
+def handler_sg_get(ttype, source, parameters):
     iq = xmpp.Iq('get')
-    Id = 'finf%s' % (time.time())
+    Id = 'finf%s' % (rand10())
     iq.setID(Id)
     iq.setQueryNS('http://jabber.org/protocol/stats')
     
@@ -35,14 +35,30 @@ def handler_sg_get(type, source, parameters):
 
         iq.setTo(conser)
         parameters = conser
-        
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(iq, first_handler_sg, {'parameters': parameters, 'type': type, 'source': source, 'sId': Id})
     
-    return '[info]'
+    jconn = get_client_conn()
+    
+    if ttype != 'null':
+        jconn.SendAndCallForResponse(iq, first_handler_sg, {'parameters': parameters, 'ttype': ttype, 'source': source, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(iq)
+
+        node = xmpp.simplexml.XML2Node(xml)
+        
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            return first_handler_sg(jconn, node, parameters, ttype, source, Id)
+        elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+            ertg = node.getTag('error')
+            erco = ertg.getAttr('code')
+            
+            if not erco:
+                erco = '503'
+            
+            return '-%s' % (erco)
+        return '-1'
 
 @handle_xmpp_exc('Unknown error!')
-def first_handler_sg(coze, res, parameters, type, source, sId):
+def first_handler_sg(coze, res, parameters, ttype, source, sId):
     qu = None
     
     if res:
@@ -51,36 +67,64 @@ def first_handler_sg(coze, res, parameters, type, source, sId):
         Id = res.getID()
         
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
     else:
-        return reply(type, source, l('Unknown error!'))
+        return reply(ttype, source, l('Unknown error!'))
     
     ptype = res.getType()
     
     if ptype == 'error':
-        return reply(type, source, l('Unknown error!'))
+        return reply(ttype, source, l('Unknown error!'))
     elif ptype == 'result':
         iq = xmpp.Iq('get')
-        Id = 'sinf%s' % (time.time())
+        Id = 'sinf%s' % (rand10())
         iq.setID(Id)
         iq.setQueryNS('http://jabber.org/protocol/stats')
         iq.setQueryPayload(qu)
         iq.setTo(parameters)
         
-        jconn = get_client_conn()
-        jconn.SendAndCallForResponse(iq, second_handler_sg, {'parameters': parameters, 'type': type, 'source': source, 'sId': Id})
+        if ttype != 'null':
+            jconn = get_client_conn()
+            jconn.SendAndCallForResponse(iq, second_handler_sg, {'parameters': parameters, 'ttype': ttype, 'source': source, 'sId': Id})
+        else:
+            xml = xmpp_nested_rtns(iq)
+
+            node = xmpp.simplexml.XML2Node(xml)
+
+            if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+                qrtg = node.getTag('query')
+                ndls = qrtg.getChildren()
+                idic = {}
+                
+                for nd in ndls:
+                    name = nd.getAttr('name')
+                    units = nd.getAttr('units')
+                    value = nd.getAttr('value')
+                    
+                    idic[name] = {'units': units, 'value': value}
+                    
+                return idic
+            elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+                ertg = node.getTag('error')
+                erco = ertg.getAttr('code')
+                
+                if not erco:
+                    erco = '503'
+                
+                return '-%s' % (erco)
+            return '-1'
     else:
         return reply(type, source, l('Timeout has expired!'))
 
 @handle_xmpp_exc('Unknown error!')
-def second_handler_sg(coze, stats, parameters, type, source, sId):
+def second_handler_sg(coze, stats, parameters, ttype, source, sId):
     if stats:
         Id = stats.getID()
         
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
     else:
-        return reply(type, source, l('Unknown error!'))
+        return reply(ttype, source, l('Unknown error!'))
     
     stats = xmpp.Iq(node=stats)
     pay = stats.getQueryPayload()
@@ -98,6 +142,6 @@ def second_handler_sg(coze, stats, parameters, type, source, sId):
             
             result += '%s: %s %s.\n' % (name.capitalize(), value, units) 
             
-        return reply(type, source, result.strip())
+        return reply(ttype, source, result.strip())
     
 register_command_handler(handler_sg_get, 'info', 10)

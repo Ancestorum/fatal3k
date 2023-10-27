@@ -28,6 +28,7 @@ def get_note_jid(gch, nick):
     if qres:
         jid = qres[0][0]
         return jid
+    return ''    
         
 def show_notes(gch, notes, pref='', miff='', start=0, end=10):
     rng = []
@@ -67,7 +68,7 @@ def get_notes(gch, notes_id):
     cid = get_client_id()
     
     sql = 'SELECT * FROM %s ORDER BY ndate DESC;' % (notes_id)
-    notes = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+    notes = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, qer=True)
     return notes
 
 def check_notes_id(gch, notes_id):
@@ -89,6 +90,7 @@ def get_notes_id(gch, jid):
     
     if notes_id:
         return notes_id[0][0]
+    return ''
 
 def note_add(gch, jid, note, notes_id=''):
     cid = get_client_id()
@@ -116,19 +118,19 @@ def note_add(gch, jid, note, notes_id=''):
     
     sql = "INSERT INTO %s (ndate, note) VALUES (?, ?);" % (notes_id)
     
-    res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note)
+    res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note, qer=True)
     
     if res == '':
         sql = 'CREATE TABLE %s (ndate VARCHAR NOT NULL, note VARCHAR NOT NULL, UNIQUE(note));' % (notes_id)
         
-        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, qer=True)
         
         sql = 'CREATE UNIQUE INDEX i%s ON %s (note);' % (notes_id, notes_id)
-        sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql)
+        sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, qer=True)
         
         sql = "INSERT INTO %s (ndate, note) VALUES (?, ?);" % (notes_id)
         
-        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note)
+        res = sqlquery('dynamic/%s/%s/notes.db' % (cid, gch), sql, date, note, qer=True)
 
     return res
 

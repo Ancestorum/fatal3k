@@ -210,9 +210,10 @@ def order_unban(groupchat, jid):
     jconn.send(iq)
 
 def start_check_idle():
-    cid = get_client_id()
+    gchs = []
     
-    gchs = list(get_fatal_var(cid, 'gchrosters'))
+    if is_cvar_set('gchrosters'):
+        gchs = tuple(get_client_var('gchrosters'))
     
     idle_cond = False
     

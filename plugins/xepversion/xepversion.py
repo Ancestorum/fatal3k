@@ -21,7 +21,7 @@ __all__ = []
 
 from fatalapi import *
 
-def handler_version(type, source, parameters):
+def handler_version(ttype, source, parameters):
     gch_jid = source[1]
     nick = source[2]
     
@@ -49,20 +49,39 @@ def handler_version(type, source, parameters):
             jid = source[0]
         
     iq.setTo(jid)    
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(iq, handler_version_answ, {'type': type, 'source': source, 'src': src, 'jid': jid, 'sId': Id})
     
-    return '[version]'
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(iq, handler_version_answ, {'ttype': ttype, 'source': source, 'src': src, 'jid': jid, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(iq)
+        node = xmpp.simplexml.XML2Node(xml)
+
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            qrtg = node.getTag('query')
+            nmdt = qrtg.getTagData('name')
+            vrdt = qrtg.getTagData('version')
+            osdt = qrtg.getTagData('os')
+            
+            vrdc = {'name': nmdt, 'version': vrdt, 'os': osdt}
+            
+            return vrdc
+        elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+            ertg = node.getTag('error')
+            erco = ertg.getAttr('code')
+            
+            return '-%s' % (erco)
+        return '-1'
 
 @handle_xmpp_exc('Unknown error!')
-def handler_version_answ(coze, res, type, source, src, jid, sId):
+def handler_version_answ(coze, res, ttype, source, src, jid, sId):
     rep = ''
     
     if res:
         Id = res.getID()
         
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
             
         ptype = res.getType()
         
@@ -70,9 +89,11 @@ def handler_version_answ(coze, res, type, source, src, jid, sId):
             ecode = res.getErrorCode()
             
             if ecode == '404':
-                return reply(type, source, l('User not found!'))
+                return reply(ttype, source, l('User not found!'))
+            elif ecode == '503':
+                return reply(ttype, source, l('Service unavailable!'))
             else:
-                return reply(type, source, l('Unknown error!'))
+                return reply(ttype, source, l('Unknown error!'))
         elif ptype == 'result':
             name = '[no name]'
             version = '[no ver]'
@@ -150,7 +171,7 @@ def handler_version_answ(coze, res, type, source, src, jid, sId):
     else:
         rep = l('Unknown error!')
         
-    return reply(type, source, rep)
+    return reply(ttype, source, rep)
     
 register_command_handler(handler_version, 'version')
 

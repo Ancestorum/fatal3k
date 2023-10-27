@@ -22,7 +22,7 @@ __all__ = []
 from fatalapi import *
 from threading import Event
 
-def handler_ping(type, source, parameters):
+def handler_ping(ttype, source, parameters):
     nick = parameters.strip()
     groupchat = source[1]
     param = ''
@@ -47,19 +47,33 @@ def handler_ping(type, source, parameters):
         param = ''
     
     t0 = time.time()
-    jconn = get_client_conn()
-    
-    jconn.SendAndCallForResponse(iq, handler_ping_answ, {'t0': t0, 'type': type, 'source': source, 'param': param, 'sId': Id})
-    
-    return '[ping]'
+        
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(iq, handler_ping_answ, {'t0': t0, 'ttype': ttype, 'source': source, 'param': param, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(iq)
+        node = xmpp.simplexml.XML2Node(xml)
+        
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            return '%.3f' % (time.time() - t0)
+        elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+            ertg = node.getTag('error')
+            erco = ertg.getAttr('code')
+            
+            if not erco:
+                erco = '503'
+            
+            return '-%s' % (erco)
+        return '-1'
     
 @handle_xmpp_exc('Unknown error!')
-def handler_ping_answ(coze, res, t0, type, source, param, sId):
+def handler_ping_answ(coze, res, t0, ttype, source, param, sId):
     if res:
         Id = res.getID()
                 
         if Id != sId:
-            return reply(type, source, l('Unknown error!'))
+            return reply(ttype, source, l('Unknown error!'))
         
         if res.getType() in ['result', 'get'] or res.getErrorCode() in ['503', '501']:
             t = time.time()
@@ -74,6 +88,6 @@ def handler_ping_answ(coze, res, t0, type, source, param, sId):
         else:
             rep = l('Unknown error!')
 
-        return reply(type, source, rep)
+        return reply(ttype, source, rep)
     
 register_command_handler(handler_ping, 'ping')
