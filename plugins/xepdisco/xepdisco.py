@@ -120,7 +120,7 @@ def handler_disco_ext(coze, res, ttype, source, stop, srch, tojid, sId):
                     
                     if 'name' in att:
                         try:
-                            st = re.search('^(.*) \((.*)\)$', att['name'])
+                            st = re.search(r'^(.*) \((.*)\)$', att['name'])
                             st = st.groups()
                             disco.append([st[0], att['jid'], st[1]])
                             

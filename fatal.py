@@ -120,8 +120,6 @@ def main():
         
         load_plugins()
         
-        chk_md5_and_reload()
-        
         set_fatal_var('curr_cons_owner', 'fatal-bot')
         set_fatal_var('console_owners', cljds[1:])
         
@@ -182,6 +180,10 @@ def main():
         
         if readline:
             readline.set_completer(ftcompl)
+        
+        if is_param_seti('reload_code'):
+            relc = get_int_cfg_param('reload_code')
+            add_fatal_task('chk_md5_and_reload', func=chk_md5_and_reload, ival=relc)
         
         while True:
             try:                

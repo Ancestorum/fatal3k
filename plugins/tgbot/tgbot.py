@@ -929,6 +929,13 @@ def command_messages(message):
             
             fname = rmv_emoji(fname)
             
+            if usern:
+                source = [usrid, chatid, '@%s' % (usern)]
+            else:
+                source = [usrid, chatid, fname]
+            
+            call_message_handlers('telegram', source, message.text)
+            
             if usern and fname != usern:
                 rep = '[%s]<%s%s (@%s)> %s%s%s' % (chat_title, fname, lname, usern, from_usr, mtxt, rto)
             else:

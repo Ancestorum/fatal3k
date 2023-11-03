@@ -36,7 +36,6 @@ class Dispatcher(PlugIn):
         PlugIn.__init__(self)
         DBG_LINE='dispatcher'
         self.handlers={}
-        self._func_res={}
         self._expected={}
         self._defaultHandler=None
         self._pendingExceptions=[]
@@ -46,24 +45,7 @@ class Dispatcher(PlugIn):
         self.RegisterEventHandler,self.UnregisterCycleHandler,self.RegisterCycleHandler,\
         self.RegisterHandlerOnce,self.UnregisterHandler,self.RegisterProtocol,\
         self.WaitForResponse,self.SendAndWaitForResponse,self.send,self.disconnect,\
-        self.SendAndCallForResponse,self.getFuncRes,]
-
-    def getFuncRes(self, Id=None):
-        if Id:
-            try:
-                res = self._func_res[Id]['tx']
-                
-                klst = tuple(self._func_res.keys())
-                
-                for ki in klst:
-                    tt = self._func_res[ki]['tt']
-                    
-                    if round(time.time()) - tt > 25:
-                        del self._func_res[ki]
-                return res
-            except Exception as e:
-                return None
-        return self._func_res
+        self.SendAndCallForResponse,]
 
     def dumpHandlers(self):
         """ Return set of user-registered callbacks in it's internal format.
@@ -138,7 +120,9 @@ class Dispatcher(PlugIn):
         if self._owner.Connection.pending_data(timeout):
             try: data=self._owner.Connection.receive()
             except IOError: return
+            
             self.Stream.Parse(data)
+            
             if len(self._pendingExceptions) > 0:
                 _pendingException = self._pendingExceptions.pop()
                 ex = _pendingException[0](_pendingException[1])
@@ -312,15 +296,7 @@ class Dispatcher(PlugIn):
             if type(session._expected[ID])==type(()):
                 cb,kwargs=session._expected[ID]
                 session.DEBUG("Expected stanza arrived. Callback %s(%s) found!"%(cb,kwargs),'ok')
-                try: 
-                    self._func_res[ID] = {'tx': None, 'tt': round(time.time())}
-                    
-                    res = cb(session, stanza, **kwargs)
-                    
-                    if res:
-                        self._func_res[ID]['tx'] = res
-                    else:
-                        del self._func_res[ID]
+                try: cb(session, stanza, **kwargs)
                 except Exception as typ:
                     if typ.__class__.__name__!='NodeProcessed': raise
             else:

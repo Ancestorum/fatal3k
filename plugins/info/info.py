@@ -23,7 +23,6 @@ from fatalapi import *
 from math import trunc
 import urllib3
 import requests
-#from bs4 import BeautifulSoup
 
 def get_and_out_jids(type, source, gch, affiliation, succstr, failstr):
     iq = xmpp.Iq('get')
@@ -364,15 +363,12 @@ def get_rem_nick(gch, jid):
 def save_remind(gch, nick, jid, rtime, ctms, dsts, mess, status, timerid, cycle=False, mod=0):
     cid = get_client_id()
     
-    if mess.count("'"):
-        mess = mess.replace("'", '"')
-    
     sql = '''INSERT INTO reminds(nick, jid, rtime, ctms, 
                                  dsts, mess, status, timerid, ctask, mod) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);'''
     
     args = nick, jid, rtime, ctms, dsts, mess, status, timerid, int(cycle), mod
     
-    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, *args)
+    rep = sqlquery('dynamic/%s/%s/reminds.db' % (cid, gch), sql, *args, qer=True)
     
     if rep != '':
         return rep
@@ -1434,7 +1430,7 @@ def handler_bot_uptime(type, source, parameters):
         rep += l('CPU time: %.2f sec.\n') % (user)
         rep += l('System time: %.2f sec.\n') % (system)
         rep += l('Created threads: %s.\n') % (thrs)
-        rep += l('\Active threads: %s.') % (threading.activeCount())
+        rep += l('\\Active threads: %s.') % (threading.activeCount())
     else:
         rep = l('Unknown error!')
         

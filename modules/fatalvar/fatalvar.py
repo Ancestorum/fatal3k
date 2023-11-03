@@ -858,8 +858,10 @@ class _fCycleTasks(object):
                         self._tasks[tsk]['next'] = curt + ival
                         self._tasks[tsk]['strd'] += 1
                         self._strd += 1
+                        
                         self._recalc_gcd()
                 except Exception:
+                    print('task_mgr_error')
                     self._fails += 1
             
             iawt_fatal_event('task_manager_event', self._miv)

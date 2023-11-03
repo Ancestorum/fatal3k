@@ -45,6 +45,8 @@ import xmpp
 from xmpp import features
 from xmpp import simplexml
 from xml.parsers.expat import ExpatError
+import xml.etree.ElementTree as etree
+from xml.etree.ElementTree import ParseError
 
 from fatalvar import *
 from fataldmn import *
@@ -236,8 +238,10 @@ def _app_file(filename, data):
     except Exception:
         log_exc_error()
 
-def tms_to_str(tmstm=time.time(), pat='%d.%m.%Y/%H:%M:%S'):
-    tmstm = time.time()
+def tms_to_str(tmstm=None, pat='%d.%m.%Y/%H:%M:%S'):
+    if not tmstm:
+        tmstm = time.time()
+        
     return time.strftime(pat, time.localtime(tmstm))
 
 def iso_to_tms(isof):
@@ -445,7 +449,7 @@ def semph(sem):
 def fatal_gui():
     try:
         import _tkinter.ttk
-        wlib = ttk
+        #wlib = ttk
     except ImportError:
         wlib = _tkinter
     
@@ -995,7 +999,7 @@ def get_last_rev(url):
 
 def initialize_file(filename, data=''):
     if not os.access(filename, os.F_OK):
-        fp = file(filename, 'w')
+        fp = open(filename, 'w')
         if data:
             fp.write(data)
         fp.close()
@@ -1526,28 +1530,6 @@ def _reload_chd_pls(chd_pls):
         sprint('\n\n[%s] Reload changed plugins (total: %d): %s.' % (rltime, len(lsucc), ', '.join(lsucc)))
 
 def chk_md5_and_reload():
-    relc = get_int_cfg_param('reload_code')
-    
-    if not relc:
-        return
-
-    chk_interval = relc
-    
-    with semph(wsmph):
-        thrc = inc_fatal_var('info', 'thr')
-        
-        st_time = time.strftime('%H.%M.%S', time.localtime(time.time()))
-        tmr_name = 'all/%s.reload_code%d.%s' % ('chk_md5_and_reload', thrc, st_time)
-        
-        tmr = threading.Timer(chk_interval, chk_md5_and_reload)
-        tmr.setName(tmr_name)
-        
-        try:
-            tmr.start()
-        except Exception:
-            dec_fatal_var('info', 'thr')
-            log_exc_error()
-    
     ocore_md5 = get_fatal_var('core_md5')
     ocfg_md5 = get_fatal_var('cfg_md5')
     ncfg_md5 = core_md5('fatal.conf')
@@ -1770,19 +1752,21 @@ def _get_pl_body(plfile):
 def xmpp_nested_rtns(stanza):
     jconn = get_client_conn()
     
-    xml=''
+    xml=b''
     rcv = ''
     
     jconn.send(stanza)
     
     unid = 'spf%s' % (rand10())
     
+    set_client_var('stop_xmpp_proc', 1)
+
     while True:
-        while rcv == '':
+        while rcv == '': 
             rcv = jconn._owner.Connection.receive()
             
             if is_cvar_set(unid): break
-        
+
         try:
             if rcv == '':
                 break
@@ -1794,13 +1778,14 @@ def xmpp_nested_rtns(stanza):
             set_client_var(unid, 1)
             
             if rcv != '':
-                xml += rcv.decode()
+                xml += rcv
             else: break
            
             rcv = ''
     
     rmv_client_var(unid)
-
+    rmv_client_var('stop_xmpp_proc')
+    
     return xml
 
 def extr_nested_cmd(expr):
@@ -1825,9 +1810,86 @@ def extr_nested_cmd(expr):
             return [expr[s:fe+1]]
     return []
 
-def rep_nested_cmds(ttype, source, params):
+def rep_nested_cmds_ex(ttype, source, params):
     cn = gcp('comm_nested', '#')
     
+    fcmds = []
+    
+    def get_fcmds(params):
+        frex = '%s{1,1}[a-z_а-я]{1,}%s{1,1}' % (cn, cn)
+        
+        fcmds = re.findall(frex, params)
+        
+        if not fcmds:
+            fcmds = extr_nested_cmd(params)
+            
+        return fcmds    
+    
+    if not (params.count(cn) % 2) and params.count(cn):
+        fcmds = get_fcmds(params)
+        
+        cmdl = get_list_fatal_var('command_handlers')
+        
+        while fcmds:
+            fcmd = fcmds[0]
+            
+            if fcmd.count('::'):
+                spc = fcmd.replace(cn, '')
+                spc = safe_split(spc, '::')
+                
+                com = spc[0]
+                par = spc[1]
+                
+                cnm = get_real_cmd_name(com)
+                
+                if not cnm:
+                    cnm = com
+                
+                if cnm in cmdl:
+                    if check_access(ttype, source, cnm):
+                        cmd_hnd = get_fatal_var('command_handlers', cnm)
+                        
+                        try:
+                            res = cmd_hnd(ttype, source, par)
+                        except Exception:
+                            res = '[-1]'
+                        
+                        params = params.replace(fcmd, str(res), 1)
+                    else:
+                        return params
+                else:
+                    return params
+            else:
+                spc = fcmd.replace(cn, '')
+                com = spc
+                
+                cnm = get_real_cmd_name(com)
+                
+                if not cnm:
+                    cnm = com
+                
+                if cnm in cmdl:
+                    if check_access(ttype, source, cnm):
+                        cmd_hnd = get_fatal_var('command_handlers', cnm)
+                        
+                        try:
+                            res = cmd_hnd(ttype, source, '')
+                        except Exception:
+                            res = '[-1]'
+                        
+                        params = params.replace(fcmd, str(res), 1)
+                    else:
+                        return params
+                else:
+                    return params
+            
+            fcmds = get_fcmds(params)
+
+    return params
+
+def rep_nested_cmds(ttype, source, params):
+    cn = gcp('comm_nested', '#')
+        
     if not (params.count(cn) % 2) and params.count(cn):
         frex = '%s{1,1}[a-z_а-я]{1,}%s{1,1}' % (cn, cn)
         
@@ -1857,7 +1919,10 @@ def rep_nested_cmds(ttype, source, params):
                     if check_access(ttype, source, cnm):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
                         
-                        res = cmd_hnd(ttype, source, par)
+                        try:
+                            res = cmd_hnd(ttype, source, par)
+                        except Exception:
+                            res = '[-1]'
 
                         params = params.replace(fcmd, str(res), 1)
                     else:
@@ -1876,14 +1941,18 @@ def rep_nested_cmds(ttype, source, params):
                 if cnm in cmdl:
                     if check_access(ttype, source, cnm):
                         cmd_hnd = get_fatal_var('command_handlers', cnm)
-                        res = str(cmd_hnd(ttype, source, ''))
                         
-                        params = params.replace(fcmd, res, 1)
+                        try:
+                            res = cmd_hnd(ttype, source, '')
+                        except Exception:
+                            res = '[-1]'
+                        
+                        params = params.replace(fcmd, str(res), 1)
                     else:
                         return params
                 else:
                     return params
-                
+            
             return rep_nested_cmds(ttype, source, params)
     
     return params
@@ -3924,19 +3993,6 @@ def get_curr_thr_name():
     thr_name = curr_thr.getName()
     return thr_name
 
-def rstrt_main_xmpp_pc():
-    cid = get_client_id()
-
-    mstk_size = get_int_cfg_param('main_proc_stk_size', 1048576)
-    stk_size = get_int_cfg_param('def_stk_size', 524288)
-    
-    threading.stack_size(mstk_size)
-
-    mn_xmpp_thr = init_fatal_thr(cid + '/main_xmpp_stanza_pc', main_xmpp_stanza_pc)
-    mn_xmpp_thr.ttype = 'sys'
-    mn_xmpp_thr.start()
-    threading.stack_size(stk_size)
-
 def main_xmpp_stanza_pc():
     cid = get_client_id()
     
@@ -3952,8 +4008,12 @@ def main_xmpp_stanza_pc():
 
             if not is_var_set(cid):
                 return
-         
-            pdata = jconn.Process(8)
+
+            if not is_cvar_set('stop_xmpp_proc'):
+                pdata = jconn.Process(8)
+            else:
+                pdata = '0'
+                time.sleep(1)
             
             if is_cvar_set(thrn):
                 rtm = get_client_var(thrn, 'rtm')

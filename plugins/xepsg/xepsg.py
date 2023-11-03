@@ -26,7 +26,7 @@ def handler_sg_get(ttype, source, parameters):
     Id = 'finf%s' % (rand10())
     iq.setID(Id)
     iq.setQueryNS('http://jabber.org/protocol/stats')
-    
+
     if parameters != '':
         iq.setTo(parameters.strip())
     else:
@@ -43,7 +43,12 @@ def handler_sg_get(ttype, source, parameters):
     else:
         xml = xmpp_nested_rtns(iq)
 
-        node = xmpp.simplexml.XML2Node(xml)
+        node = ''
+        
+        try:
+            node = xmpp.simplexml.XML2Node(xml)
+        except ExpatError:
+            return -1
         
         if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
             return first_handler_sg(jconn, node, parameters, ttype, source, Id)
@@ -82,36 +87,42 @@ def first_handler_sg(coze, res, parameters, ttype, source, sId):
         iq.setQueryNS('http://jabber.org/protocol/stats')
         iq.setQueryPayload(qu)
         iq.setTo(parameters)
-        
+
         if ttype != 'null':
             jconn = get_client_conn()
             jconn.SendAndCallForResponse(iq, second_handler_sg, {'parameters': parameters, 'ttype': ttype, 'source': source, 'sId': Id})
         else:
             xml = xmpp_nested_rtns(iq)
 
-            node = xmpp.simplexml.XML2Node(xml)
+            node = ''
+            
+            try:
+                node = xmpp.simplexml.XML2Node(xml)
+            except ExpatError:
+                pass
 
-            if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
-                qrtg = node.getTag('query')
-                ndls = qrtg.getChildren()
-                idic = {}
-                
-                for nd in ndls:
-                    name = nd.getAttr('name')
-                    units = nd.getAttr('units')
-                    value = nd.getAttr('value')
+            if node:
+                if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+                    qrtg = node.getTag('query')
+                    ndls = qrtg.getChildren()
+                    idic = {}
                     
-                    idic[name] = {'units': units, 'value': value}
+                    for nd in ndls:
+                        name = nd.getAttr('name')
+                        units = nd.getAttr('units')
+                        value = nd.getAttr('value')
+                        
+                        idic[name] = {'units': units, 'value': value}
+                        
+                    return idic
+                elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+                    ertg = node.getTag('error')
+                    erco = ertg.getAttr('code')
                     
-                return idic
-            elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
-                ertg = node.getTag('error')
-                erco = ertg.getAttr('code')
-                
-                if not erco:
-                    erco = '503'
-                
-                return '-%s' % (erco)
+                    if not erco:
+                        erco = '503'
+                    
+                    return '-%s' % (erco)
             return '-1'
     else:
         return reply(type, source, l('Timeout has expired!'))
