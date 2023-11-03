@@ -3316,8 +3316,6 @@ def keep_alive_check_answ(coze, res, sId):
     if res:
         Id = res.getID()
         
-        coze.getFuncRes(sId)
-       
         if Id != sId:
             return
                 

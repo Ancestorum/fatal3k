@@ -107,8 +107,6 @@ def gch_keepalive_check_answ(coze, res, sId):
     if res:        
         Id = res.getID()
         
-        coze.getFuncRes(sId)
-        
         if not Id == sId:
             return
                 
