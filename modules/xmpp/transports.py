@@ -388,6 +388,10 @@ class TLS(PlugIn):
         """ Here we should switch pending_data to hint mode."""
         tcpsock=self._owner.Connection
         sslcntx = ssl.SSLContext()
+        
+        if self._owner._cert:
+            sslcntx.load_verify_locations(self._owner._cert)
+        
         tcpsock._sslObj    = sslcntx.wrap_socket(tcpsock._sock)
         tcpsock._sslIssuer = tcpsock._sslObj.getpeercert().get('issuer')
         tcpsock._sslServer = tcpsock._sslObj.getpeercert().get('server')

@@ -26,7 +26,7 @@ def handler_sg_get(ttype, source, parameters):
     Id = 'finf%s' % (rand10())
     iq.setID(Id)
     iq.setQueryNS('http://jabber.org/protocol/stats')
-
+    
     if parameters != '':
         iq.setTo(parameters.strip())
     else:
@@ -48,18 +48,19 @@ def handler_sg_get(ttype, source, parameters):
         try:
             node = xmpp.simplexml.XML2Node(xml)
         except ExpatError:
-            return -1
+            return '-1'
         
-        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
-            return first_handler_sg(jconn, node, parameters, ttype, source, Id)
-        elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
-            ertg = node.getTag('error')
-            erco = ertg.getAttr('code')
-            
-            if not erco:
-                erco = '503'
-            
-            return '-%s' % (erco)
+        if node:
+            if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+                return first_handler_sg(jconn, node, parameters, ttype, source, Id)
+            elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+                ertg = node.getTag('error')
+                erco = ertg.getAttr('code')
+                
+                if not erco:
+                    erco = '503'
+                
+                return '-%s' % (erco)
         return '-1'
 
 @handle_xmpp_exc('Unknown error!')
@@ -123,7 +124,7 @@ def first_handler_sg(coze, res, parameters, ttype, source, sId):
                         erco = '503'
                     
                     return '-%s' % (erco)
-            return '-1'
+            return '-2'
     else:
         return reply(type, source, l('Timeout has expired!'))
 

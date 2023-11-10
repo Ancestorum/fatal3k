@@ -20,8 +20,8 @@ from contextlib import contextmanager
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime as dt
 import os
+import subprocess
 import sys
-import mmap
 import atexit
 import threading
 import traceback
@@ -769,7 +769,10 @@ def put_in_thr_pool(prt, thr):
     thread_pool = get_fatal_var('thread_pool')
     thread_pool.put((prt, thrid, thr))
 
-def start_daemon(pidfile, wfunc, stdout='/dev/null', stderr='/dev/null'):
+def start_win_dmn():
+    subprocess.Popen("py fatal.py", creationflags=subprocess.CREATE_NO_WINDOW)
+
+def start_nix_dmn(pidfile, wfunc, stdout='/dev/null', stderr='/dev/null'):
     drun = fDaemon(pidfile)
     drun.worker = wfunc
     drun.stderr = stderr
@@ -885,26 +888,21 @@ def get_cmd_thr_prt(access):
     else:
         return cmd_prts
 
-def create_fatal_mmap():
-    if os.name == 'nt':
-        fmpd = mmap.mmap(-1, 10, 'fatal_started_flag')
-        fmpd.write(bytes(1))
-        set_fatal_var('fatal_started_flag', fmpd)
-        
 def is_pid_alive(pid):
     if os.name == 'posix':
         opr = os.system('kill -0 %s > /dev/null 2>&1' % (pid))
         
         if opr == 0:
             return True
-        else:
-            return False
+        return False
     elif os.name == 'nt':
-        fmpd = mmap.mmap(-1, 10, 'fatal_started_flag')
-        stfl = fmpd.read(1)
-        fmpd.close()
-    
-        if stfl == '1':
+        cmdstr =  'tasklist /fi "pid eq %s" /fo csv' % (pid)
+        
+        pipe = os.popen(cmdstr)
+        ret = pipe.read().encode('cp1251').decode('cp866')
+        pipe.close()
+
+        if ret.count(pid):
             return True
         return False
     else:
@@ -1749,6 +1747,31 @@ def _get_pl_body(plfile):
     else:
         return ''
 
+def xmpp_read_data():
+    conn = get_client_conn()
+    recv = conn._owner.Connection._recv
+    
+    data = b''
+    
+    #while not data:
+    try:
+        #time.sleep(0.3)
+        data = recv(1024)
+    except Exception:
+        log_exc_error()
+        data = b''
+    
+    req = b''
+
+    while data:
+        req += data
+        try:
+            data = recv(1024)
+        except Exception:
+            break
+        
+    return req
+
 def xmpp_nested_rtns(stanza):
     jconn = get_client_conn()
     
@@ -1756,6 +1779,8 @@ def xmpp_nested_rtns(stanza):
     rcv = ''
     
     jconn.send(stanza)
+    
+    #return xmpp_read_data()
     
     unid = 'spf%s' % (rand10())
     
@@ -1922,6 +1947,7 @@ def rep_nested_cmds(ttype, source, params):
                         try:
                             res = cmd_hnd(ttype, source, par)
                         except Exception:
+                            log_exc_error()
                             res = '[-1]'
 
                         params = params.replace(fcmd, str(res), 1)
@@ -4008,11 +4034,11 @@ def main_xmpp_stanza_pc():
                 return
 
             if not is_cvar_set('stop_xmpp_proc'):
-                pdata = jconn.Process(8)
+                pdata = jconn.Process(1)
             else:
                 pdata = '0'
                 time.sleep(1)
-            
+                
             if is_cvar_set(thrn):
                 rtm = get_client_var(thrn, 'rtm')
                 lst = time.time() - rtm

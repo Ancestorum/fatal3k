@@ -59,17 +59,6 @@ else:
 
 sys.stderr = error_log
 
-if not sys.stdin.isatty():
-    if os.path.exists('syslogs/output.log'):
-        if os.path.getsize('syslogs/output.log') >= 1048576:
-            output_log = open('syslogs/output.log', 'w')
-        else:
-            output_log = open('syslogs/output.log', 'a')
-    else:
-        output_log = open('syslogs/output.log', 'a')
-
-    sys.stdout = output_log
-
 #----------------------------------------------------------------------------
 
 def main():
@@ -275,8 +264,6 @@ if __name__ == "__main__":
             sprint(log_error('Error: It may be the second instance of fatal-bot in memory. Exit!'))
             os._exit(1)
     
-    create_fatal_mmap()
-    
     set_fatal_var('main_proc', main)
     
     if dmnrun:
@@ -284,7 +271,23 @@ if __name__ == "__main__":
         stderr = '%s/syslogs/error.log' % (fataldir)
         stdout = '%s/syslogs/output.log' % (fataldir)
         sprint('\nInfo: fatal-bot continues to run in daemon mode!\n')
-        start_daemon(pidfile, main, stdout, stderr)
+        
+        if os.path.exists('syslogs/output.log'):
+            if os.path.getsize('syslogs/output.log') >= 1048576:
+                output_log = open('syslogs/output.log', 'w')
+            else:
+                output_log = open('syslogs/output.log', 'a')
+        else:
+            output_log = open('syslogs/output.log', 'a')
+
+        sys.stdout = output_log
+        
+        os_uname = get_os_uname()
+        
+        if os_uname.count('win'):
+            start_win_dmn()
+        else:
+            start_nix_dmn(pidfile, main, stdout, stderr)
     else:
         copyright()
         create_pid_file()

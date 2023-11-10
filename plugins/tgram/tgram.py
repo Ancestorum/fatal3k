@@ -78,7 +78,12 @@ def init_tgram_handlers():
     client.add_event_handler(album_handler, events.Album)
 
 def tgram_polling_proc():
-    asyncio.run(tgram_start())
+    set_client_var('tgram_loop_count', 0)
+
+    while True:
+        inc_client_var('tgram_loop_count')
+        asyncio.run(tgram_start())
+        time.sleep(8)
 
 async def tgram_start():
     api_id = get_int_cfg_param('tgram_api_id')
