@@ -1778,13 +1778,13 @@ def xmpp_nested_rtns(stanza):
     xml=b''
     rcv = ''
     
+    set_client_var('stop_xmpp_proc', 1)    
+    
     jconn.send(stanza)
     
     #return xmpp_read_data()
     
     unid = 'spf%s' % (rand10())
-    
-    set_client_var('stop_xmpp_proc', 1)
 
     while True:
         while rcv == '': 

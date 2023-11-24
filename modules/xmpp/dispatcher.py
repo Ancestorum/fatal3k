@@ -296,8 +296,11 @@ class Dispatcher(PlugIn):
             if type(session._expected[ID])==type(()):
                 cb,kwargs=session._expected[ID]
                 session.DEBUG("Expected stanza arrived. Callback %s(%s) found!"%(cb,kwargs),'ok')
-                try: cb(session, stanza, **kwargs)
+                try: 
+                    cb(session, stanza, **kwargs)
+                    del self._expected[ID]
                 except Exception as typ:
+                    del self._expected[ID]
                     if typ.__class__.__name__!='NodeProcessed': raise
             else:
                 session.DEBUG("Expected stanza arrived!",'ok')
