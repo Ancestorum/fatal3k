@@ -1246,7 +1246,9 @@ def handler_html_parse(type, source, parameters):
 
 def handler_http_get(type, source, parameters):
     if not parameters:
-        return reply(type, source, l('Invalid syntax!'))
+        if type != 'null':
+            return reply(type, source, l('Invalid syntax!'))
+        return '-2'
     
     url = ''
     ppar = ''
@@ -1286,7 +1288,9 @@ def handler_http_get(type, source, parameters):
         sprs = False
     
     if not sprs:
-        return reply(type, source, l('Invalid syntax!'))
+        if type != 'null':
+            return reply(type, source, l('Invalid syntax!'))
+        return '-2'
     
     if resp.status_code == 200:
         if ppar in ('headers', 'hdrs') and not spar:
@@ -1301,22 +1305,32 @@ def handler_http_get(type, source, parameters):
                     hdrs = resp.headers[spar]
                     return reply(type, source, str(hdrs))
                 except Exception:
-                    return reply(type, source, l('Invalid syntax!'))
+                    if type != 'null':
+                        return reply(type, source, l('Invalid syntax!'))
+                    return '-2'
         elif ppar:
-            return reply(type, source, l('Invalid syntax!'))
+            if type != 'null':
+                return reply(type, source, l('Invalid syntax!'))
+            return '-2'
         
         if not 'Content-Type' in tuple(resp.headers):
-            return reply(type, source, l('Unknown error!'))
+            if type != 'null':
+                return reply(type, source, l('Unknown error!'))
+            return '-1'
         
         ct = resp.headers['Content-Type']
         ct = ct.split(';')[0]
         
         if ct not in ('text/html', 'application/json'):
-            return reply(type, source, l('Unknown error!'))
+            if type != 'null':
+                return reply(type, source, l('Unknown error!'))
+            return '-1'
         
         return reply(type, source, resp.text)
     else:
-        return reply(type, source, l('Unknown error!'))
+        if type != 'null':
+            return reply(type, source, l('Unknown error!'))
+        return '-1'
 
 def handler_getrealjid(type, source, parameters):
     groupchat = source[1]
