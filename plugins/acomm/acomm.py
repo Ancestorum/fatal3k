@@ -29,11 +29,23 @@ def comp_acomm_rexps(gch):
         spts = []
         npts = []
         jpts = []
+        ival = 300
         
         for acomm in qli:
             rid = '%s' % (acomm[0])
             
             entity = acomm[1]
+            
+            if '/' in entity:
+                entity = entity.split('/')
+                ival = entity[1].strip()
+                entity = entity[0]
+
+                if ival.isdigit():
+                    ival = int(ival) * 60
+                else:
+                    ival = 300
+
             exp = acomm[2]
             command = acomm[3]
             params = acomm[4]
@@ -53,7 +65,7 @@ def comp_acomm_rexps(gch):
             elif entity == 'jid':
                 jpts.append((rid, exp, command, params))
             elif entity == 'cvar':
-                add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (gch, exp, command, params), ival=300)
+                add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (gch, exp, command, params), ival=ival)
                 
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'body', bpts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'status', spts)
@@ -319,7 +331,7 @@ def handler_acomm_control(type, source, parameters):
                 comp_acomm_rexps(groupchat)
                 
                 for li in qli:
-                    if li[1] == 'cvar':
+                    if li[1].startswith('cvar'):
                         gpar = get_md5(li[2])
                         rmv_gch_param(groupchat, gpar)
                         rmv_fatal_task('check_changed_var%s' % (li[0]))
@@ -338,7 +350,7 @@ def handler_acomm_control(type, source, parameters):
                     
                     res = rmv_acomm_rule(groupchat, rid)
                     
-                    if dnum[1] == 'cvar':
+                    if dnum[1].startswith('cvar'):
                         gpar = get_md5(dnum[2])
                         rmv_gch_param(groupchat, gpar)
                         rmv_fatal_task('check_changed_var%s' % (rid))
@@ -361,6 +373,19 @@ def handler_acomm_control(type, source, parameters):
             prsr = parse_cmd_params(strp)
             
             entity = prsr[0]
+            
+            ival = 300
+            
+            if '/' in entity:
+                entity = entity.split('/')
+                ival = entity[1].strip()
+                entity = entity[0]
+
+                if ival.isdigit():
+                    ival = int(ival) * 60
+                else:
+                    ival = 300
+            
             rexp = prsr[1]
             cmdpr = prsr[2]
             
@@ -408,8 +433,13 @@ def handler_acomm_control(type, source, parameters):
             else:
                 return reply(type, source, l('Command or alias not found!'))
 
-            res = set_acomm_rule(groupchat, entity, rexp, comm, params)
+            fent = ''
 
+            if ival != 300:
+                fent = '/%d' % (ival / 60)
+
+            res = set_acomm_rule(groupchat, entity + fent, rexp, comm, params)
+            
             if res != '':
                 qli = get_all_rules(groupchat)
                 rid = 0
@@ -433,7 +463,7 @@ def handler_acomm_control(type, source, parameters):
                     
                     gchp = get_md5(rexp)
                     set_gch_param(groupchat, gchp, '%s:=%s' % (trjid, cvar))
-                    add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (groupchat, rexp, comm, params), ival=300)
+                    add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (groupchat, rexp, comm, params), ival=ival)
                 except Exception:
                     log_exc_error()
                     res = ''

@@ -345,7 +345,7 @@ class Alias:
         self.accesslist = {}
         self.aliascmds = AliasCommands()
 
-    def init(self,gch):
+    def init(self, gch=''):
         self.galiaslist = get_alias_list()
         self.gaccesslist = get_access_list()
         

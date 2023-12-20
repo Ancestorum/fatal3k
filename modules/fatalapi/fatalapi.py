@@ -3936,14 +3936,15 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
         tname = make_thr_name(jid, 'connect_client', 'task_manager')
         start_scheduler(tname)
 
+    aliaso = get_client_var('alias')
+    aliaso.init()
+
     if is_db_exists('dynamic/%s/chatrooms.db' % (jid)):
         groupchats = get_chatrooms_list()
         
         gchs = get_complete_gchs_info(groupchats)
         
-        if groupchats:
-            aliaso = get_client_var('alias')
-            
+        if groupchats:            
             if get_int_cfg_param('privacy_lists', 1):
                 add_jids_to_privacy(groupchats)
             
@@ -3966,7 +3967,6 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
                     except Exception:
                         sprint('\\Can\'t join: %s.\n' % (groupchat))
                         log_exc_error()
-        
         del gchs
     else:
         sql = 'CREATE TABLE chatrooms (chatroom VARCHAR(50) NOT NULL, nick VARCHAR, pass VARCHAR, UNIQUE (chatroom));'
