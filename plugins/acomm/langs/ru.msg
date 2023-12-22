@@ -8,3 +8,4 @@ Too few rights to use this command! = Недостаточно прав для �
 Too few rights to use this alias! = Недостаточно прав для использования этого алиаса!
 Auto-command rule has been added! = Правило автокоманды добавлено!
 Command or alias not found! = Команда или алиас не найден(а)!
+This groups of acomm command allowed only in groupchats! = Эти группы команды acomm доступны только в конференциях!

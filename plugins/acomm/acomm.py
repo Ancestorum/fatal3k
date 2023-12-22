@@ -433,12 +433,12 @@ def handler_acomm_control(type, source, parameters):
             if not entity or not entity in ('body', 'status', 'nick', 'jid', 'cvar'):
                 entity = 'body'
             
-            if is_groupchat(groupchat) and entity in ('body', 'status', 'nick', 'jid'):
+            if not is_groupchat(groupchat) and entity in ('body', 'status', 'nick', 'jid'):
                 return reply(type, source, l('This groups of acomm command allowed only in groupchats!'))                
             
             if not rexp:
                 return reply(type, source, l('Regular expression has not specified!'))
-                
+            
             if not cmdpr:
                 return reply(type, source, l('Command has not specified!'))
             
