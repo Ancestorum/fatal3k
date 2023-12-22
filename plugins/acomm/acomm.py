@@ -19,7 +19,7 @@ __all__ = []
 
 from fatalapi import *
 
-def comp_acomm_rexps(gch):
+def comp_acomm_rexps(gch=''):
     cid = get_client_id()
     
     qli = get_all_rules(gch)
@@ -66,54 +66,82 @@ def comp_acomm_rexps(gch):
                 jpts.append((rid, exp, command, params))
             elif entity == 'cvar':
                 add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (gch, exp, command, params), ival=ival)
-                
+        
+        if not is_groupchat(gch):
+            return
+        
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'body', bpts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'status', spts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'nick', npts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'jid', jpts)
 
 def rmv_acomm_rule(gch, rid):
-    sql = "DELETE FROM acomm WHERE id=?;"
-    
     cid = get_client_id()
     
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql, rid)
+    sql = "DELETE FROM acomm WHERE id=?;"
+
+    dbp = 'dynamic/%s/%s/acomm.db' % (cid, gch)
+
+    if not is_groupchat(gch):
+        dbp = 'dynamic/%s/acomm.db' % (cid)
+
+    qres = sqlquery(dbp, sql, rid)
 
     return qres
 
-def rmv_all_rules(gch):
+def rmv_all_rules(gch=''):
+    cid = get_client_id()
+    
     sql = 'DELETE FROM acomm;'
     
-    cid = get_client_id()
+    dbp = 'dynamic/%s/%s/acomm.db' % (cid, gch)
+
+    if not is_groupchat(gch):
+        dbp = 'dynamic/%s/acomm.db' % (cid)
     
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql)
+    qres = sqlquery(dbp, sql)
 
     return qres
 
-def get_all_rules(gch):
-    sql = 'SELECT * FROM acomm;'
-
+def get_all_rules(gch=''):
     cid = get_client_id()
 
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql)
+    sql = 'SELECT * FROM acomm;'
+
+    dbp = 'dynamic/%s/%s/acomm.db' % (cid, gch)
+
+    if not is_groupchat(gch):
+        dbp = 'dynamic/%s/acomm.db' % (cid)
+    
+    qres = sqlquery(dbp, sql)
     return qres
 
 def get_acomm_rules(gch, entity):
-    sql = "SELECT exp, command, params FROM acomm WHERE entity=?;"
-    
     cid = get_client_id()
 
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql, entity)
+    sql = "SELECT exp, command, params FROM acomm WHERE entity=?;"
+
+    dbp = 'dynamic/%s/%s/acomm.db' % (cid, gch)
+
+    if not is_groupchat(gch):
+        dbp = 'dynamic/%s/acomm.db' % (cid)
+
+    qres = sqlquery(dbp, sql, entity)
     return qres
 
 def set_acomm_rule(gch, entity, exp, command, params=''):
+    cid = get_client_id()
+
     sql = "INSERT INTO acomm (entity, exp, command, params) VALUES (?, ?, ?, ?);"
     
-    cid = get_client_id()
-    
     args = entity.strip(), exp.strip(), command.strip(), params.strip()
-    
-    qres = sqlquery('dynamic/%s/%s/acomm.db' % (cid, gch), sql, *args)
+
+    dbp = 'dynamic/%s/%s/acomm.db' % (cid, gch)
+
+    if not is_groupchat(gch):
+        dbp = 'dynamic/%s/acomm.db' % (cid)
+
+    qres = sqlquery(dbp, sql, *args)
 
     return qres
 
@@ -278,8 +306,17 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
 def check_cvar_val(groupchat, rexp, comm, params):
     gchp = get_md5(rexp)
     
+    gch = groupchat
+    
+    if not is_groupchat(groupchat):
+        groupchat = ''
+    
     if param_exists(groupchat, gchp):
-        oval = get_gch_param(groupchat, gchp)
+        if not is_groupchat(groupchat):
+            groupchat = gch
+            oval = get_param(gchp)
+        else:
+            oval = get_gch_param(groupchat, gchp)
         
         spov = oval.split(':=', 1)
         gch_jid = spov[0]
@@ -309,7 +346,11 @@ def check_cvar_val(groupchat, rexp, comm, params):
             return False
         
         if nval != oval:
-            set_gch_param(groupchat, gchp, '%s:=%s' % (gch_jid, nval))
+            if not is_groupchat(groupchat):
+                set_param(gchp, '%s:=%s' % (gch_jid, nval))
+            else:
+                set_gch_param(groupchat, gchp, '%s:=%s' % (gch_jid, nval))
+            
             call_command_handlers(comm, 'null', source, params.strip(), comm)
 
 def handler_acomm_control(type, source, parameters):
@@ -317,8 +358,8 @@ def handler_acomm_control(type, source, parameters):
     
     groupchat = source[1]
     
-    if not is_groupchat(groupchat):
-        return reply(type, source, l('This command can be used only in groupchat!'))
+    #if not is_groupchat(groupchat):
+        #return reply(type, source, l('This command can be used only in groupchat!'))
     
     if parameters:
         strp = parameters.strip()
@@ -389,8 +430,11 @@ def handler_acomm_control(type, source, parameters):
             rexp = prsr[1]
             cmdpr = prsr[2]
             
-            if not entity or not entity in ['body', 'status', 'nick', 'jid', 'cvar']:
+            if not entity or not entity in ('body', 'status', 'nick', 'jid', 'cvar'):
                 entity = 'body'
+            
+            if is_groupchat(groupchat) and entity in ('body', 'status', 'nick', 'jid'):
+                return reply(type, source, l('This groups of acomm command allowed only in groupchats!'))                
             
             if not rexp:
                 return reply(type, source, l('Regular expression has not specified!'))
@@ -462,7 +506,12 @@ def handler_acomm_control(type, source, parameters):
                     trjid = get_true_jid(source)
                     
                     gchp = get_md5(rexp)
-                    set_gch_param(groupchat, gchp, '%s:=%s' % (trjid, cvar))
+                    
+                    if not is_groupchat(groupchat):
+                        set_param(gchp, '%s:=%s' % (trjid, cvar))
+                    else:
+                        set_gch_param(groupchat, gchp, '%s:=%s' % (trjid, cvar))
+                    
                     add_fatal_task('check_changed_var%s' % (rid), check_cvar_val, (groupchat, rexp, comm, params), ival=ival)
                 except Exception:
                     log_exc_error()
@@ -530,6 +579,24 @@ def init_acomm_db(gch):
 
     comp_acomm_rexps(gch)
 
+def init_acomm_rdb():
+    cid = get_client_id()
+    
+    if not is_db_exists('dynamic/%s/acomm.db' % (cid)):
+        sql = '''CREATE TABLE acomm(id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    entity VARCHAR NOT NULL,
+                                    exp VARCHAR NOT NULL,
+                                    command VARCHAR NOT NULL,
+                                    params VARCHAR);'''
+                    
+        sqlquery('dynamic/%s/acomm.db' % (cid), sql)
+        
+        sql = 'CREATE INDEX iacomm ON acomm (id);'
+        sqlquery('dynamic/%s/acomm.db' % (cid), sql)
+    
+    comp_acomm_rexps()
+
+register_stage0_init(init_acomm_rdb)
 register_stage1_init(init_acomm_db)
 register_presence_handler(handler_acomm_status)
 register_join_handler(handler_acomm_join_jn)

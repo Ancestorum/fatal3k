@@ -37,6 +37,8 @@ import signal
 
 from fatalapi import *
 
+import pickle
+
 #---------------------------------------------------------------------------
 
 if not is_config_loaded():
@@ -156,7 +158,7 @@ def main():
                         cpsws.append(pswi)
             elif iscvs('client_state'):
                 set_fatal_var(cli, 'if_client_connected', 1)
-
+        
         os_uname = get_os_uname()
 
         if not os_uname == 'freebsd' and is_param_seti('show_console'):
@@ -214,7 +216,7 @@ def main():
                         dec_fatal_var('info', 'opnum')
 
                         continue
-
+                    
                     interrupt()
     except Exception:
         print((log_exc_error()))
@@ -223,7 +225,7 @@ if __name__ == "__main__":
     pols, args = [], []
     
     try:
-        pols, args = getopt.gnu_getopt(sys.argv[1:], 'hvdkp:', ['help', 'version', 'daemon', 'kill', 'port='])
+        pols, args = getopt.gnu_getopt(sys.argv[1:], 'hvdkp:', ['help', 'version', 'daemon', 'ki`ll', 'port='])
     except Exception as exc:
         sprint('\nError: %s!\n' % (str(exc).capitalize()))
         sys.exit(1)
