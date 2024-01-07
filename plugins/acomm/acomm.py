@@ -345,7 +345,7 @@ def check_cvar_val(groupchat, rexp, comm, params):
         if (nval == '') or (oval == ''):
             return False
         
-        if nval != oval:
+        if nval != oval and nval != '-1':
             if not is_groupchat(groupchat):
                 set_param(gchp, '%s:=%s' % (gch_jid, nval))
             else:
@@ -357,9 +357,6 @@ def handler_acomm_control(type, source, parameters):
     cid = get_client_id()
     
     groupchat = source[1]
-    
-    #if not is_groupchat(groupchat):
-        #return reply(type, source, l('This command can be used only in groupchat!'))
     
     if parameters:
         strp = parameters.strip()
