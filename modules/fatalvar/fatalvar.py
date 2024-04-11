@@ -3,7 +3,7 @@
 #  fatal variables module
 #  fatalvar.py
 
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -1803,7 +1803,7 @@ _fatalVars.addVar('info', {'start': 0, 'ses': 0, 'msg': 0, 'prs': 0, 'iq': 0, 'c
 _fatalVars.addVar('repos', 'https://github.com/Ancestorum/fatal3k')
 
 _revision = get_revision()
-_fatalVars.addVar('ftver', {'rev': _revision, 'caps': 'http://fatal-dev.ru/bot/caps', 'botver': {'name': 'fatal-bot [Neutrino]', 'ver': 'v3.0a%s', 'os': ''}})
+_fatalVars.addVar('ftver', {'rev': _revision, 'caps': 'http://fatal-dev.ru/bot/caps', 'botver': {'name': 'fatal-bot [Neutrino]', 'ver': 'v3.1%s', 'os': ''}})
 
 #-------------------------------- Misc vars --------------------------------
 

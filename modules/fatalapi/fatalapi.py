@@ -3,7 +3,7 @@
 #  fatal API module
 #  fatalapi.py
 
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 #  Some useful ideas © 2010 Quality <admin@qabber.ru>
 
 #  This program is free software; you can redistribute it and/or modify
@@ -137,7 +137,7 @@ def d(file=''):
 
 def copyright():
     fatal_copy_head = ' ' + '=' * 41
-    fatal_copy_mid = '< Copyright (c) 2009-2023 Ancestors Soft  >'
+    fatal_copy_mid = '< Copyright (c) 2009-2024 Ancestors Soft  >'
     fatal_copy_foot = ' ' + '=' * 41
 
     sprint()
@@ -162,7 +162,7 @@ def fatal_version():
     
     vstr = '\n+----------------------------------------------------+\n'
     vstr += '+fatal-bot %s,   free   jabber(XMPP)   bot.+\n' % (fver)
-    vstr += '+----> Copyright (c) 2009-2023 Ancestors Soft. <-----+\n'
+    vstr += '+----> Copyright (c) 2009-2024 Ancestors Soft. <-----+\n'
     
     sprint(vstr, cl_bgreen, True)
 
@@ -237,6 +237,15 @@ def _app_file(filename, data):
         fp.close()
     except Exception:
         log_exc_error()
+
+def get_ldc_tms(utm=0):
+    ldctm = utm 
+    
+    if not utm:
+        ldctm = time.time()
+    
+    ldctm = time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(ldctm))
+    return ldctm
 
 def tms_to_str(tmstm=None, pat='%d.%m.%Y/%H:%M:%S'):
     if not tmstm:
@@ -375,7 +384,10 @@ def interrupt(clmess='\nInterrupt (Ctrl+C)', prmess='Got Ctrl+C --> Shutdown!'):
             pass        
     
     time.sleep(2)
-    sprint('\nDisconnected.')
+    
+    dctm = get_ldc_tms()
+   
+    sprint('\nDisconnected: %s' % (dctm))
     sprint('\n...---===FATAL-BOT STOPPED===---...\n')
     rmv_pid_file()
     os._exit(0)
@@ -3310,7 +3322,8 @@ def keep_alive_check():
     ptrs = get_int_cfg_param('ping_tries', 2)
     
     if get_int_fatal_var(bjid, 'keep_alive_checks') >= ptrs:
-        sprint('\nKeep alive timed out.')
+        dctm = get_ldc_tms()
+        sprint('\nKeep alive timed out: %s' % (dctm))
         time.sleep(3)
         sprint('\\Try to reconnect...')
         
@@ -3759,7 +3772,9 @@ def dcHnd():
     cid = get_client_id()
     
     if not is_cvar_set('disconnected') and is_param_seti('auto_reconnect'):
-        sprint('\nDisconnected.\n\\Reconnecting...')
+        dctm = get_ldc_tms()
+        
+        sprint('\nDisconnected: %s\n\\Reconnecting...' % (dctm))
         
         dec_fatal_var('connected_count') 
         set_client_var('keep_alive_checks', 0)

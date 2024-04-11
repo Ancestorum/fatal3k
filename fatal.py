@@ -7,7 +7,7 @@
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
 #  Modifications Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Parts of code Copyright © Boris Kotov <admin@avoozl.ru>
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -80,7 +80,7 @@ def main():
         
         sprint('\n...---===STARTING FATAL-BOT===---...\n')
         
-        sttm = time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(sttm))
+        sttm = get_ldc_tms(sttm)
 
         sprint('\\Starting time: %s\n' % (sttm))
         
