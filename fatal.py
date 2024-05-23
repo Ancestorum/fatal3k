@@ -145,11 +145,11 @@ def main():
             prti = ports.pop(0)
             tlsi = tlss.pop(0)
             
-            init_fatal_event('client_event')
+            init_fatal_event('client_event', cli)
 
             call_in_sep_thr(cli + '/main', connect_client, cli, pswi, rsci, prti, tlsi)
         
-            wait_fatal_event('client_event')
+            wait_fatal_event('client_event', cid=cli)
         
             if not iscvs('client_state'): 
                 if is_param_seti('reconnect_forever'):

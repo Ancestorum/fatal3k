@@ -483,16 +483,18 @@ def iawt_fatal_event(ename, timeout=None):
 def ife(ename):
     init_fatal_event(ename)
 
-def init_fatal_event(ename):
-    cid = get_client_id()    
+def init_fatal_event(ename, cid=None):
+    if not cid:
+        cid = get_client_id()    
 
     _fatalVars.setVar(cid, ename, 'evnt', Event())
 
 def wfe(ename, timeout=None):
     wait_fatal_event(ename, timeout)
 
-def wait_fatal_event(ename, timeout=None):
-    cid = get_client_id()
+def wait_fatal_event(ename, timeout=None, cid=None):
+    if not cid:
+        cid = get_client_id()
     
     evnt = _fatalVars.getVar(cid, ename, 'evnt')
     
@@ -508,8 +510,9 @@ def wait_fatal_event(ename, timeout=None):
 def sfe(ename):
     set_fatal_event(ename)
 
-def set_fatal_event(ename):
-    cid = get_client_id()
+def set_fatal_event(ename, cid=None):
+    if not cid:
+        cid = get_client_id()
     
     evnt = get_fatal_var(cid, ename, 'evnt')
 
