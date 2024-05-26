@@ -94,10 +94,13 @@ def handler_python_exec(ttype, source, parameters):
         exec(str(parameters), globals())
         
         if ttype == 'null':
-            return reply(ttype, source, '')
+            return reply(ttype, source, '0')
         return reply(ttype, source, l('Executed!'))
     except Exception:
         rep = '%s - %s' % (sys.exc_info()[0], sys.exc_info()[1])
+        
+        if ttype == 'null':
+            return reply(ttype, source, '-1')
         return reply(ttype, source, rep.strip())
 
 def handler_python_sh(type, source, parameters):

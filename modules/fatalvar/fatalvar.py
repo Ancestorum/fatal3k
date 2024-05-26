@@ -476,12 +476,12 @@ def is_event_init(ename):
         return True
     return False
 
-def iawt_fatal_event(ename, timeout=None):
-    init_fatal_event(ename)
-    wait_fatal_event(ename, timeout)
+def iawt_fatal_event(ename, timeout=None, cid=None):
+    init_fatal_event(ename, cid)
+    wait_fatal_event(ename, timeout, cid)
 
-def ife(ename):
-    init_fatal_event(ename)
+def ife(ename, cid=None):
+    init_fatal_event(ename, cid)
 
 def init_fatal_event(ename, cid=None):
     if not cid:
@@ -489,8 +489,8 @@ def init_fatal_event(ename, cid=None):
 
     _fatalVars.setVar(cid, ename, 'evnt', Event())
 
-def wfe(ename, timeout=None):
-    wait_fatal_event(ename, timeout)
+def wfe(ename, timeout=None, cid=None):
+    wait_fatal_event(ename, timeout, cid)
 
 def wait_fatal_event(ename, timeout=None, cid=None):
     if not cid:
@@ -507,8 +507,8 @@ def wait_fatal_event(ename, timeout=None, cid=None):
     if timeout: 
         _fatalVars.delVar(cid, ename)
 
-def sfe(ename):
-    set_fatal_event(ename)
+def sfe(ename, cid=None):
+    set_fatal_event(ename, cid)
 
 def set_fatal_event(ename, cid=None):
     if not cid:

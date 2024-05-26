@@ -1076,8 +1076,8 @@ def parse_cmd_params(params):
     sgroup = ''
     tgroup = ''
     
-    if not ':' in params:
-        if '=' in params:
+    if params.count(':') <= 1:
+        if ':=' in params:
             params = ':%s' % (params)
     
     splp = safe_split(params)
@@ -2237,7 +2237,7 @@ def call_presence_handlers(prs):
 
         put_in_thr_pool(prs_prt, thr)
 
-def call_command_handlers(command, type, source, parameters, callee):
+def call_command_handlers(command, ttype, source, parameters, callee):
     cid = get_client_id()
     
     gch_jid = source[1]
@@ -2264,7 +2264,7 @@ def call_command_handlers(command, type, source, parameters, callee):
     if is_var_set('command_handlers', command):
         cmd_hnd = get_fatal_var('command_handlers', command)
         
-        if check_access(type, source, command):
+        if check_access(ttype, source, command):
             cmdl = ('acomm', 'ctask', 'remind', 'alias_add', 'galias_add') 
 
             if not command in cmdl:
@@ -2275,7 +2275,7 @@ def call_command_handlers(command, type, source, parameters, callee):
             
             cid = get_client_id()
             
-            thr = init_fatal_thr(cid + '/call_command_handlers', cmd_hnd, type, source, parameters)
+            thr = init_fatal_thr(cid + '/call_command_handlers', cmd_hnd, ttype, source, parameters)
             
             cmd_prt = get_cmd_thr_prt(real_access)
             
@@ -2283,7 +2283,7 @@ def call_command_handlers(command, type, source, parameters, callee):
 
             put_in_thr_pool(cmd_prt, thr)
         else:
-            reply(type, source, l('Too few rights!'))
+            reply(ttype, source, l('Too few rights!'))
 
 #------------------------------------------------------------------------------------------
 
