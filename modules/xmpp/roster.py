@@ -106,13 +106,17 @@ class Roster(PlugIn):
             role = pres.getRole()
             
             self.DEBUG('Setting roster item %s for resource %s...' % (jstrp, rsrc), 'ok')
-            item['resources'][rsrc] = res={'show': None, 'status': None, 'priority': '0', 'timestamp': None}
+            item['resources'][rsrc] = res={'show': None, 'status': None, 'priority': '0', 'timestamp': None, 'caps': None}
             
             res['rjid'] = rjid
             res['affiliation'] = aff
             res['role'] = role
             res['joined'] = time()
             res['idle'] = time()
+            res['caps'] = pres.getTag('c', namespace=NS_CAPS)
+            
+            if res['caps']:
+               res['caps'] = res['caps'].getAttrs()
             
             if pres.getTag('show'):
                 res['show'] = pres.getShow()

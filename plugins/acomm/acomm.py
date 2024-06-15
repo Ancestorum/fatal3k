@@ -26,6 +26,7 @@ def comp_acomm_rexps(gch=''):
     
     if qli != '':
         bpts = []
+        cpts = []
         spts = []
         npts = []
         jpts = []
@@ -58,6 +59,8 @@ def comp_acomm_rexps(gch=''):
             
             if entity == 'body':
                 bpts.append((rid, exp, command, params))
+            elif entity == 'caps':
+                cpts.append((rid, exp, command, params))
             elif entity == 'status':
                 spts.append((rid, exp, command, params))
             elif entity == 'nick':
@@ -71,6 +74,7 @@ def comp_acomm_rexps(gch=''):
             return
         
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'body', bpts)
+        set_fatal_var(cid, 'comp_acomm_exp', gch, 'caps', cpts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'status', spts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'nick', npts)
         set_fatal_var(cid, 'comp_acomm_exp', gch, 'jid', jpts)
@@ -254,12 +258,14 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
     sjid = get_true_jid(groupchat + '/' + snick)
 
     fjid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
+    caps = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'caps', 'node')
 
     if sjid == cid or snick == bnick:
         return
 
     jpts = list(get_dict_fatal_var(cid, 'comp_acomm_exp', groupchat, 'jid'))
     npts = list(get_dict_fatal_var(cid, 'comp_acomm_exp', groupchat, 'nick'))
+    cpts = list(get_dict_fatal_var(cid, 'comp_acomm_exp', groupchat, 'caps'))
     
     for jpli in jpts:
         exp = jpli[1]
@@ -302,6 +308,28 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
                 cmd_hnd = get_fatal_var('command_handlers', rcomm)
                 source = [groupchat + '/' + snick, groupchat, snick]
                 cmd_hnd('null', source, params)
+                
+    for cpli in cpts:
+        exp = cpli[1]
+        comm = cpli[2]
+        params = cpli[3]
+        
+        acomm = get_real_cmd_name(comm)
+        rcomm = comm
+        
+        if acomm:
+            rcomm = acomm
+            
+        params = params.replace('%nick%', snick)
+        params = params.replace('%jid%', sjid)
+        params = params.replace('%groupchat%', groupchat)
+        
+        if is_var_set('commands', rcomm) and exp:
+            if caps:
+                if exp.findall(caps):
+                    cmd_hnd = get_fatal_var('command_handlers', rcomm)
+                    source = [groupchat + '/' + snick, groupchat, snick]
+                    cmd_hnd('null', source, params)
 
 def check_cvar_val(groupchat, rexp, comm, params):
     gchp = get_md5(rexp)
@@ -427,10 +455,10 @@ def handler_acomm_control(type, source, parameters):
             rexp = prsr[1]
             cmdpr = prsr[2]
             
-            if not entity or not entity in ('body', 'status', 'nick', 'jid', 'cvar'):
+            if not entity or not entity in ('body', 'status', 'nick', 'jid', 'cvar', 'caps'):
                 entity = 'body'
             
-            if not is_groupchat(groupchat) and entity in ('body', 'status', 'nick', 'jid'):
+            if not is_groupchat(groupchat) and entity in ('body', 'status', 'nick', 'jid', 'caps'):
                 return reply(type, source, l('This groups of acomm command allowed only in groupchats!'))                
             
             if not rexp:

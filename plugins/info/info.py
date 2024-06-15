@@ -1358,7 +1358,7 @@ def handler_getrealjid(type, source, parameters):
 
     rep = l('Real jid of %s: %s') % (nick, truejid)        
             
-    return reply(type, source, rep)
+    return reply('private', source, rep)
         
 def handler_total_in_muc(type, source, parameters):
     cid = get_client_id()
