@@ -3,7 +3,7 @@
 #  fatal plugin
 #  wtf plugin
 
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@ def show_opened(gch, opli):
         return nopli
     else:
         return ''
-        
+
 def get_rdr_wtf(gch, reader_id, entity):
     cid = get_client_id()
     
@@ -207,7 +207,7 @@ def get_reader_id(gch, jid):
 
 def save_pos(gch, jid, entity, last, part, spart, qop, reader_id=''):
     cid = get_client_id()
-    
+
     if not reader_id:
         reader_id = 'reader%s' % (rand10())
         chk_rid = check_reader_id(gch, reader_id)
@@ -367,8 +367,8 @@ def add_def(gch, entity, gdef, author=''):
         
 #-----------------------End Of Local Functions---------------------------------
 
-    ajid = get_user_jid(gch, author)
-
+    ajid = get_user_jid(gch, author, False)
+    
     if len(gdef) <= 255:
         dpath = gdef.encode('utf-8')
         if os.path.exists(dpath):
@@ -376,7 +376,7 @@ def add_def(gch, entity, gdef, author=''):
                 tmp_gdef = read_file(dpath.strip())
             
                 if tmp_gdef.strip():
-                    gdef = tmp_gdef.decode('utf-8')
+                    gdef = tmp_gdef
                 
                     if len(gdef) >= 50000:
                         author = 'book'

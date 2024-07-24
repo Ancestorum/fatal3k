@@ -113,9 +113,11 @@ def sprint(*args):
     try:
         for arg in args:
             print(color + arg + ncolor)
+            sys.stdout.flush()
 
         if not args:
             print()
+            sys.stdout.flush()
     except Exception:
         log_exc_error()
         log_error(str(args), 'syslogs/output.log')
@@ -781,8 +783,8 @@ def put_in_thr_pool(prt, thr):
     thread_pool = get_fatal_var('thread_pool')
     thread_pool.put((prt, thrid, thr))
 
-def start_win_dmn():
-    subprocess.Popen("py fatal.py", creationflags=subprocess.CREATE_NO_WINDOW)
+def start_win_dmn(stdout=None, stderr=None):
+    subprocess.Popen("py fatal.py", creationflags=subprocess.CREATE_NO_WINDOW, stdout=stdout, stderr=stderr)
 
 def start_nix_dmn(pidfile, wfunc, stdout='/dev/null', stderr='/dev/null'):
     drun = fDaemon(pidfile)
@@ -2547,10 +2549,14 @@ def get_user_status(gch, nick):
         return status
     return ''
     
-def get_user_jid(gch, nick):
+def get_user_jid(gch, nick, full=True):
     cid = get_client_id()
     
-    return get_fatal_var(cid, 'gchrosters', gch, nick, 'rjid')
+    full_jid = get_fatal_var(cid, 'gchrosters', gch, nick, 'rjid')
+    
+    if full:
+        return full_jid
+    return get_stripped(full_jid)
     
 def get_gch_aff(gch, nick):
     cid = get_client_id()

@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 Als <Als@exploru.net>
 #  Parts of code Copyright © Bohdan Turkynewych aka Gh0st <tb0hdan[at]gmail.com>
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ from math import trunc
 import urllib3
 import requests
 
-def get_and_out_jids(type, source, gch, affiliation, succstr, failstr):
+def get_and_out_jids(ttype, source, gch, affiliation, succstr, failstr):
     iq = xmpp.Iq('get')
     Id = 'jids%s' % (time.time())
     iq.setID(Id)
@@ -34,21 +34,51 @@ def get_and_out_jids(type, source, gch, affiliation, succstr, failstr):
     query.addChild('item', {'affiliation': affiliation})
     iq.addChild(node=query)
     
-    jconn = get_client_conn()
-    jconn.SendAndCallForResponse(iq, get_jid_answ, {'type': type, 'source': source, 'succ': succstr, 'fail': failstr, 'sId': Id})
+    if ttype != 'null':
+        jconn = get_client_conn()
+        jconn.SendAndCallForResponse(iq, get_jid_answ, {'ttype': ttype, 'source': source, 'succ': succstr, 'fail': failstr, 'sId': Id})
+    else:
+        xml = xmpp_nested_rtns(iq)
+        node = xmpp.simplexml.XML2Node(xml)
+        
+        if node.getAttr('type') == 'result' and node.getAttr('id') == Id:
+            qrtg = node.getTag('query')
+            itags = qrtg.getTags('item')
+            
+            restu = []
+            
+            rlist = [li.getTag('reason').getData() for li in itags]
+            jlist = [li.getAttr('jid') for li in itags]
+            
+            ri = 0
+            
+            for li in jlist:
+                restu.append((li, rlist[ri]))
+                ri += 1
+            
+            return tuple(restu)
+        elif node.getAttr('type') == 'error' and node.getAttr('id') == Id:
+            ertg = node.getTag('error')
+            erco = ertg.getAttr('code')
+            
+            if not erco:
+                erco = '503'
+            
+            return '-%s' % (erco)
+        return '-1'
 
-def get_jid_answ(coze, res, type, source, succ, fail, sId):
+def get_jid_answ(coze, res, ttype, source, succ, fail, sId):
     try:
         if res:
             Id = res.getID()
             if not Id == sId:
-                return reply(type, source, l('Unknown error!'))
+                return reply(ttype, source, l('Unknown error!'))
             
             ptype = res.getType()
             
             if ptype == 'result':
-                if type == 'public':
-                    reply(type, source, l('Look in private!'))
+                if ttype == 'public':
+                    reply(ttype, source, l('Look in private!'))
                 
                 njids = parse_stanza(res)
                 
@@ -57,23 +87,24 @@ def get_jid_answ(coze, res, type, source, succ, fail, sId):
                 else:
                     rep = fail
                     
-                if type == 'console':
-                    reply(type, source, rep)
+                if ttype == 'console':
+                    reply(ttype, source, rep)
                 else:
                     return reply('private', source, rep)
             else:
-                return reply(type, source, l('Unknown error!'))
+                return reply(ttype, source, l('Unknown error!'))
     except Exception:
         log_exc_error()
-        return reply(type, source, l('Unknown error!'))
+        return reply(ttype, source, l('Unknown error!'))
                 
 def parse_stanza(stanza):
     if stanza:
         itlist = stanza.getTag('query').getTags('item')
+        rlist = [li.getTag('reason').getData() for li in itlist]
         jlist = [li.getAttr('jid') for li in itlist]
-        jlist.sort()
         rng = list(range(len(jlist)))
-        njlist = ['%s) %s' % (li + 1, jlist[li]) for li in rng]
+        njlist = [l('%s) %s (Reason: %s)') % (li + 1, jlist[li], rlist[li]) for li in rng]
+        njlist = [li.replace(l('(Reason: )'), '') for li in njlist]
         return njlist
     else:
         return ''
@@ -674,7 +705,7 @@ def handler_members(type, source, parameters):
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))
 
-    get_and_out_jids(type, source, groupchat, 'member', l('Members (total: %s):\n\n%s'), l('List of members is empty!'))
+    return get_and_out_jids(type, source, groupchat, 'member', l('Members (total: %s):\n\n%s'), l('List of members is empty!'))
         
 def handler_admins(type, source, parameters):
     groupchat = source[1]
@@ -682,7 +713,7 @@ def handler_admins(type, source, parameters):
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))
 
-    get_and_out_jids(type, source, groupchat, 'admin', l('Admins (total: %s):\n\n%s'), l('List of admins is empty!'))
+    return get_and_out_jids(type, source, groupchat, 'admin', l('Admins (total: %s):\n\n%s'), l('List of admins is empty!'))
             
 def handler_owners(type, source, parameters):
     groupchat = source[1]
@@ -690,7 +721,7 @@ def handler_owners(type, source, parameters):
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))
 
-    get_and_out_jids(type, source, groupchat, 'owner', l('Owners (total: %s):\n\n%s'), l('List of owners is empty!'))
+    return get_and_out_jids(type, source, groupchat, 'owner', l('Owners (total: %s):\n\n%s'), l('List of owners is empty!'))
         
 def handler_outcasts(type, source, parameters):
     groupchat = source[1]
@@ -698,7 +729,7 @@ def handler_outcasts(type, source, parameters):
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))
 
-    get_and_out_jids(type, source, groupchat, 'outcast', l('Outcasts (total: %s):\n\n%s'), l('List of outcasts is empty!'))
+    return get_and_out_jids(type, source, groupchat, 'outcast', l('Outcasts (total: %s):\n\n%s'), l('List of outcasts is empty!'))
     
 def get_info_state(gch):
     cid = get_client_id()
@@ -1203,7 +1234,7 @@ def handler_nicks(type, source, parameters):
             nlst = get_num_list(nlst)
             
             if nlst:
-                rep = l('Users visited this groupchat (total: %s):\n\n%s') % (len(nlst), '\n'.join(nlst))
+                rep = l('Users which visited this groupchat last 24 hours (total: %s):\n\n%s') % (len(nlst), '\n'.join(nlst))
             else:
                 rep = l('There were not users last twenty-four hours!')
         else:

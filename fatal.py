@@ -281,13 +281,14 @@ if __name__ == "__main__":
                 output_log = open('syslogs/output.log', 'a')
         else:
             output_log = open('syslogs/output.log', 'a')
-
-        sys.stdout = output_log
         
         os_uname = get_os_uname()
         
+        if is_param_seti('show_console'):
+            set_cfg_param('show_console', 0)
+        
         if os_uname.count('win'):
-            start_win_dmn()
+            start_win_dmn(stdout=output_log, stderr=error_log)
         else:
             start_nix_dmn(pidfile, main, stdout, stderr)
     else:

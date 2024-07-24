@@ -3,7 +3,7 @@
 #  fatal plugin
 #  acomm plugin
 
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -280,6 +280,7 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         
         params = params.replace('%nick%', snick)
         params = params.replace('%jid%', sjid)
+        params = params.replace('%fjid%', fjid)
         params = params.replace('%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
@@ -301,6 +302,7 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
             
         params = params.replace('%nick%', snick)
         params = params.replace('%jid%', sjid)
+        params = params.replace('%fjid%', fjid)
         params = params.replace('%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
@@ -322,6 +324,7 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
             
         params = params.replace('%nick%', snick)
         params = params.replace('%jid%', sjid)
+        params = params.replace('%fjid%', fjid)
         params = params.replace('%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
