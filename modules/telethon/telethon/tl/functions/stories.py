@@ -6,7 +6,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeInputMedia, TypeInputPrivacyRule, TypeInputUser, TypeMediaArea, TypeMessageEntity, TypeReaction, TypeReportReason
+    from ...tl.types import TypeInputMedia, TypeInputPeer, TypeInputPrivacyRule, TypeMediaArea, TypeMessageEntity, TypeReaction, TypeReportReason
 
 
 
@@ -44,55 +44,74 @@ class ActivateStealthModeRequest(TLRequest):
 
 
 class CanSendStoryRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xb100d45d
+    CONSTRUCTOR_ID = 0xc7dfdfdd
     SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, peer: 'TypeInputPeer'):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.peer = peer
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
-            '_': 'CanSendStoryRequest'
+            '_': 'CanSendStoryRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer
         }
 
     def _bytes(self):
         return b''.join((
-            b']\xd4\x00\xb1',
+            b'\xdd\xdf\xdf\xc7',
+            self.peer._bytes(),
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        return cls()
+        _peer = reader.tgread_object()
+        return cls(peer=_peer)
 
 
 class DeleteStoriesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xb5d501d7
+    CONSTRUCTOR_ID = 0xae59db5f
     SUBCLASS_OF_ID = 0x5026710f
 
-    def __init__(self, id: List[int]):
+    def __init__(self, peer: 'TypeInputPeer', id: List[int]):
         """
         :returns Vector<int>: This type has no constructors.
         """
+        self.peer = peer
         self.id = id
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'DeleteStoriesRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': [] if self.id is None else self.id[:]
         }
 
     def _bytes(self):
         return b''.join((
-            b'\xd7\x01\xd5\xb5',
+            b'_\xdbY\xae',
+            self.peer._bytes(),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
         ))
 
     @classmethod
     def from_reader(cls, reader):
+        _peer = reader.tgread_object()
         reader.read_int()
         _id = []
         for _ in range(reader.read_int()):
             _x = reader.read_int()
             _id.append(_x)
 
-        return cls(id=_id)
+        return cls(peer=_peer, id=_id)
 
     @staticmethod
     def read_result(reader):
@@ -101,13 +120,14 @@ class DeleteStoriesRequest(TLRequest):
 
 
 class EditStoryRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xa9b91ae4
+    CONSTRUCTOR_ID = 0xb583ba46
     SUBCLASS_OF_ID = 0x8af52aac
 
-    def __init__(self, id: int, media: Optional['TypeInputMedia']=None, media_areas: Optional[List['TypeMediaArea']]=None, caption: Optional[str]=None, entities: Optional[List['TypeMessageEntity']]=None, privacy_rules: Optional[List['TypeInputPrivacyRule']]=None):
+    def __init__(self, peer: 'TypeInputPeer', id: int, media: Optional['TypeInputMedia']=None, media_areas: Optional[List['TypeMediaArea']]=None, caption: Optional[str]=None, entities: Optional[List['TypeMessageEntity']]=None, privacy_rules: Optional[List['TypeInputPrivacyRule']]=None):
         """
         :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
         """
+        self.peer = peer
         self.id = id
         self.media = media
         self.media_areas = media_areas
@@ -116,12 +136,14 @@ class EditStoryRequest(TLRequest):
         self.privacy_rules = privacy_rules
 
     async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
         if self.media:
             self.media = utils.get_input_media(self.media)
 
     def to_dict(self):
         return {
             '_': 'EditStoryRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': self.id,
             'media': self.media.to_dict() if isinstance(self.media, TLObject) else self.media,
             'media_areas': [] if self.media_areas is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.media_areas],
@@ -133,8 +155,9 @@ class EditStoryRequest(TLRequest):
     def _bytes(self):
         assert ((self.caption or self.caption is not None) and (self.entities or self.entities is not None)) or ((self.caption is None or self.caption is False) and (self.entities is None or self.entities is False)), 'caption, entities parameters must all be False-y (like None) or all me True-y'
         return b''.join((
-            b'\xe4\x1a\xb9\xa9',
+            b'F\xba\x83\xb5',
             struct.pack('<I', (0 if self.media is None or self.media is False else 1) | (0 if self.media_areas is None or self.media_areas is False else 8) | (0 if self.caption is None or self.caption is False else 2) | (0 if self.entities is None or self.entities is False else 2) | (0 if self.privacy_rules is None or self.privacy_rules is False else 4)),
+            self.peer._bytes(),
             struct.pack('<i', self.id),
             b'' if self.media is None or self.media is False else (self.media._bytes()),
             b'' if self.media_areas is None or self.media_areas is False else b''.join((b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.media_areas)),b''.join(x._bytes() for x in self.media_areas))),
@@ -147,6 +170,7 @@ class EditStoryRequest(TLRequest):
     def from_reader(cls, reader):
         flags = reader.read_int()
 
+        _peer = reader.tgread_object()
         _id = reader.read_int()
         if flags & 1:
             _media = reader.tgread_object()
@@ -183,56 +207,56 @@ class EditStoryRequest(TLRequest):
 
         else:
             _privacy_rules = None
-        return cls(id=_id, media=_media, media_areas=_media_areas, caption=_caption, entities=_entities, privacy_rules=_privacy_rules)
+        return cls(peer=_peer, id=_id, media=_media, media_areas=_media_areas, caption=_caption, entities=_entities, privacy_rules=_privacy_rules)
 
 
 class ExportStoryLinkRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x16e443ce
+    CONSTRUCTOR_ID = 0x7b8def20
     SUBCLASS_OF_ID = 0xfc541a6
 
-    def __init__(self, user_id: 'TypeInputUser', id: int):
+    def __init__(self, peer: 'TypeInputPeer', id: int):
         """
         :returns ExportedStoryLink: Instance of ExportedStoryLink.
         """
-        self.user_id = user_id
+        self.peer = peer
         self.id = id
 
     async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'ExportStoryLinkRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': self.id
         }
 
     def _bytes(self):
         return b''.join((
-            b'\xceC\xe4\x16',
-            self.user_id._bytes(),
+            b' \xef\x8d{',
+            self.peer._bytes(),
             struct.pack('<i', self.id),
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
+        _peer = reader.tgread_object()
         _id = reader.read_int()
-        return cls(user_id=_user_id, id=_id)
+        return cls(peer=_peer, id=_id)
 
 
-class GetAllReadUserStoriesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x729c562c
+class GetAllReadPeerStoriesRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x9b5ae7f9
     SUBCLASS_OF_ID = 0x8af52aac
 
     def to_dict(self):
         return {
-            '_': 'GetAllReadUserStoriesRequest'
+            '_': 'GetAllReadPeerStoriesRequest'
         }
 
     def _bytes(self):
         return b''.join((
-            b',V\x9cr',
+            b'\xf9\xe7Z\x9b',
         ))
 
     @classmethod
@@ -280,137 +304,52 @@ class GetAllStoriesRequest(TLRequest):
         return cls(next=_next, hidden=_hidden, state=_state)
 
 
-class GetPinnedStoriesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xb471137
-    SUBCLASS_OF_ID = 0x251c0c2c
-
-    def __init__(self, user_id: 'TypeInputUser', offset_id: int, limit: int):
-        """
-        :returns stories.Stories: Instance of Stories.
-        """
-        self.user_id = user_id
-        self.offset_id = offset_id
-        self.limit = limit
-
-    async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+class GetChatsToSendRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xa56a8b60
+    SUBCLASS_OF_ID = 0x99d5cb14
 
     def to_dict(self):
         return {
-            '_': 'GetPinnedStoriesRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
-            'offset_id': self.offset_id,
-            'limit': self.limit
+            '_': 'GetChatsToSendRequest'
         }
 
     def _bytes(self):
         return b''.join((
-            b'7\x11G\x0b',
-            self.user_id._bytes(),
-            struct.pack('<i', self.offset_id),
-            struct.pack('<i', self.limit),
+            b'`\x8bj\xa5',
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
-        _offset_id = reader.read_int()
-        _limit = reader.read_int()
-        return cls(user_id=_user_id, offset_id=_offset_id, limit=_limit)
+        return cls()
 
 
-class GetStoriesArchiveRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x1f5bc5d2
-    SUBCLASS_OF_ID = 0x251c0c2c
+class GetPeerMaxIDsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x535983c3
+    SUBCLASS_OF_ID = 0x5026710f
 
-    def __init__(self, offset_id: int, limit: int):
+    def __init__(self, id: List['TypeInputPeer']):
         """
-        :returns stories.Stories: Instance of Stories.
+        :returns Vector<int>: This type has no constructors.
         """
-        self.offset_id = offset_id
-        self.limit = limit
-
-    def to_dict(self):
-        return {
-            '_': 'GetStoriesArchiveRequest',
-            'offset_id': self.offset_id,
-            'limit': self.limit
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\xd2\xc5[\x1f',
-            struct.pack('<i', self.offset_id),
-            struct.pack('<i', self.limit),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _offset_id = reader.read_int()
-        _limit = reader.read_int()
-        return cls(offset_id=_offset_id, limit=_limit)
-
-
-class GetStoriesByIDRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x6a15cf46
-    SUBCLASS_OF_ID = 0x251c0c2c
-
-    def __init__(self, user_id: 'TypeInputUser', id: List[int]):
-        """
-        :returns stories.Stories: Instance of Stories.
-        """
-        self.user_id = user_id
         self.id = id
 
     async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+        _tmp = []
+        for _x in self.id:
+            _tmp.append(utils.get_input_peer(await client.get_input_entity(_x)))
+
+        self.id = _tmp
 
     def to_dict(self):
         return {
-            '_': 'GetStoriesByIDRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
-            'id': [] if self.id is None else self.id[:]
+            '_': 'GetPeerMaxIDsRequest',
+            'id': [] if self.id is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.id]
         }
 
     def _bytes(self):
         return b''.join((
-            b'F\xcf\x15j',
-            self.user_id._bytes(),
-            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
-        reader.read_int()
-        _id = []
-        for _ in range(reader.read_int()):
-            _x = reader.read_int()
-            _id.append(_x)
-
-        return cls(user_id=_user_id, id=_id)
-
-
-class GetStoriesViewsRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x9a75d6a6
-    SUBCLASS_OF_ID = 0x4b3fc4ba
-
-    def __init__(self, id: List[int]):
-        """
-        :returns stories.StoryViews: Instance of StoryViews.
-        """
-        self.id = id
-
-    def to_dict(self):
-        return {
-            '_': 'GetStoriesViewsRequest',
-            'id': [] if self.id is None else self.id[:]
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\xa6\xd6u\x9a',
-            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
+            b'\xc3\x83YS',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(x._bytes() for x in self.id),
         ))
 
     @classmethod
@@ -418,42 +357,303 @@ class GetStoriesViewsRequest(TLRequest):
         reader.read_int()
         _id = []
         for _ in range(reader.read_int()):
-            _x = reader.read_int()
+            _x = reader.tgread_object()
             _id.append(_x)
 
         return cls(id=_id)
 
+    @staticmethod
+    def read_result(reader):
+        reader.read_int()  # Vector ID
+        return [reader.read_int() for _ in range(reader.read_int())]
+
+
+class GetPeerStoriesRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x2c4ada50
+    SUBCLASS_OF_ID = 0x9d56cfd0
+
+    def __init__(self, peer: 'TypeInputPeer'):
+        """
+        :returns stories.PeerStories: Instance of PeerStories.
+        """
+        self.peer = peer
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'GetPeerStoriesRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'P\xdaJ,',
+            self.peer._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        return cls(peer=_peer)
+
+
+class GetPinnedStoriesRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x5821a5dc
+    SUBCLASS_OF_ID = 0x251c0c2c
+
+    def __init__(self, peer: 'TypeInputPeer', offset_id: int, limit: int):
+        """
+        :returns stories.Stories: Instance of Stories.
+        """
+        self.peer = peer
+        self.offset_id = offset_id
+        self.limit = limit
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'GetPinnedStoriesRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'offset_id': self.offset_id,
+            'limit': self.limit
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xdc\xa5!X',
+            self.peer._bytes(),
+            struct.pack('<i', self.offset_id),
+            struct.pack('<i', self.limit),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        _offset_id = reader.read_int()
+        _limit = reader.read_int()
+        return cls(peer=_peer, offset_id=_offset_id, limit=_limit)
+
+
+class GetStoriesArchiveRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xb4352016
+    SUBCLASS_OF_ID = 0x251c0c2c
+
+    def __init__(self, peer: 'TypeInputPeer', offset_id: int, limit: int):
+        """
+        :returns stories.Stories: Instance of Stories.
+        """
+        self.peer = peer
+        self.offset_id = offset_id
+        self.limit = limit
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'GetStoriesArchiveRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'offset_id': self.offset_id,
+            'limit': self.limit
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x16 5\xb4',
+            self.peer._bytes(),
+            struct.pack('<i', self.offset_id),
+            struct.pack('<i', self.limit),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        _offset_id = reader.read_int()
+        _limit = reader.read_int()
+        return cls(peer=_peer, offset_id=_offset_id, limit=_limit)
+
+
+class GetStoriesByIDRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x5774ca74
+    SUBCLASS_OF_ID = 0x251c0c2c
+
+    def __init__(self, peer: 'TypeInputPeer', id: List[int]):
+        """
+        :returns stories.Stories: Instance of Stories.
+        """
+        self.peer = peer
+        self.id = id
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'GetStoriesByIDRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'id': [] if self.id is None else self.id[:]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b't\xcatW',
+            self.peer._bytes(),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        reader.read_int()
+        _id = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _id.append(_x)
+
+        return cls(peer=_peer, id=_id)
+
+
+class GetStoriesViewsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x28e16cc8
+    SUBCLASS_OF_ID = 0x4b3fc4ba
+
+    def __init__(self, peer: 'TypeInputPeer', id: List[int]):
+        """
+        :returns stories.StoryViews: Instance of StoryViews.
+        """
+        self.peer = peer
+        self.id = id
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'GetStoriesViewsRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'id': [] if self.id is None else self.id[:]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xc8l\xe1(',
+            self.peer._bytes(),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        reader.read_int()
+        _id = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _id.append(_x)
+
+        return cls(peer=_peer, id=_id)
+
+
+class GetStoryReactionsListRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xb9b2881f
+    SUBCLASS_OF_ID = 0x46f91e3
+
+    def __init__(self, peer: 'TypeInputPeer', id: int, limit: int, forwards_first: Optional[bool]=None, reaction: Optional['TypeReaction']=None, offset: Optional[str]=None):
+        """
+        :returns stories.StoryReactionsList: Instance of StoryReactionsList.
+        """
+        self.peer = peer
+        self.id = id
+        self.limit = limit
+        self.forwards_first = forwards_first
+        self.reaction = reaction
+        self.offset = offset
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'GetStoryReactionsListRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'id': self.id,
+            'limit': self.limit,
+            'forwards_first': self.forwards_first,
+            'reaction': self.reaction.to_dict() if isinstance(self.reaction, TLObject) else self.reaction,
+            'offset': self.offset
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x1f\x88\xb2\xb9',
+            struct.pack('<I', (0 if self.forwards_first is None or self.forwards_first is False else 4) | (0 if self.reaction is None or self.reaction is False else 1) | (0 if self.offset is None or self.offset is False else 2)),
+            self.peer._bytes(),
+            struct.pack('<i', self.id),
+            b'' if self.reaction is None or self.reaction is False else (self.reaction._bytes()),
+            b'' if self.offset is None or self.offset is False else (self.serialize_bytes(self.offset)),
+            struct.pack('<i', self.limit),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _forwards_first = bool(flags & 4)
+        _peer = reader.tgread_object()
+        _id = reader.read_int()
+        if flags & 1:
+            _reaction = reader.tgread_object()
+        else:
+            _reaction = None
+        if flags & 2:
+            _offset = reader.tgread_string()
+        else:
+            _offset = None
+        _limit = reader.read_int()
+        return cls(peer=_peer, id=_id, limit=_limit, forwards_first=_forwards_first, reaction=_reaction, offset=_offset)
+
 
 class GetStoryViewsListRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xf95f61a4
+    CONSTRUCTOR_ID = 0x7ed23c57
     SUBCLASS_OF_ID = 0xb9437560
 
-    def __init__(self, id: int, offset: str, limit: int, just_contacts: Optional[bool]=None, reactions_first: Optional[bool]=None, q: Optional[str]=None):
+    def __init__(self, peer: 'TypeInputPeer', id: int, offset: str, limit: int, just_contacts: Optional[bool]=None, reactions_first: Optional[bool]=None, forwards_first: Optional[bool]=None, q: Optional[str]=None):
         """
         :returns stories.StoryViewsList: Instance of StoryViewsList.
         """
+        self.peer = peer
         self.id = id
         self.offset = offset
         self.limit = limit
         self.just_contacts = just_contacts
         self.reactions_first = reactions_first
+        self.forwards_first = forwards_first
         self.q = q
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'GetStoryViewsListRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': self.id,
             'offset': self.offset,
             'limit': self.limit,
             'just_contacts': self.just_contacts,
             'reactions_first': self.reactions_first,
+            'forwards_first': self.forwards_first,
             'q': self.q
         }
 
     def _bytes(self):
         return b''.join((
-            b'\xa4a_\xf9',
-            struct.pack('<I', (0 if self.just_contacts is None or self.just_contacts is False else 1) | (0 if self.reactions_first is None or self.reactions_first is False else 4) | (0 if self.q is None or self.q is False else 2)),
+            b'W<\xd2~',
+            struct.pack('<I', (0 if self.just_contacts is None or self.just_contacts is False else 1) | (0 if self.reactions_first is None or self.reactions_first is False else 4) | (0 if self.forwards_first is None or self.forwards_first is False else 8) | (0 if self.q is None or self.q is False else 2)),
+            self.peer._bytes(),
             b'' if self.q is None or self.q is False else (self.serialize_bytes(self.q)),
             struct.pack('<i', self.id),
             self.serialize_bytes(self.offset),
@@ -466,6 +666,8 @@ class GetStoryViewsListRequest(TLRequest):
 
         _just_contacts = bool(flags & 1)
         _reactions_first = bool(flags & 4)
+        _forwards_first = bool(flags & 8)
+        _peer = reader.tgread_object()
         if flags & 2:
             _q = reader.tgread_string()
         else:
@@ -473,113 +675,82 @@ class GetStoryViewsListRequest(TLRequest):
         _id = reader.read_int()
         _offset = reader.tgread_string()
         _limit = reader.read_int()
-        return cls(id=_id, offset=_offset, limit=_limit, just_contacts=_just_contacts, reactions_first=_reactions_first, q=_q)
-
-
-class GetUserStoriesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x96d528e0
-    SUBCLASS_OF_ID = 0xc6b1923d
-
-    def __init__(self, user_id: 'TypeInputUser'):
-        """
-        :returns stories.UserStories: Instance of UserStories.
-        """
-        self.user_id = user_id
-
-    async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
-
-    def to_dict(self):
-        return {
-            '_': 'GetUserStoriesRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\xe0(\xd5\x96',
-            self.user_id._bytes(),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
-        return cls(user_id=_user_id)
+        return cls(peer=_peer, id=_id, offset=_offset, limit=_limit, just_contacts=_just_contacts, reactions_first=_reactions_first, forwards_first=_forwards_first, q=_q)
 
 
 class IncrementStoryViewsRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x22126127
+    CONSTRUCTOR_ID = 0xb2028afb
     SUBCLASS_OF_ID = 0xf5b399ac
 
-    def __init__(self, user_id: 'TypeInputUser', id: List[int]):
+    def __init__(self, peer: 'TypeInputPeer', id: List[int]):
         """
         :returns Bool: This type has no constructors.
         """
-        self.user_id = user_id
+        self.peer = peer
         self.id = id
 
     async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'IncrementStoryViewsRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': [] if self.id is None else self.id[:]
         }
 
     def _bytes(self):
         return b''.join((
-            b'\'a\x12"',
-            self.user_id._bytes(),
+            b'\xfb\x8a\x02\xb2',
+            self.peer._bytes(),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
+        _peer = reader.tgread_object()
         reader.read_int()
         _id = []
         for _ in range(reader.read_int()):
             _x = reader.read_int()
             _id.append(_x)
 
-        return cls(user_id=_user_id, id=_id)
+        return cls(peer=_peer, id=_id)
 
 
 class ReadStoriesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xedc5105b
+    CONSTRUCTOR_ID = 0xa556dac8
     SUBCLASS_OF_ID = 0x5026710f
 
-    def __init__(self, user_id: 'TypeInputUser', max_id: int):
+    def __init__(self, peer: 'TypeInputPeer', max_id: int):
         """
         :returns Vector<int>: This type has no constructors.
         """
-        self.user_id = user_id
+        self.peer = peer
         self.max_id = max_id
 
     async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'ReadStoriesRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'max_id': self.max_id
         }
 
     def _bytes(self):
         return b''.join((
-            b'[\x10\xc5\xed',
-            self.user_id._bytes(),
+            b'\xc8\xdaV\xa5',
+            self.peer._bytes(),
             struct.pack('<i', self.max_id),
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
+        _peer = reader.tgread_object()
         _max_id = reader.read_int()
-        return cls(user_id=_user_id, max_id=_max_id)
+        return cls(peer=_peer, max_id=_max_id)
 
     @staticmethod
     def read_result(reader):
@@ -588,25 +759,25 @@ class ReadStoriesRequest(TLRequest):
 
 
 class ReportRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xc95be06a
+    CONSTRUCTOR_ID = 0x1923fa8c
     SUBCLASS_OF_ID = 0xf5b399ac
 
-    def __init__(self, user_id: 'TypeInputUser', id: List[int], reason: 'TypeReportReason', message: str):
+    def __init__(self, peer: 'TypeInputPeer', id: List[int], reason: 'TypeReportReason', message: str):
         """
         :returns Bool: This type has no constructors.
         """
-        self.user_id = user_id
+        self.peer = peer
         self.id = id
         self.reason = reason
         self.message = message
 
     async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'ReportRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': [] if self.id is None else self.id[:],
             'reason': self.reason.to_dict() if isinstance(self.reason, TLObject) else self.reason,
             'message': self.message
@@ -614,8 +785,8 @@ class ReportRequest(TLRequest):
 
     def _bytes(self):
         return b''.join((
-            b'j\xe0[\xc9',
-            self.user_id._bytes(),
+            b'\x8c\xfa#\x19',
+            self.peer._bytes(),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
             self.reason._bytes(),
             self.serialize_bytes(self.message),
@@ -623,7 +794,7 @@ class ReportRequest(TLRequest):
 
     @classmethod
     def from_reader(cls, reader):
-        _user_id = reader.tgread_object()
+        _peer = reader.tgread_object()
         reader.read_int()
         _id = []
         for _ in range(reader.read_int()):
@@ -632,29 +803,29 @@ class ReportRequest(TLRequest):
 
         _reason = reader.tgread_object()
         _message = reader.tgread_string()
-        return cls(user_id=_user_id, id=_id, reason=_reason, message=_message)
+        return cls(peer=_peer, id=_id, reason=_reason, message=_message)
 
 
 class SendReactionRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x49aaa9b3
+    CONSTRUCTOR_ID = 0x7fd736b2
     SUBCLASS_OF_ID = 0x8af52aac
 
-    def __init__(self, user_id: 'TypeInputUser', story_id: int, reaction: 'TypeReaction', add_to_recent: Optional[bool]=None):
+    def __init__(self, peer: 'TypeInputPeer', story_id: int, reaction: 'TypeReaction', add_to_recent: Optional[bool]=None):
         """
         :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
         """
-        self.user_id = user_id
+        self.peer = peer
         self.story_id = story_id
         self.reaction = reaction
         self.add_to_recent = add_to_recent
 
     async def resolve(self, client, utils):
-        self.user_id = utils.get_input_user(await client.get_input_entity(self.user_id))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'SendReactionRequest',
-            'user_id': self.user_id.to_dict() if isinstance(self.user_id, TLObject) else self.user_id,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'story_id': self.story_id,
             'reaction': self.reaction.to_dict() if isinstance(self.reaction, TLObject) else self.reaction,
             'add_to_recent': self.add_to_recent
@@ -662,9 +833,9 @@ class SendReactionRequest(TLRequest):
 
     def _bytes(self):
         return b''.join((
-            b'\xb3\xa9\xaaI',
+            b'\xb26\xd7\x7f',
             struct.pack('<I', (0 if self.add_to_recent is None or self.add_to_recent is False else 1)),
-            self.user_id._bytes(),
+            self.peer._bytes(),
             struct.pack('<i', self.story_id),
             self.reaction._bytes(),
         ))
@@ -674,51 +845,64 @@ class SendReactionRequest(TLRequest):
         flags = reader.read_int()
 
         _add_to_recent = bool(flags & 1)
-        _user_id = reader.tgread_object()
+        _peer = reader.tgread_object()
         _story_id = reader.read_int()
         _reaction = reader.tgread_object()
-        return cls(user_id=_user_id, story_id=_story_id, reaction=_reaction, add_to_recent=_add_to_recent)
+        return cls(peer=_peer, story_id=_story_id, reaction=_reaction, add_to_recent=_add_to_recent)
 
 
 class SendStoryRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xd455fcec
+    CONSTRUCTOR_ID = 0xe4e6694b
     SUBCLASS_OF_ID = 0x8af52aac
 
-    def __init__(self, media: 'TypeInputMedia', privacy_rules: List['TypeInputPrivacyRule'], pinned: Optional[bool]=None, noforwards: Optional[bool]=None, media_areas: Optional[List['TypeMediaArea']]=None, caption: Optional[str]=None, entities: Optional[List['TypeMessageEntity']]=None, random_id: int=None, period: Optional[int]=None):
+    def __init__(self, peer: 'TypeInputPeer', media: 'TypeInputMedia', privacy_rules: List['TypeInputPrivacyRule'], pinned: Optional[bool]=None, noforwards: Optional[bool]=None, fwd_modified: Optional[bool]=None, media_areas: Optional[List['TypeMediaArea']]=None, caption: Optional[str]=None, entities: Optional[List['TypeMessageEntity']]=None, random_id: int=None, period: Optional[int]=None, fwd_from_id: Optional['TypeInputPeer']=None, fwd_from_story: Optional[int]=None):
         """
         :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
         """
+        self.peer = peer
         self.media = media
         self.privacy_rules = privacy_rules
         self.pinned = pinned
         self.noforwards = noforwards
+        self.fwd_modified = fwd_modified
         self.media_areas = media_areas
         self.caption = caption
         self.entities = entities
         self.random_id = random_id if random_id is not None else int.from_bytes(os.urandom(8), 'big', signed=True)
         self.period = period
+        self.fwd_from_id = fwd_from_id
+        self.fwd_from_story = fwd_from_story
 
     async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
         self.media = utils.get_input_media(self.media)
+        if self.fwd_from_id:
+            self.fwd_from_id = utils.get_input_peer(await client.get_input_entity(self.fwd_from_id))
 
     def to_dict(self):
         return {
             '_': 'SendStoryRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'media': self.media.to_dict() if isinstance(self.media, TLObject) else self.media,
             'privacy_rules': [] if self.privacy_rules is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.privacy_rules],
             'pinned': self.pinned,
             'noforwards': self.noforwards,
+            'fwd_modified': self.fwd_modified,
             'media_areas': [] if self.media_areas is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.media_areas],
             'caption': self.caption,
             'entities': [] if self.entities is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.entities],
             'random_id': self.random_id,
-            'period': self.period
+            'period': self.period,
+            'fwd_from_id': self.fwd_from_id.to_dict() if isinstance(self.fwd_from_id, TLObject) else self.fwd_from_id,
+            'fwd_from_story': self.fwd_from_story
         }
 
     def _bytes(self):
+        assert ((self.fwd_from_id or self.fwd_from_id is not None) and (self.fwd_from_story or self.fwd_from_story is not None)) or ((self.fwd_from_id is None or self.fwd_from_id is False) and (self.fwd_from_story is None or self.fwd_from_story is False)), 'fwd_from_id, fwd_from_story parameters must all be False-y (like None) or all me True-y'
         return b''.join((
-            b'\xec\xfcU\xd4',
-            struct.pack('<I', (0 if self.pinned is None or self.pinned is False else 4) | (0 if self.noforwards is None or self.noforwards is False else 16) | (0 if self.media_areas is None or self.media_areas is False else 32) | (0 if self.caption is None or self.caption is False else 1) | (0 if self.entities is None or self.entities is False else 2) | (0 if self.period is None or self.period is False else 8)),
+            b'Ki\xe6\xe4',
+            struct.pack('<I', (0 if self.pinned is None or self.pinned is False else 4) | (0 if self.noforwards is None or self.noforwards is False else 16) | (0 if self.fwd_modified is None or self.fwd_modified is False else 128) | (0 if self.media_areas is None or self.media_areas is False else 32) | (0 if self.caption is None or self.caption is False else 1) | (0 if self.entities is None or self.entities is False else 2) | (0 if self.period is None or self.period is False else 8) | (0 if self.fwd_from_id is None or self.fwd_from_id is False else 64) | (0 if self.fwd_from_story is None or self.fwd_from_story is False else 64)),
+            self.peer._bytes(),
             self.media._bytes(),
             b'' if self.media_areas is None or self.media_areas is False else b''.join((b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.media_areas)),b''.join(x._bytes() for x in self.media_areas))),
             b'' if self.caption is None or self.caption is False else (self.serialize_bytes(self.caption)),
@@ -726,6 +910,8 @@ class SendStoryRequest(TLRequest):
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.privacy_rules)),b''.join(x._bytes() for x in self.privacy_rules),
             struct.pack('<q', self.random_id),
             b'' if self.period is None or self.period is False else (struct.pack('<i', self.period)),
+            b'' if self.fwd_from_id is None or self.fwd_from_id is False else (self.fwd_from_id._bytes()),
+            b'' if self.fwd_from_story is None or self.fwd_from_story is False else (struct.pack('<i', self.fwd_from_story)),
         ))
 
     @classmethod
@@ -734,6 +920,8 @@ class SendStoryRequest(TLRequest):
 
         _pinned = bool(flags & 4)
         _noforwards = bool(flags & 16)
+        _fwd_modified = bool(flags & 128)
+        _peer = reader.tgread_object()
         _media = reader.tgread_object()
         if flags & 32:
             reader.read_int()
@@ -768,7 +956,15 @@ class SendStoryRequest(TLRequest):
             _period = reader.read_int()
         else:
             _period = None
-        return cls(media=_media, privacy_rules=_privacy_rules, pinned=_pinned, noforwards=_noforwards, media_areas=_media_areas, caption=_caption, entities=_entities, random_id=_random_id, period=_period)
+        if flags & 64:
+            _fwd_from_id = reader.tgread_object()
+        else:
+            _fwd_from_id = None
+        if flags & 64:
+            _fwd_from_story = reader.read_int()
+        else:
+            _fwd_from_story = None
+        return cls(peer=_peer, media=_media, privacy_rules=_privacy_rules, pinned=_pinned, noforwards=_noforwards, fwd_modified=_fwd_modified, media_areas=_media_areas, caption=_caption, entities=_entities, random_id=_random_id, period=_period, fwd_from_id=_fwd_from_id, fwd_from_story=_fwd_from_story)
 
 
 class ToggleAllStoriesHiddenRequest(TLRequest):
@@ -799,33 +995,75 @@ class ToggleAllStoriesHiddenRequest(TLRequest):
         return cls(hidden=_hidden)
 
 
+class TogglePeerStoriesHiddenRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xbd0415c4
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, peer: 'TypeInputPeer', hidden: bool):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.peer = peer
+        self.hidden = hidden
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'TogglePeerStoriesHiddenRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'hidden': self.hidden
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xc4\x15\x04\xbd',
+            self.peer._bytes(),
+            b'\xb5ur\x99' if self.hidden else b'7\x97y\xbc',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        _hidden = reader.tgread_bool()
+        return cls(peer=_peer, hidden=_hidden)
+
+
 class TogglePinnedRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x51602944
+    CONSTRUCTOR_ID = 0x9a75a1ef
     SUBCLASS_OF_ID = 0x5026710f
 
-    def __init__(self, id: List[int], pinned: bool):
+    def __init__(self, peer: 'TypeInputPeer', id: List[int], pinned: bool):
         """
         :returns Vector<int>: This type has no constructors.
         """
+        self.peer = peer
         self.id = id
         self.pinned = pinned
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'TogglePinnedRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': [] if self.id is None else self.id[:],
             'pinned': self.pinned
         }
 
     def _bytes(self):
         return b''.join((
-            b'D)`Q',
+            b'\xef\xa1u\x9a',
+            self.peer._bytes(),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
             b'\xb5ur\x99' if self.pinned else b'7\x97y\xbc',
         ))
 
     @classmethod
     def from_reader(cls, reader):
+        _peer = reader.tgread_object()
         reader.read_int()
         _id = []
         for _ in range(reader.read_int()):
@@ -833,10 +1071,50 @@ class TogglePinnedRequest(TLRequest):
             _id.append(_x)
 
         _pinned = reader.tgread_bool()
-        return cls(id=_id, pinned=_pinned)
+        return cls(peer=_peer, id=_id, pinned=_pinned)
 
     @staticmethod
     def read_result(reader):
         reader.read_int()  # Vector ID
         return [reader.read_int() for _ in range(reader.read_int())]
+
+
+class TogglePinnedToTopRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xb297e9b
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, peer: 'TypeInputPeer', id: List[int]):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.peer = peer
+        self.id = id
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'TogglePinnedToTopRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'id': [] if self.id is None else self.id[:]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x9b~)\x0b',
+            self.peer._bytes(),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        reader.read_int()
+        _id = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _id.append(_x)
+
+        return cls(peer=_peer, id=_id)
 

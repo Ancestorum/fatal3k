@@ -5,7 +5,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeAuthorization, TypeAutoDownloadSettings, TypeAutoSaveException, TypeAutoSaveSettings, TypeChat, TypeDocument, TypeEmojiStatus, TypePasswordKdfAlgo, TypePrivacyRule, TypeSecurePasswordKdfAlgo, TypeSecureRequiredType, TypeSecureSecretSettings, TypeSecureValue, TypeSecureValueError, TypeTheme, TypeUser, TypeWallPaper, TypeWebAuthorization
+    from ...tl.types import TypeAuthorization, TypeAutoDownloadSettings, TypeAutoSaveException, TypeAutoSaveSettings, TypeBusinessChatLink, TypeChat, TypeConnectedBot, TypeDocument, TypeEmojiStatus, TypeMessageEntity, TypePasswordKdfAlgo, TypePeer, TypePrivacyRule, TypeSecurePasswordKdfAlgo, TypeSecureRequiredType, TypeSecureSecretSettings, TypeSecureValue, TypeSecureValueError, TypeTheme, TypeUser, TypeWallPaper, TypeWebAuthorization
     from ...tl.types.auth import TypeSentCode
 
 
@@ -215,6 +215,99 @@ class AutoSaveSettings(TLObject):
             _users.append(_x)
 
         return cls(users_settings=_users_settings, chats_settings=_chats_settings, broadcasts_settings=_broadcasts_settings, exceptions=_exceptions, chats=_chats, users=_users)
+
+
+class BusinessChatLinks(TLObject):
+    CONSTRUCTOR_ID = 0xec43a2d1
+    SUBCLASS_OF_ID = 0xc6ba4a31
+
+    def __init__(self, links: List['TypeBusinessChatLink'], chats: List['TypeChat'], users: List['TypeUser']):
+        """
+        Constructor for account.BusinessChatLinks: Instance of BusinessChatLinks.
+        """
+        self.links = links
+        self.chats = chats
+        self.users = users
+
+    def to_dict(self):
+        return {
+            '_': 'BusinessChatLinks',
+            'links': [] if self.links is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.links],
+            'chats': [] if self.chats is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.chats],
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xd1\xa2C\xec',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.links)),b''.join(x._bytes() for x in self.links),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.chats)),b''.join(x._bytes() for x in self.chats),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        reader.read_int()
+        _links = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _links.append(_x)
+
+        reader.read_int()
+        _chats = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _chats.append(_x)
+
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(links=_links, chats=_chats, users=_users)
+
+
+class ConnectedBots(TLObject):
+    CONSTRUCTOR_ID = 0x17d7f87b
+    SUBCLASS_OF_ID = 0xe4caf7d3
+
+    def __init__(self, connected_bots: List['TypeConnectedBot'], users: List['TypeUser']):
+        """
+        Constructor for account.ConnectedBots: Instance of ConnectedBots.
+        """
+        self.connected_bots = connected_bots
+        self.users = users
+
+    def to_dict(self):
+        return {
+            '_': 'ConnectedBots',
+            'connected_bots': [] if self.connected_bots is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.connected_bots],
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'{\xf8\xd7\x17',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.connected_bots)),b''.join(x._bytes() for x in self.connected_bots),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        reader.read_int()
+        _connected_bots = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _connected_bots.append(_x)
+
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(connected_bots=_connected_bots, users=_users)
 
 
 class ContentSettings(TLObject):
@@ -692,6 +785,71 @@ class ResetPasswordRequestedWait(TLObject):
     def from_reader(cls, reader):
         _until_date = reader.tgread_date()
         return cls(until_date=_until_date)
+
+
+class ResolvedBusinessChatLinks(TLObject):
+    CONSTRUCTOR_ID = 0x9a23af21
+    SUBCLASS_OF_ID = 0x3a772c28
+
+    def __init__(self, peer: 'TypePeer', message: str, chats: List['TypeChat'], users: List['TypeUser'], entities: Optional[List['TypeMessageEntity']]=None):
+        """
+        Constructor for account.ResolvedBusinessChatLinks: Instance of ResolvedBusinessChatLinks.
+        """
+        self.peer = peer
+        self.message = message
+        self.chats = chats
+        self.users = users
+        self.entities = entities
+
+    def to_dict(self):
+        return {
+            '_': 'ResolvedBusinessChatLinks',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'message': self.message,
+            'chats': [] if self.chats is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.chats],
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users],
+            'entities': [] if self.entities is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.entities]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'!\xaf#\x9a',
+            struct.pack('<I', (0 if self.entities is None or self.entities is False else 1)),
+            self.peer._bytes(),
+            self.serialize_bytes(self.message),
+            b'' if self.entities is None or self.entities is False else b''.join((b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.entities)),b''.join(x._bytes() for x in self.entities))),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.chats)),b''.join(x._bytes() for x in self.chats),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _peer = reader.tgread_object()
+        _message = reader.tgread_string()
+        if flags & 1:
+            reader.read_int()
+            _entities = []
+            for _ in range(reader.read_int()):
+                _x = reader.tgread_object()
+                _entities.append(_x)
+
+        else:
+            _entities = None
+        reader.read_int()
+        _chats = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _chats.append(_x)
+
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(peer=_peer, message=_message, chats=_chats, users=_users, entities=_entities)
 
 
 class SavedRingtone(TLObject):

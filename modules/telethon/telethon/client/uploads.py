@@ -90,6 +90,7 @@ def _resize_photo_if_needed(
         buffer = io.BytesIO()
         result.save(buffer, 'JPEG', progressive=True, **kwargs)
         buffer.seek(0)
+        buffer.name = 'a.jpg'
         return buffer
     except IOError:
         return file

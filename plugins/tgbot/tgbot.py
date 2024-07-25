@@ -1064,11 +1064,8 @@ def msg_worker(message, public=False):
 def tgbot_polling_proc():
     cid = get_client_id()
     tbot = get_fatal_var(cid, 'tgbot')
-    
-    try:
-        tbot.infinity_polling()
-    except Exception:
-        log_exc_error()     
+
+    tbot.infinity_polling()
 
 def album_worker(msgs):
     cid = get_client_id()

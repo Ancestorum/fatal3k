@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import random
 import re
-import string
 import threading
 import traceback
 from typing import Any, Callable, List, Dict, Optional, Union
@@ -14,20 +12,12 @@ import queue as Queue
 import logging
 
 from telebot import types
+from telebot.service_utils import is_pil_image, is_dict, is_string, is_bytes, chunks, generate_random_token, pil_image_to_file
 
 try:
     import ujson as json
 except ImportError:
     import json
-
-try:
-    # noinspection PyPackageRequirements
-    from PIL import Image
-    from io import BytesIO
-
-    pil_imported = True
-except:
-    pil_imported = False
 
 MAX_MESSAGE_LENGTH = 4096
 
@@ -37,25 +27,28 @@ thread_local = threading.local()
 
 #: Contains all media content types.
 content_type_media = [
-    'text', 'audio', 'document', 'animation', 'game', 'photo', 'sticker', 'video', 'video_note', 'voice', 'contact',
-    'location', 'venue', 'dice', 'invoice', 'successful_payment', 'connected_website', 'poll', 'passport_data',
-    'web_app_data',
+    'text', 'animation', 'audio', 'document', 'photo', 'sticker', 'story', 'video', 'video_note', 'voice', 'contact',
+    'dice', 'game', 'poll', 'venue', 'location',  'invoice', 'successful_payment', 'connected_website',
+    'passport_data', 'web_app_data',
 ]
 
 #: Contains all service content types such as `User joined the group`.
 content_type_service = [
-    'new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo', 'delete_chat_photo', 'group_chat_created',
-    'supergroup_chat_created', 'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message',
-    'proximity_alert_triggered', 'video_chat_scheduled', 'video_chat_started', 'video_chat_ended',
-    'video_chat_participants_invited', 'message_auto_delete_timer_changed', 'forum_topic_created', 'forum_topic_closed',
-    'forum_topic_reopened',
+    'new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo', 'delete_chat_photo',
+    'group_chat_created', 'supergroup_chat_created', 'channel_chat_created', 'message_auto_delete_timer_changed',
+    'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message', 'users_shared', 'chat_shared',
+    'write_access_allowed', 'proximity_alert_triggered', 'forum_topic_created', 'forum_topic_edited',
+    'forum_topic_closed', 'forum_topic_reopened', 'general_forum_topic_hidden', 'general_forum_topic_unhidden',
+    'giveaway_created', 'giveaway', 'giveaway_winners', 'giveaway_completed', 'video_chat_scheduled',
+    'video_chat_started', 'video_chat_ended', 'video_chat_participants_invited',
 ]
 
 #: All update types, should be used for allowed_updates parameter in polling.
 update_types = [
     "message", "edited_message", "channel_post", "edited_channel_post", "inline_query", "chosen_inline_result",
     "callback_query", "shipping_query", "pre_checkout_query", "poll", "poll_answer", "my_chat_member", "chat_member",
-    "chat_join_request",
+    "chat_join_request", "message_reaction", "message_reaction_count", "chat_boost", "removed_chat_boost",
+    "business_connection", "business_message", "edited_business_message", "deleted_business_messages"
 ]
 
 
@@ -129,6 +122,7 @@ class ThreadPool:
     """
     :meta private:
     """
+
     def __init__(self, telebot, num_threads=2):
         self.telebot = telebot
         self.tasks = Queue.Queue()
@@ -162,13 +156,15 @@ class ThreadPool:
         for worker in self.workers:
             worker.stop()
         for worker in self.workers:
-            worker.join()
+            if worker != threading.current_thread():
+                worker.join()
 
 
 class AsyncTask:
     """
     :meta private:
     """
+
     def __init__(self, target, *args, **kwargs):
         self.target = target
         self.args = args
@@ -194,11 +190,12 @@ class AsyncTask:
             return self.result
 
 
-class CustomRequestResponse():
+class CustomRequestResponse:
     """
     :meta private:
     """
-    def __init__(self, json_text, status_code = 200, reason = ""):
+
+    def __init__(self, json_text, status_code=200, reason=""):
         self.status_code = status_code
         self.text = json_text
         self.reason = reason
@@ -211,6 +208,7 @@ def async_dec():
     """
     :meta private:
     """
+
     def decorator(fn):
         def wrapper(*args, **kwargs):
             return AsyncTask(fn, *args, **kwargs)
@@ -218,63 +216,6 @@ def async_dec():
         return wrapper
 
     return decorator
-
-
-def is_string(var) -> bool:
-    """
-    Returns True if the given object is a string.
-    """
-    return isinstance(var, str)
-
-
-def is_dict(var) -> bool:
-    """
-    Returns True if the given object is a dictionary.
-
-    :param var: object to be checked
-    :type var: :obj:`object`
-
-    :return: True if the given object is a dictionary.
-    :rtype: :obj:`bool`
-    """
-    return isinstance(var, dict)
-
-
-def is_bytes(var) -> bool:
-    """
-    Returns True if the given object is a bytes object.
-
-    :param var: object to be checked
-    :type var: :obj:`object`
-
-    :return: True if the given object is a bytes object.
-    :rtype: :obj:`bool`
-    """
-    return isinstance(var, bytes)
-
-
-def is_pil_image(var) -> bool:
-    """
-    Returns True if the given object is a PIL.Image.Image object.
-
-    :param var: object to be checked
-    :type var: :obj:`object`
-
-    :return: True if the given object is a PIL.Image.Image object.
-    :rtype: :obj:`bool`
-    """
-    return pil_imported and isinstance(var, Image.Image)
-
-
-def pil_image_to_file(image, extension='JPEG', quality='web_low'):
-    if pil_imported:
-        photoBuffer = BytesIO()
-        image.convert('RGB').save(photoBuffer, extension, quality=quality)
-        photoBuffer.seek(0)
-
-        return photoBuffer
-    else:
-        raise RuntimeError('PIL module is not imported')
 
 
 def is_command(text: str) -> bool:
@@ -335,6 +276,39 @@ def extract_arguments(text: str) -> str or None:
     result = regexp.match(text)
     return result.group(2) if is_command(text) else None
 
+def extract_entity(text: str, e: types.MessageEntity) -> str:
+    """
+    Returns the content of the entity.
+    
+    :param text: The text of the message the entity belongs to
+    :type text: :obj:`str`
+    
+    :param e: The entity to extract
+    :type e: :obj:`MessageEntity`
+    
+    :return: The content of the entity
+    :rtype: :obj:`str`
+    """
+    offset = 0
+    start = 0
+    encoded_text = text.encode()
+    end = len(encoded_text)
+    i = 0
+    
+    for byte in encoded_text:
+        if (byte & 0xc0) != 0x80:
+            if offset == e.offset:
+                start = i
+            elif offset - e.offset == e.length:
+                end = i
+                break
+            if byte >= 0xf0:
+                offset += 2
+            else:
+                offset += 1
+        i += 1
+    
+    return encoded_text[start:end].decode()
 
 def split_string(text: str, chars_per_string: int) -> List[str]:
     """
@@ -353,7 +327,7 @@ def split_string(text: str, chars_per_string: int) -> List[str]:
     return [text[i:i + chars_per_string] for i in range(0, len(text), chars_per_string)]
 
 
-def smart_split(text: str, chars_per_string: int=MAX_MESSAGE_LENGTH) -> List[str]:
+def smart_split(text: str, chars_per_string: int = MAX_MESSAGE_LENGTH) -> List[str]:
     r"""
     Splits one string into multiple strings, with a maximum amount of `chars_per_string` characters per string.
     This is very useful for splitting one giant message into multiples.
@@ -383,15 +357,18 @@ def smart_split(text: str, chars_per_string: int=MAX_MESSAGE_LENGTH) -> List[str
 
         part = text[:chars_per_string]
 
-        if "\n" in part: part = _text_before_last("\n")
-        elif ". " in part: part = _text_before_last(". ")
-        elif " " in part: part = _text_before_last(" ")
+        if "\n" in part:
+            part = _text_before_last("\n")
+        elif ". " in part:
+            part = _text_before_last(". ")
+        elif " " in part:
+            part = _text_before_last(" ")
 
         parts.append(part)
         text = text[len(part):]
 
 
-def escape(text: str) -> str:
+def escape(text: str) -> Optional[str]:
     """
     Replaces the following chars in `text` ('&' with '&amp;', '<' with '&lt;' and '>' with '&gt;').
 
@@ -401,12 +378,12 @@ def escape(text: str) -> str:
     chars = {"&": "&amp;", "<": "&lt;", ">": "&gt;"}
     if text is None:
         return None
-    for old, new in chars.items(): 
+    for old, new in chars.items():
         text = text.replace(old, new)
     return text
 
 
-def user_link(user: types.User, include_id: bool=False) -> str:
+def user_link(user: types.User, include_id: bool = False) -> str:
     """
     Returns an HTML user link. This is useful for reports.
     Attention: Don't forget to set parse_mode to 'HTML'!
@@ -433,10 +410,10 @@ def user_link(user: types.User, include_id: bool=False) -> str:
     """
     name = escape(user.first_name)
     return (f"<a href='tg://user?id={user.id}'>{name}</a>"
-        + (f" (<pre>{user.id}</pre>)" if include_id else ""))
+            + (f" (<pre>{user.id}</pre>)" if include_id else ""))
 
 
-def quick_markup(values: Dict[str, Dict[str, Any]], row_width: int=2) -> types.InlineKeyboardMarkup:
+def quick_markup(values: Dict[str, Dict[str, Any]], row_width: int = 2) -> types.InlineKeyboardMarkup:
     """
     Returns a reply markup from a dict in this format: {'text': kwargs}
     This is useful to avoid always typing 'btn1 = InlineKeyboardButton(...)' 'btn2 = InlineKeyboardButton(...)' 
@@ -446,11 +423,13 @@ def quick_markup(values: Dict[str, Dict[str, Any]], row_width: int=2) -> types.I
     .. code-block:: python3
         :caption: Using quick_markup:
 
-        quick_markup({
+        from telebot.util import quick_markup
+
+        markup = quick_markup({
             'Twitter': {'url': 'https://twitter.com'},
             'Facebook': {'url': 'https://facebook.com'},
             'Back': {'callback_data': 'whatever'}
-        }, row_width=2): 
+        }, row_width=2)
         # returns an InlineKeyboardMarkup with two buttons in a row, one leading to Twitter, the other to facebook
         # and a back button below
 
@@ -469,7 +448,7 @@ def quick_markup(values: Dict[str, Dict[str, Any]], row_width: int=2) -> types.I
     :param values: a dict containing all buttons to create in this format: {text: kwargs} {str:}
     :type values: :obj:`dict`
 
-    :param row_width: int row width
+    :param row_width: number of :class:`telebot.types.InlineKeyboardButton` objects on each row
     :type row_width: :obj:`int`
 
     :return: InlineKeyboardMarkup
@@ -551,24 +530,7 @@ def per_thread(key, construct_value, reset=False):
     return getattr(thread_local, key)
 
 
-def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
-    # https://stackoverflow.com/a/312464/9935473
-    for i in range(0, len(lst), n):
-        yield lst[i:i + n]
-
-
-def generate_random_token() -> str:
-    """
-    Generates a random token consisting of letters and digits, 16 characters long.
-
-    :return: a random token
-    :rtype: :obj:`str`
-    """
-    return ''.join(random.sample(string.ascii_letters, 16))
-
-
-def deprecated(warn: bool=True, alternative: Optional[Callable]=None, deprecation_text=None):
+def deprecated(warn: bool = True, alternative: Optional[Callable] = None, deprecation_text=None):
     """
     Use this decorator to mark functions as deprecated.
     When the function is used, an info (or warning if `warn` is True) is logged.
@@ -586,6 +548,7 @@ def deprecated(warn: bool=True, alternative: Optional[Callable]=None, deprecatio
 
     :return: The decorated function
     """
+
     def decorator(function):
         def wrapper(*args, **kwargs):
             info = f"`{function.__name__}` is deprecated."
@@ -598,7 +561,9 @@ def deprecated(warn: bool=True, alternative: Optional[Callable]=None, deprecatio
             else:
                 logger.warning(info)
             return function(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -628,7 +593,7 @@ def webhook_google_functions(bot, request):
         return 'Bot ON'
 
 
-def antiflood(function: Callable, *args, **kwargs):
+def antiflood(function: Callable, *args, number_retries=5, **kwargs):
     """
     Use this function inside loops in order to avoid getting TooManyRequests error.
     Example:
@@ -642,6 +607,9 @@ def antiflood(function: Callable, *args, **kwargs):
     :param function: The function to call
     :type function: :obj:`Callable`
 
+    :param number_retries: Number of retries to send
+    :type function: :obj:int
+
     :param args: The arguments to pass to the function
     :type args: :obj:`tuple`
 
@@ -653,16 +621,18 @@ def antiflood(function: Callable, *args, **kwargs):
     from telebot.apihelper import ApiTelegramException
     from time import sleep
 
-    try:
-        return function(*args, **kwargs)
-    except ApiTelegramException as ex:
-        if ex.error_code == 429:
-            sleep(ex.result_json['parameters']['retry_after'])
+    for _ in range(number_retries - 1):
+        try:
             return function(*args, **kwargs)
-        else:
-            raise
-    
-    
+        except ApiTelegramException as ex:
+            if ex.error_code == 429:
+                sleep(ex.result_json['parameters']['retry_after'])
+            else:
+                raise
+    else:
+        return function(*args, **kwargs)
+
+
 def parse_web_app_data(token: str, raw_init_data: str):
     """
     Parses web app data.
@@ -715,4 +685,16 @@ def validate_web_app_data(token: str, raw_init_data: str):
 
     return hmac.new(secret_key.digest(), data_check_string.encode(), sha256).hexdigest() == init_data_hash
 
-    
+
+__all__ = (
+    "content_type_media", "content_type_service", "update_types",
+    "WorkerThread", "AsyncTask", "CustomRequestResponse",
+    "async_dec", "deprecated",
+    "is_bytes", "is_string", "is_dict", "is_pil_image",
+    "chunks", "generate_random_token", "pil_image_to_file",
+    "is_command", "extract_command", "extract_arguments",
+    "split_string", "smart_split", "escape", "user_link", "quick_markup",
+    "antiflood", "parse_web_app_data", "validate_web_app_data",
+    "or_set", "or_clear", "orify", "OrEvent", "per_thread",
+    "webhook_google_functions"
+)

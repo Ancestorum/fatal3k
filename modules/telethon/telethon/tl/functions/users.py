@@ -41,13 +41,13 @@ class GetFullUserRequest(TLRequest):
         return cls(id=_id)
 
 
-class GetStoriesMaxIDsRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xca1cb9ab
-    SUBCLASS_OF_ID = 0x5026710f
+class GetIsPremiumRequiredToContactRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xa622aa10
+    SUBCLASS_OF_ID = 0x15dfc3f1
 
     def __init__(self, id: List['TypeInputUser']):
         """
-        :returns Vector<int>: This type has no constructors.
+        :returns Vector<Bool>: This type has no constructors.
         """
         self.id = id
 
@@ -60,13 +60,13 @@ class GetStoriesMaxIDsRequest(TLRequest):
 
     def to_dict(self):
         return {
-            '_': 'GetStoriesMaxIDsRequest',
+            '_': 'GetIsPremiumRequiredToContactRequest',
             'id': [] if self.id is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.id]
         }
 
     def _bytes(self):
         return b''.join((
-            b'\xab\xb9\x1c\xca',
+            b'\x10\xaa"\xa6',
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(x._bytes() for x in self.id),
         ))
 
@@ -79,11 +79,6 @@ class GetStoriesMaxIDsRequest(TLRequest):
             _id.append(_x)
 
         return cls(id=_id)
-
-    @staticmethod
-    def read_result(reader):
-        reader.read_int()  # Vector ID
-        return [reader.read_int() for _ in range(reader.read_int())]
 
 
 class GetUsersRequest(TLRequest):

@@ -465,7 +465,7 @@ class SentCodeTypeApp(TLObject):
 
     def __init__(self, length: int):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.length = length
 
@@ -493,7 +493,7 @@ class SentCodeTypeCall(TLObject):
 
     def __init__(self, length: int):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.length = length
 
@@ -521,7 +521,7 @@ class SentCodeTypeEmailCode(TLObject):
 
     def __init__(self, email_pattern: str, length: int, apple_signin_allowed: Optional[bool]=None, google_signin_allowed: Optional[bool]=None, reset_available_period: Optional[int]=None, reset_pending_date: Optional[datetime]=None):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.email_pattern = email_pattern
         self.length = length
@@ -571,15 +571,16 @@ class SentCodeTypeEmailCode(TLObject):
 
 
 class SentCodeTypeFirebaseSms(TLObject):
-    CONSTRUCTOR_ID = 0xe57b1432
+    CONSTRUCTOR_ID = 0x13c90f17
     SUBCLASS_OF_ID = 0xff5b158e
 
-    def __init__(self, length: int, nonce: Optional[bytes]=None, receipt: Optional[str]=None, push_timeout: Optional[int]=None):
+    def __init__(self, length: int, nonce: Optional[bytes]=None, play_integrity_nonce: Optional[bytes]=None, receipt: Optional[str]=None, push_timeout: Optional[int]=None):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.length = length
         self.nonce = nonce
+        self.play_integrity_nonce = play_integrity_nonce
         self.receipt = receipt
         self.push_timeout = push_timeout
 
@@ -588,6 +589,7 @@ class SentCodeTypeFirebaseSms(TLObject):
             '_': 'SentCodeTypeFirebaseSms',
             'length': self.length,
             'nonce': self.nonce,
+            'play_integrity_nonce': self.play_integrity_nonce,
             'receipt': self.receipt,
             'push_timeout': self.push_timeout
         }
@@ -595,9 +597,10 @@ class SentCodeTypeFirebaseSms(TLObject):
     def _bytes(self):
         assert ((self.receipt or self.receipt is not None) and (self.push_timeout or self.push_timeout is not None)) or ((self.receipt is None or self.receipt is False) and (self.push_timeout is None or self.push_timeout is False)), 'receipt, push_timeout parameters must all be False-y (like None) or all me True-y'
         return b''.join((
-            b'2\x14{\xe5',
-            struct.pack('<I', (0 if self.nonce is None or self.nonce is False else 1) | (0 if self.receipt is None or self.receipt is False else 2) | (0 if self.push_timeout is None or self.push_timeout is False else 2)),
+            b'\x17\x0f\xc9\x13',
+            struct.pack('<I', (0 if self.nonce is None or self.nonce is False else 1) | (0 if self.play_integrity_nonce is None or self.play_integrity_nonce is False else 4) | (0 if self.receipt is None or self.receipt is False else 2) | (0 if self.push_timeout is None or self.push_timeout is False else 2)),
             b'' if self.nonce is None or self.nonce is False else (self.serialize_bytes(self.nonce)),
+            b'' if self.play_integrity_nonce is None or self.play_integrity_nonce is False else (self.serialize_bytes(self.play_integrity_nonce)),
             b'' if self.receipt is None or self.receipt is False else (self.serialize_bytes(self.receipt)),
             b'' if self.push_timeout is None or self.push_timeout is False else (struct.pack('<i', self.push_timeout)),
             struct.pack('<i', self.length),
@@ -611,6 +614,10 @@ class SentCodeTypeFirebaseSms(TLObject):
             _nonce = reader.tgread_bytes()
         else:
             _nonce = None
+        if flags & 4:
+            _play_integrity_nonce = reader.tgread_bytes()
+        else:
+            _play_integrity_nonce = None
         if flags & 2:
             _receipt = reader.tgread_string()
         else:
@@ -620,7 +627,7 @@ class SentCodeTypeFirebaseSms(TLObject):
         else:
             _push_timeout = None
         _length = reader.read_int()
-        return cls(length=_length, nonce=_nonce, receipt=_receipt, push_timeout=_push_timeout)
+        return cls(length=_length, nonce=_nonce, play_integrity_nonce=_play_integrity_nonce, receipt=_receipt, push_timeout=_push_timeout)
 
 
 class SentCodeTypeFlashCall(TLObject):
@@ -629,7 +636,7 @@ class SentCodeTypeFlashCall(TLObject):
 
     def __init__(self, pattern: str):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.pattern = pattern
 
@@ -657,7 +664,7 @@ class SentCodeTypeFragmentSms(TLObject):
 
     def __init__(self, url: str, length: int):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.url = url
         self.length = length
@@ -689,7 +696,7 @@ class SentCodeTypeMissedCall(TLObject):
 
     def __init__(self, prefix: str, length: int):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.prefix = prefix
         self.length = length
@@ -721,7 +728,7 @@ class SentCodeTypeSetUpEmailRequired(TLObject):
 
     def __init__(self, apple_signin_allowed: Optional[bool]=None, google_signin_allowed: Optional[bool]=None):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.apple_signin_allowed = apple_signin_allowed
         self.google_signin_allowed = google_signin_allowed
@@ -754,7 +761,7 @@ class SentCodeTypeSms(TLObject):
 
     def __init__(self, length: int):
         """
-        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms.
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
         """
         self.length = length
 
@@ -774,4 +781,72 @@ class SentCodeTypeSms(TLObject):
     def from_reader(cls, reader):
         _length = reader.read_int()
         return cls(length=_length)
+
+
+class SentCodeTypeSmsPhrase(TLObject):
+    CONSTRUCTOR_ID = 0xb37794af
+    SUBCLASS_OF_ID = 0xff5b158e
+
+    def __init__(self, beginning: Optional[str]=None):
+        """
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
+        """
+        self.beginning = beginning
+
+    def to_dict(self):
+        return {
+            '_': 'SentCodeTypeSmsPhrase',
+            'beginning': self.beginning
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xaf\x94w\xb3',
+            struct.pack('<I', (0 if self.beginning is None or self.beginning is False else 1)),
+            b'' if self.beginning is None or self.beginning is False else (self.serialize_bytes(self.beginning)),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _beginning = reader.tgread_string()
+        else:
+            _beginning = None
+        return cls(beginning=_beginning)
+
+
+class SentCodeTypeSmsWord(TLObject):
+    CONSTRUCTOR_ID = 0xa416ac81
+    SUBCLASS_OF_ID = 0xff5b158e
+
+    def __init__(self, beginning: Optional[str]=None):
+        """
+        Constructor for auth.SentCodeType: Instance of either SentCodeTypeApp, SentCodeTypeSms, SentCodeTypeCall, SentCodeTypeFlashCall, SentCodeTypeMissedCall, SentCodeTypeEmailCode, SentCodeTypeSetUpEmailRequired, SentCodeTypeFragmentSms, SentCodeTypeFirebaseSms, SentCodeTypeSmsWord, SentCodeTypeSmsPhrase.
+        """
+        self.beginning = beginning
+
+    def to_dict(self):
+        return {
+            '_': 'SentCodeTypeSmsWord',
+            'beginning': self.beginning
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x81\xac\x16\xa4',
+            struct.pack('<I', (0 if self.beginning is None or self.beginning is False else 1)),
+            b'' if self.beginning is None or self.beginning is False else (self.serialize_bytes(self.beginning)),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _beginning = reader.tgread_string()
+        else:
+            _beginning = None
+        return cls(beginning=_beginning)
 

@@ -5,7 +5,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeChannelAdminLogEvent, TypeChannelParticipant, TypeChat, TypeSendAsPeer, TypeUser
+    from ...tl.types import TypeChannelAdminLogEvent, TypeChannelParticipant, TypeChat, TypeSendAsPeer, TypeSponsoredMessageReportOption, TypeUser
 
 
 
@@ -229,4 +229,79 @@ class SendAsPeers(TLObject):
             _users.append(_x)
 
         return cls(peers=_peers, chats=_chats, users=_users)
+
+
+class SponsoredMessageReportResultAdsHidden(TLObject):
+    CONSTRUCTOR_ID = 0x3e3bcf2f
+    SUBCLASS_OF_ID = 0x26231822
+
+    def to_dict(self):
+        return {
+            '_': 'SponsoredMessageReportResultAdsHidden'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'/\xcf;>',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
+
+
+class SponsoredMessageReportResultChooseOption(TLObject):
+    CONSTRUCTOR_ID = 0x846f9e42
+    SUBCLASS_OF_ID = 0x26231822
+
+    def __init__(self, title: str, options: List['TypeSponsoredMessageReportOption']):
+        """
+        Constructor for channels.SponsoredMessageReportResult: Instance of either SponsoredMessageReportResultChooseOption, SponsoredMessageReportResultAdsHidden, SponsoredMessageReportResultReported.
+        """
+        self.title = title
+        self.options = options
+
+    def to_dict(self):
+        return {
+            '_': 'SponsoredMessageReportResultChooseOption',
+            'title': self.title,
+            'options': [] if self.options is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.options]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'B\x9eo\x84',
+            self.serialize_bytes(self.title),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.options)),b''.join(x._bytes() for x in self.options),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _title = reader.tgread_string()
+        reader.read_int()
+        _options = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _options.append(_x)
+
+        return cls(title=_title, options=_options)
+
+
+class SponsoredMessageReportResultReported(TLObject):
+    CONSTRUCTOR_ID = 0xad798849
+    SUBCLASS_OF_ID = 0x26231822
+
+    def to_dict(self):
+        return {
+            '_': 'SponsoredMessageReportResultReported'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'I\x88y\xad',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
 

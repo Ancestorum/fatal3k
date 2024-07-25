@@ -117,34 +117,6 @@ class EditUserInfoRequest(TLRequest):
         return cls(user_id=_user_id, message=_message, entities=_entities)
 
 
-class GetAppChangelogRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x9010ef6f
-    SUBCLASS_OF_ID = 0x8af52aac
-
-    def __init__(self, prev_app_version: str):
-        """
-        :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
-        """
-        self.prev_app_version = prev_app_version
-
-    def to_dict(self):
-        return {
-            '_': 'GetAppChangelogRequest',
-            'prev_app_version': self.prev_app_version
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'o\xef\x10\x90',
-            self.serialize_bytes(self.prev_app_version),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _prev_app_version = reader.tgread_string()
-        return cls(prev_app_version=_prev_app_version)
-
-
 class GetAppConfigRequest(TLRequest):
     CONSTRUCTOR_ID = 0x61e3f854
     SUBCLASS_OF_ID = 0x14381c9a
@@ -365,6 +337,62 @@ class GetPassportConfigRequest(TLRequest):
         return cls(hash=_hash)
 
 
+class GetPeerColorsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xda80f42f
+    SUBCLASS_OF_ID = 0xe3f6733
+
+    def __init__(self, hash: int):
+        """
+        :returns help.PeerColors: Instance of either PeerColorsNotModified, PeerColors.
+        """
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'GetPeerColorsRequest',
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'/\xf4\x80\xda',
+            struct.pack('<i', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_int()
+        return cls(hash=_hash)
+
+
+class GetPeerProfileColorsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xabcfa9fd
+    SUBCLASS_OF_ID = 0xe3f6733
+
+    def __init__(self, hash: int):
+        """
+        :returns help.PeerColors: Instance of either PeerColorsNotModified, PeerColors.
+        """
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'GetPeerProfileColorsRequest',
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xfd\xa9\xcf\xab',
+            struct.pack('<i', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_int()
+        return cls(hash=_hash)
+
+
 class GetPremiumPromoRequest(TLRequest):
     CONSTRUCTOR_ID = 0xb81b93d4
     SUBCLASS_OF_ID = 0xc987a338
@@ -486,6 +514,34 @@ class GetTermsOfServiceUpdateRequest(TLRequest):
     @classmethod
     def from_reader(cls, reader):
         return cls()
+
+
+class GetTimezonesListRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x49b30240
+    SUBCLASS_OF_ID = 0xca76e475
+
+    def __init__(self, hash: int):
+        """
+        :returns help.TimezonesList: Instance of either TimezonesListNotModified, TimezonesList.
+        """
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'GetTimezonesListRequest',
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'@\x02\xb3I',
+            struct.pack('<i', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_int()
+        return cls(hash=_hash)
 
 
 class GetUserInfoRequest(TLRequest):

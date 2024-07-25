@@ -5,7 +5,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeChat, TypeContact, TypeImportedContact, TypePeer, TypePeerBlocked, TypePopularContact, TypeTopPeerCategoryPeers, TypeUser
+    from ...tl.types import TypeChat, TypeContact, TypeContactBirthday, TypeImportedContact, TypePeer, TypePeerBlocked, TypePopularContact, TypeTopPeerCategoryPeers, TypeUser
 
 
 
@@ -113,6 +113,48 @@ class BlockedSlice(TLObject):
             _users.append(_x)
 
         return cls(count=_count, blocked=_blocked, chats=_chats, users=_users)
+
+
+class ContactBirthdays(TLObject):
+    CONSTRUCTOR_ID = 0x114ff30d
+    SUBCLASS_OF_ID = 0xe7aabff
+
+    def __init__(self, contacts: List['TypeContactBirthday'], users: List['TypeUser']):
+        """
+        Constructor for contacts.ContactBirthdays: Instance of ContactBirthdays.
+        """
+        self.contacts = contacts
+        self.users = users
+
+    def to_dict(self):
+        return {
+            '_': 'ContactBirthdays',
+            'contacts': [] if self.contacts is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.contacts],
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\r\xf3O\x11',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.contacts)),b''.join(x._bytes() for x in self.contacts),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        reader.read_int()
+        _contacts = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _contacts.append(_x)
+
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(contacts=_contacts, users=_users)
 
 
 class Contacts(TLObject):

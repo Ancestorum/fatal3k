@@ -164,7 +164,7 @@ class CreateStickerSetRequest(TLRequest):
     CONSTRUCTOR_ID = 0x9021ab67
     SUBCLASS_OF_ID = 0x9b704a5a
 
-    def __init__(self, user_id: 'TypeInputUser', title: str, short_name: str, stickers: List['TypeInputStickerSetItem'], masks: Optional[bool]=None, animated: Optional[bool]=None, videos: Optional[bool]=None, emojis: Optional[bool]=None, text_color: Optional[bool]=None, thumb: Optional['TypeInputDocument']=None, software: Optional[str]=None):
+    def __init__(self, user_id: 'TypeInputUser', title: str, short_name: str, stickers: List['TypeInputStickerSetItem'], masks: Optional[bool]=None, emojis: Optional[bool]=None, text_color: Optional[bool]=None, thumb: Optional['TypeInputDocument']=None, software: Optional[str]=None):
         """
         :returns messages.StickerSet: Instance of either StickerSet, StickerSetNotModified.
         """
@@ -173,8 +173,6 @@ class CreateStickerSetRequest(TLRequest):
         self.short_name = short_name
         self.stickers = stickers
         self.masks = masks
-        self.animated = animated
-        self.videos = videos
         self.emojis = emojis
         self.text_color = text_color
         self.thumb = thumb
@@ -193,8 +191,6 @@ class CreateStickerSetRequest(TLRequest):
             'short_name': self.short_name,
             'stickers': [] if self.stickers is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.stickers],
             'masks': self.masks,
-            'animated': self.animated,
-            'videos': self.videos,
             'emojis': self.emojis,
             'text_color': self.text_color,
             'thumb': self.thumb.to_dict() if isinstance(self.thumb, TLObject) else self.thumb,
@@ -204,7 +200,7 @@ class CreateStickerSetRequest(TLRequest):
     def _bytes(self):
         return b''.join((
             b'g\xab!\x90',
-            struct.pack('<I', (0 if self.masks is None or self.masks is False else 1) | (0 if self.animated is None or self.animated is False else 2) | (0 if self.videos is None or self.videos is False else 16) | (0 if self.emojis is None or self.emojis is False else 32) | (0 if self.text_color is None or self.text_color is False else 64) | (0 if self.thumb is None or self.thumb is False else 4) | (0 if self.software is None or self.software is False else 8)),
+            struct.pack('<I', (0 if self.masks is None or self.masks is False else 1) | (0 if self.emojis is None or self.emojis is False else 32) | (0 if self.text_color is None or self.text_color is False else 64) | (0 if self.thumb is None or self.thumb is False else 4) | (0 if self.software is None or self.software is False else 8)),
             self.user_id._bytes(),
             self.serialize_bytes(self.title),
             self.serialize_bytes(self.short_name),
@@ -218,8 +214,6 @@ class CreateStickerSetRequest(TLRequest):
         flags = reader.read_int()
 
         _masks = bool(flags & 1)
-        _animated = bool(flags & 2)
-        _videos = bool(flags & 16)
         _emojis = bool(flags & 32)
         _text_color = bool(flags & 64)
         _user_id = reader.tgread_object()
@@ -239,7 +233,7 @@ class CreateStickerSetRequest(TLRequest):
             _software = reader.tgread_string()
         else:
             _software = None
-        return cls(user_id=_user_id, title=_title, short_name=_short_name, stickers=_stickers, masks=_masks, animated=_animated, videos=_videos, emojis=_emojis, text_color=_text_color, thumb=_thumb, software=_software)
+        return cls(user_id=_user_id, title=_title, short_name=_short_name, stickers=_stickers, masks=_masks, emojis=_emojis, text_color=_text_color, thumb=_thumb, software=_software)
 
 
 class DeleteStickerSetRequest(TLRequest):
@@ -331,6 +325,41 @@ class RenameStickerSetRequest(TLRequest):
         _stickerset = reader.tgread_object()
         _title = reader.tgread_string()
         return cls(stickerset=_stickerset, title=_title)
+
+
+class ReplaceStickerRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x4696459a
+    SUBCLASS_OF_ID = 0x9b704a5a
+
+    def __init__(self, sticker: 'TypeInputDocument', new_sticker: 'TypeInputStickerSetItem'):
+        """
+        :returns messages.StickerSet: Instance of either StickerSet, StickerSetNotModified.
+        """
+        self.sticker = sticker
+        self.new_sticker = new_sticker
+
+    async def resolve(self, client, utils):
+        self.sticker = utils.get_input_document(self.sticker)
+
+    def to_dict(self):
+        return {
+            '_': 'ReplaceStickerRequest',
+            'sticker': self.sticker.to_dict() if isinstance(self.sticker, TLObject) else self.sticker,
+            'new_sticker': self.new_sticker.to_dict() if isinstance(self.new_sticker, TLObject) else self.new_sticker
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x9aE\x96F',
+            self.sticker._bytes(),
+            self.new_sticker._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _sticker = reader.tgread_object()
+        _new_sticker = reader.tgread_object()
+        return cls(sticker=_sticker, new_sticker=_new_sticker)
 
 
 class SetStickerSetThumbRequest(TLRequest):

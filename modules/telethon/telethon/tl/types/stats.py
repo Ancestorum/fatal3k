@@ -5,15 +5,120 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeMessageInteractionCounters, TypeStatsAbsValueAndPrev, TypeStatsDateRangeDays, TypeStatsGraph, TypeStatsGroupTopAdmin, TypeStatsGroupTopInviter, TypeStatsGroupTopPoster, TypeStatsPercentValue, TypeUser
+    from ...tl.types import TypeBroadcastRevenueBalances, TypeBroadcastRevenueTransaction, TypeChat, TypePostInteractionCounters, TypePublicForward, TypeStatsAbsValueAndPrev, TypeStatsDateRangeDays, TypeStatsGraph, TypeStatsGroupTopAdmin, TypeStatsGroupTopInviter, TypeStatsGroupTopPoster, TypeStatsPercentValue, TypeUser
 
+
+
+class BroadcastRevenueStats(TLObject):
+    CONSTRUCTOR_ID = 0x5407e297
+    SUBCLASS_OF_ID = 0x2cee3078
+
+    def __init__(self, top_hours_graph: 'TypeStatsGraph', revenue_graph: 'TypeStatsGraph', balances: 'TypeBroadcastRevenueBalances', usd_rate: float):
+        """
+        Constructor for stats.BroadcastRevenueStats: Instance of BroadcastRevenueStats.
+        """
+        self.top_hours_graph = top_hours_graph
+        self.revenue_graph = revenue_graph
+        self.balances = balances
+        self.usd_rate = usd_rate
+
+    def to_dict(self):
+        return {
+            '_': 'BroadcastRevenueStats',
+            'top_hours_graph': self.top_hours_graph.to_dict() if isinstance(self.top_hours_graph, TLObject) else self.top_hours_graph,
+            'revenue_graph': self.revenue_graph.to_dict() if isinstance(self.revenue_graph, TLObject) else self.revenue_graph,
+            'balances': self.balances.to_dict() if isinstance(self.balances, TLObject) else self.balances,
+            'usd_rate': self.usd_rate
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x97\xe2\x07T',
+            self.top_hours_graph._bytes(),
+            self.revenue_graph._bytes(),
+            self.balances._bytes(),
+            struct.pack('<d', self.usd_rate),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _top_hours_graph = reader.tgread_object()
+        _revenue_graph = reader.tgread_object()
+        _balances = reader.tgread_object()
+        _usd_rate = reader.read_double()
+        return cls(top_hours_graph=_top_hours_graph, revenue_graph=_revenue_graph, balances=_balances, usd_rate=_usd_rate)
+
+
+class BroadcastRevenueTransactions(TLObject):
+    CONSTRUCTOR_ID = 0x87158466
+    SUBCLASS_OF_ID = 0x676ea15
+
+    def __init__(self, count: int, transactions: List['TypeBroadcastRevenueTransaction']):
+        """
+        Constructor for stats.BroadcastRevenueTransactions: Instance of BroadcastRevenueTransactions.
+        """
+        self.count = count
+        self.transactions = transactions
+
+    def to_dict(self):
+        return {
+            '_': 'BroadcastRevenueTransactions',
+            'count': self.count,
+            'transactions': [] if self.transactions is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.transactions]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'f\x84\x15\x87',
+            struct.pack('<i', self.count),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.transactions)),b''.join(x._bytes() for x in self.transactions),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _count = reader.read_int()
+        reader.read_int()
+        _transactions = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _transactions.append(_x)
+
+        return cls(count=_count, transactions=_transactions)
+
+
+class BroadcastRevenueWithdrawalUrl(TLObject):
+    CONSTRUCTOR_ID = 0xec659737
+    SUBCLASS_OF_ID = 0xd15cc8e5
+
+    def __init__(self, url: str):
+        """
+        Constructor for stats.BroadcastRevenueWithdrawalUrl: Instance of BroadcastRevenueWithdrawalUrl.
+        """
+        self.url = url
+
+    def to_dict(self):
+        return {
+            '_': 'BroadcastRevenueWithdrawalUrl',
+            'url': self.url
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'7\x97e\xec',
+            self.serialize_bytes(self.url),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _url = reader.tgread_string()
+        return cls(url=_url)
 
 
 class BroadcastStats(TLObject):
-    CONSTRUCTOR_ID = 0xbdf78394
+    CONSTRUCTOR_ID = 0x396ca5fc
     SUBCLASS_OF_ID = 0x7ff25428
 
-    def __init__(self, period: 'TypeStatsDateRangeDays', followers: 'TypeStatsAbsValueAndPrev', views_per_post: 'TypeStatsAbsValueAndPrev', shares_per_post: 'TypeStatsAbsValueAndPrev', enabled_notifications: 'TypeStatsPercentValue', growth_graph: 'TypeStatsGraph', followers_graph: 'TypeStatsGraph', mute_graph: 'TypeStatsGraph', top_hours_graph: 'TypeStatsGraph', interactions_graph: 'TypeStatsGraph', iv_interactions_graph: 'TypeStatsGraph', views_by_source_graph: 'TypeStatsGraph', new_followers_by_source_graph: 'TypeStatsGraph', languages_graph: 'TypeStatsGraph', recent_message_interactions: List['TypeMessageInteractionCounters']):
+    def __init__(self, period: 'TypeStatsDateRangeDays', followers: 'TypeStatsAbsValueAndPrev', views_per_post: 'TypeStatsAbsValueAndPrev', shares_per_post: 'TypeStatsAbsValueAndPrev', reactions_per_post: 'TypeStatsAbsValueAndPrev', views_per_story: 'TypeStatsAbsValueAndPrev', shares_per_story: 'TypeStatsAbsValueAndPrev', reactions_per_story: 'TypeStatsAbsValueAndPrev', enabled_notifications: 'TypeStatsPercentValue', growth_graph: 'TypeStatsGraph', followers_graph: 'TypeStatsGraph', mute_graph: 'TypeStatsGraph', top_hours_graph: 'TypeStatsGraph', interactions_graph: 'TypeStatsGraph', iv_interactions_graph: 'TypeStatsGraph', views_by_source_graph: 'TypeStatsGraph', new_followers_by_source_graph: 'TypeStatsGraph', languages_graph: 'TypeStatsGraph', reactions_by_emotion_graph: 'TypeStatsGraph', story_interactions_graph: 'TypeStatsGraph', story_reactions_by_emotion_graph: 'TypeStatsGraph', recent_posts_interactions: List['TypePostInteractionCounters']):
         """
         Constructor for stats.BroadcastStats: Instance of BroadcastStats.
         """
@@ -21,6 +126,10 @@ class BroadcastStats(TLObject):
         self.followers = followers
         self.views_per_post = views_per_post
         self.shares_per_post = shares_per_post
+        self.reactions_per_post = reactions_per_post
+        self.views_per_story = views_per_story
+        self.shares_per_story = shares_per_story
+        self.reactions_per_story = reactions_per_story
         self.enabled_notifications = enabled_notifications
         self.growth_graph = growth_graph
         self.followers_graph = followers_graph
@@ -31,7 +140,10 @@ class BroadcastStats(TLObject):
         self.views_by_source_graph = views_by_source_graph
         self.new_followers_by_source_graph = new_followers_by_source_graph
         self.languages_graph = languages_graph
-        self.recent_message_interactions = recent_message_interactions
+        self.reactions_by_emotion_graph = reactions_by_emotion_graph
+        self.story_interactions_graph = story_interactions_graph
+        self.story_reactions_by_emotion_graph = story_reactions_by_emotion_graph
+        self.recent_posts_interactions = recent_posts_interactions
 
     def to_dict(self):
         return {
@@ -40,6 +152,10 @@ class BroadcastStats(TLObject):
             'followers': self.followers.to_dict() if isinstance(self.followers, TLObject) else self.followers,
             'views_per_post': self.views_per_post.to_dict() if isinstance(self.views_per_post, TLObject) else self.views_per_post,
             'shares_per_post': self.shares_per_post.to_dict() if isinstance(self.shares_per_post, TLObject) else self.shares_per_post,
+            'reactions_per_post': self.reactions_per_post.to_dict() if isinstance(self.reactions_per_post, TLObject) else self.reactions_per_post,
+            'views_per_story': self.views_per_story.to_dict() if isinstance(self.views_per_story, TLObject) else self.views_per_story,
+            'shares_per_story': self.shares_per_story.to_dict() if isinstance(self.shares_per_story, TLObject) else self.shares_per_story,
+            'reactions_per_story': self.reactions_per_story.to_dict() if isinstance(self.reactions_per_story, TLObject) else self.reactions_per_story,
             'enabled_notifications': self.enabled_notifications.to_dict() if isinstance(self.enabled_notifications, TLObject) else self.enabled_notifications,
             'growth_graph': self.growth_graph.to_dict() if isinstance(self.growth_graph, TLObject) else self.growth_graph,
             'followers_graph': self.followers_graph.to_dict() if isinstance(self.followers_graph, TLObject) else self.followers_graph,
@@ -50,16 +166,23 @@ class BroadcastStats(TLObject):
             'views_by_source_graph': self.views_by_source_graph.to_dict() if isinstance(self.views_by_source_graph, TLObject) else self.views_by_source_graph,
             'new_followers_by_source_graph': self.new_followers_by_source_graph.to_dict() if isinstance(self.new_followers_by_source_graph, TLObject) else self.new_followers_by_source_graph,
             'languages_graph': self.languages_graph.to_dict() if isinstance(self.languages_graph, TLObject) else self.languages_graph,
-            'recent_message_interactions': [] if self.recent_message_interactions is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.recent_message_interactions]
+            'reactions_by_emotion_graph': self.reactions_by_emotion_graph.to_dict() if isinstance(self.reactions_by_emotion_graph, TLObject) else self.reactions_by_emotion_graph,
+            'story_interactions_graph': self.story_interactions_graph.to_dict() if isinstance(self.story_interactions_graph, TLObject) else self.story_interactions_graph,
+            'story_reactions_by_emotion_graph': self.story_reactions_by_emotion_graph.to_dict() if isinstance(self.story_reactions_by_emotion_graph, TLObject) else self.story_reactions_by_emotion_graph,
+            'recent_posts_interactions': [] if self.recent_posts_interactions is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.recent_posts_interactions]
         }
 
     def _bytes(self):
         return b''.join((
-            b'\x94\x83\xf7\xbd',
+            b'\xfc\xa5l9',
             self.period._bytes(),
             self.followers._bytes(),
             self.views_per_post._bytes(),
             self.shares_per_post._bytes(),
+            self.reactions_per_post._bytes(),
+            self.views_per_story._bytes(),
+            self.shares_per_story._bytes(),
+            self.reactions_per_story._bytes(),
             self.enabled_notifications._bytes(),
             self.growth_graph._bytes(),
             self.followers_graph._bytes(),
@@ -70,7 +193,10 @@ class BroadcastStats(TLObject):
             self.views_by_source_graph._bytes(),
             self.new_followers_by_source_graph._bytes(),
             self.languages_graph._bytes(),
-            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.recent_message_interactions)),b''.join(x._bytes() for x in self.recent_message_interactions),
+            self.reactions_by_emotion_graph._bytes(),
+            self.story_interactions_graph._bytes(),
+            self.story_reactions_by_emotion_graph._bytes(),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.recent_posts_interactions)),b''.join(x._bytes() for x in self.recent_posts_interactions),
         ))
 
     @classmethod
@@ -79,6 +205,10 @@ class BroadcastStats(TLObject):
         _followers = reader.tgread_object()
         _views_per_post = reader.tgread_object()
         _shares_per_post = reader.tgread_object()
+        _reactions_per_post = reader.tgread_object()
+        _views_per_story = reader.tgread_object()
+        _shares_per_story = reader.tgread_object()
+        _reactions_per_story = reader.tgread_object()
         _enabled_notifications = reader.tgread_object()
         _growth_graph = reader.tgread_object()
         _followers_graph = reader.tgread_object()
@@ -89,13 +219,16 @@ class BroadcastStats(TLObject):
         _views_by_source_graph = reader.tgread_object()
         _new_followers_by_source_graph = reader.tgread_object()
         _languages_graph = reader.tgread_object()
+        _reactions_by_emotion_graph = reader.tgread_object()
+        _story_interactions_graph = reader.tgread_object()
+        _story_reactions_by_emotion_graph = reader.tgread_object()
         reader.read_int()
-        _recent_message_interactions = []
+        _recent_posts_interactions = []
         for _ in range(reader.read_int()):
             _x = reader.tgread_object()
-            _recent_message_interactions.append(_x)
+            _recent_posts_interactions.append(_x)
 
-        return cls(period=_period, followers=_followers, views_per_post=_views_per_post, shares_per_post=_shares_per_post, enabled_notifications=_enabled_notifications, growth_graph=_growth_graph, followers_graph=_followers_graph, mute_graph=_mute_graph, top_hours_graph=_top_hours_graph, interactions_graph=_interactions_graph, iv_interactions_graph=_iv_interactions_graph, views_by_source_graph=_views_by_source_graph, new_followers_by_source_graph=_new_followers_by_source_graph, languages_graph=_languages_graph, recent_message_interactions=_recent_message_interactions)
+        return cls(period=_period, followers=_followers, views_per_post=_views_per_post, shares_per_post=_shares_per_post, reactions_per_post=_reactions_per_post, views_per_story=_views_per_story, shares_per_story=_shares_per_story, reactions_per_story=_reactions_per_story, enabled_notifications=_enabled_notifications, growth_graph=_growth_graph, followers_graph=_followers_graph, mute_graph=_mute_graph, top_hours_graph=_top_hours_graph, interactions_graph=_interactions_graph, iv_interactions_graph=_iv_interactions_graph, views_by_source_graph=_views_by_source_graph, new_followers_by_source_graph=_new_followers_by_source_graph, languages_graph=_languages_graph, reactions_by_emotion_graph=_reactions_by_emotion_graph, story_interactions_graph=_story_interactions_graph, story_reactions_by_emotion_graph=_story_reactions_by_emotion_graph, recent_posts_interactions=_recent_posts_interactions)
 
 
 class MegagroupStats(TLObject):
@@ -211,29 +344,130 @@ class MegagroupStats(TLObject):
 
 
 class MessageStats(TLObject):
-    CONSTRUCTOR_ID = 0x8999f295
+    CONSTRUCTOR_ID = 0x7fe91c14
     SUBCLASS_OF_ID = 0x9604a322
 
-    def __init__(self, views_graph: 'TypeStatsGraph'):
+    def __init__(self, views_graph: 'TypeStatsGraph', reactions_by_emotion_graph: 'TypeStatsGraph'):
         """
         Constructor for stats.MessageStats: Instance of MessageStats.
         """
         self.views_graph = views_graph
+        self.reactions_by_emotion_graph = reactions_by_emotion_graph
 
     def to_dict(self):
         return {
             '_': 'MessageStats',
-            'views_graph': self.views_graph.to_dict() if isinstance(self.views_graph, TLObject) else self.views_graph
+            'views_graph': self.views_graph.to_dict() if isinstance(self.views_graph, TLObject) else self.views_graph,
+            'reactions_by_emotion_graph': self.reactions_by_emotion_graph.to_dict() if isinstance(self.reactions_by_emotion_graph, TLObject) else self.reactions_by_emotion_graph
         }
 
     def _bytes(self):
         return b''.join((
-            b'\x95\xf2\x99\x89',
+            b'\x14\x1c\xe9\x7f',
             self.views_graph._bytes(),
+            self.reactions_by_emotion_graph._bytes(),
         ))
 
     @classmethod
     def from_reader(cls, reader):
         _views_graph = reader.tgread_object()
-        return cls(views_graph=_views_graph)
+        _reactions_by_emotion_graph = reader.tgread_object()
+        return cls(views_graph=_views_graph, reactions_by_emotion_graph=_reactions_by_emotion_graph)
+
+
+class PublicForwards(TLObject):
+    CONSTRUCTOR_ID = 0x93037e20
+    SUBCLASS_OF_ID = 0xa7283211
+
+    def __init__(self, count: int, forwards: List['TypePublicForward'], chats: List['TypeChat'], users: List['TypeUser'], next_offset: Optional[str]=None):
+        """
+        Constructor for stats.PublicForwards: Instance of PublicForwards.
+        """
+        self.count = count
+        self.forwards = forwards
+        self.chats = chats
+        self.users = users
+        self.next_offset = next_offset
+
+    def to_dict(self):
+        return {
+            '_': 'PublicForwards',
+            'count': self.count,
+            'forwards': [] if self.forwards is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.forwards],
+            'chats': [] if self.chats is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.chats],
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users],
+            'next_offset': self.next_offset
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b' ~\x03\x93',
+            struct.pack('<I', (0 if self.next_offset is None or self.next_offset is False else 1)),
+            struct.pack('<i', self.count),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.forwards)),b''.join(x._bytes() for x in self.forwards),
+            b'' if self.next_offset is None or self.next_offset is False else (self.serialize_bytes(self.next_offset)),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.chats)),b''.join(x._bytes() for x in self.chats),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _count = reader.read_int()
+        reader.read_int()
+        _forwards = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _forwards.append(_x)
+
+        if flags & 1:
+            _next_offset = reader.tgread_string()
+        else:
+            _next_offset = None
+        reader.read_int()
+        _chats = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _chats.append(_x)
+
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(count=_count, forwards=_forwards, chats=_chats, users=_users, next_offset=_next_offset)
+
+
+class StoryStats(TLObject):
+    CONSTRUCTOR_ID = 0x50cd067c
+    SUBCLASS_OF_ID = 0x8b4d43d4
+
+    def __init__(self, views_graph: 'TypeStatsGraph', reactions_by_emotion_graph: 'TypeStatsGraph'):
+        """
+        Constructor for stats.StoryStats: Instance of StoryStats.
+        """
+        self.views_graph = views_graph
+        self.reactions_by_emotion_graph = reactions_by_emotion_graph
+
+    def to_dict(self):
+        return {
+            '_': 'StoryStats',
+            'views_graph': self.views_graph.to_dict() if isinstance(self.views_graph, TLObject) else self.views_graph,
+            'reactions_by_emotion_graph': self.reactions_by_emotion_graph.to_dict() if isinstance(self.reactions_by_emotion_graph, TLObject) else self.reactions_by_emotion_graph
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'|\x06\xcdP',
+            self.views_graph._bytes(),
+            self.reactions_by_emotion_graph._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _views_graph = reader.tgread_object()
+        _reactions_by_emotion_graph = reader.tgread_object()
+        return cls(views_graph=_views_graph, reactions_by_emotion_graph=_reactions_by_emotion_graph)
 

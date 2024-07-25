@@ -6,7 +6,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeAccountDaysTTL, TypeAutoDownloadSettings, TypeAutoSaveSettings, TypeBaseTheme, TypeCodeSettings, TypeEmailVerification, TypeEmailVerifyPurpose, TypeEmojiStatus, TypeGlobalPrivacySettings, TypeInputCheckPasswordSRP, TypeInputDocument, TypeInputFile, TypeInputNotifyPeer, TypeInputPeer, TypeInputPeerNotifySettings, TypeInputPhoto, TypeInputPrivacyKey, TypeInputPrivacyRule, TypeInputSecureValue, TypeInputTheme, TypeInputThemeSettings, TypeInputWallPaper, TypeReportReason, TypeSecureCredentialsEncrypted, TypeSecureValueHash, TypeSecureValueType, TypeWallPaperSettings
+    from ...tl.types import TypeAccountDaysTTL, TypeAutoDownloadSettings, TypeAutoSaveSettings, TypeBaseTheme, TypeBirthday, TypeBusinessWorkHours, TypeCodeSettings, TypeEmailVerification, TypeEmailVerifyPurpose, TypeEmojiStatus, TypeGlobalPrivacySettings, TypeInputBusinessAwayMessage, TypeInputBusinessBotRecipients, TypeInputBusinessChatLink, TypeInputBusinessGreetingMessage, TypeInputBusinessIntro, TypeInputChannel, TypeInputCheckPasswordSRP, TypeInputDocument, TypeInputFile, TypeInputGeoPoint, TypeInputNotifyPeer, TypeInputPeer, TypeInputPeerNotifySettings, TypeInputPhoto, TypeInputPrivacyKey, TypeInputPrivacyRule, TypeInputSecureValue, TypeInputTheme, TypeInputThemeSettings, TypeInputUser, TypeInputWallPaper, TypeReactionsNotifySettings, TypeReportReason, TypeSecureCredentialsEncrypted, TypeSecureValueHash, TypeSecureValueType, TypeWallPaperSettings
     from ...tl.types.account import TypePasswordInputSettings
 
 
@@ -83,11 +83,12 @@ class ChangeAuthorizationSettingsRequest(TLRequest):
     CONSTRUCTOR_ID = 0x40f48462
     SUBCLASS_OF_ID = 0xf5b399ac
 
-    def __init__(self, hash: int, encrypted_requests_disabled: Optional[bool]=None, call_requests_disabled: Optional[bool]=None):
+    def __init__(self, hash: int, confirmed: Optional[bool]=None, encrypted_requests_disabled: Optional[bool]=None, call_requests_disabled: Optional[bool]=None):
         """
         :returns Bool: This type has no constructors.
         """
         self.hash = hash
+        self.confirmed = confirmed
         self.encrypted_requests_disabled = encrypted_requests_disabled
         self.call_requests_disabled = call_requests_disabled
 
@@ -95,6 +96,7 @@ class ChangeAuthorizationSettingsRequest(TLRequest):
         return {
             '_': 'ChangeAuthorizationSettingsRequest',
             'hash': self.hash,
+            'confirmed': self.confirmed,
             'encrypted_requests_disabled': self.encrypted_requests_disabled,
             'call_requests_disabled': self.call_requests_disabled
         }
@@ -102,7 +104,7 @@ class ChangeAuthorizationSettingsRequest(TLRequest):
     def _bytes(self):
         return b''.join((
             b'b\x84\xf4@',
-            struct.pack('<I', (0 if self.encrypted_requests_disabled is None else 1) | (0 if self.call_requests_disabled is None else 2)),
+            struct.pack('<I', (0 if self.confirmed is None or self.confirmed is False else 8) | (0 if self.encrypted_requests_disabled is None else 1) | (0 if self.call_requests_disabled is None else 2)),
             struct.pack('<q', self.hash),
             b'' if self.encrypted_requests_disabled is None else (b'\xb5ur\x99' if self.encrypted_requests_disabled else b'7\x97y\xbc'),
             b'' if self.call_requests_disabled is None else (b'\xb5ur\x99' if self.call_requests_disabled else b'7\x97y\xbc'),
@@ -112,6 +114,7 @@ class ChangeAuthorizationSettingsRequest(TLRequest):
     def from_reader(cls, reader):
         flags = reader.read_int()
 
+        _confirmed = bool(flags & 8)
         _hash = reader.read_long()
         if flags & 1:
             _encrypted_requests_disabled = reader.tgread_bool()
@@ -121,7 +124,7 @@ class ChangeAuthorizationSettingsRequest(TLRequest):
             _call_requests_disabled = reader.tgread_bool()
         else:
             _call_requests_disabled = None
-        return cls(hash=_hash, encrypted_requests_disabled=_encrypted_requests_disabled, call_requests_disabled=_call_requests_disabled)
+        return cls(hash=_hash, confirmed=_confirmed, encrypted_requests_disabled=_encrypted_requests_disabled, call_requests_disabled=_call_requests_disabled)
 
 
 class ChangePhoneRequest(TLRequest):
@@ -267,6 +270,34 @@ class ConfirmPhoneRequest(TLRequest):
         return cls(phone_code_hash=_phone_code_hash, phone_code=_phone_code)
 
 
+class CreateBusinessChatLinkRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x8851e68e
+    SUBCLASS_OF_ID = 0x3c0d4a8b
+
+    def __init__(self, link: 'TypeInputBusinessChatLink'):
+        """
+        :returns BusinessChatLink: Instance of BusinessChatLink.
+        """
+        self.link = link
+
+    def to_dict(self):
+        return {
+            '_': 'CreateBusinessChatLinkRequest',
+            'link': self.link.to_dict() if isinstance(self.link, TLObject) else self.link
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x8e\xe6Q\x88',
+            self.link._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _link = reader.tgread_object()
+        return cls(link=_link)
+
+
 class CreateThemeRequest(TLRequest):
     CONSTRUCTOR_ID = 0x652e4400
     SUBCLASS_OF_ID = 0x56b4c80c
@@ -401,6 +432,34 @@ class DeleteAutoSaveExceptionsRequest(TLRequest):
         return cls()
 
 
+class DeleteBusinessChatLinkRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x60073674
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, slug: str):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.slug = slug
+
+    def to_dict(self):
+        return {
+            '_': 'DeleteBusinessChatLinkRequest',
+            'slug': self.slug
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b't6\x07`',
+            self.serialize_bytes(self.slug),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _slug = reader.tgread_string()
+        return cls(slug=_slug)
+
+
 class DeleteSecureValueRequest(TLRequest):
     CONSTRUCTOR_ID = 0xb880bc4b
     SUBCLASS_OF_ID = 0xf5b399ac
@@ -432,6 +491,69 @@ class DeleteSecureValueRequest(TLRequest):
             _types.append(_x)
 
         return cls(types=_types)
+
+
+class DisablePeerConnectedBotRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x5e437ed9
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, peer: 'TypeInputPeer'):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.peer = peer
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'DisablePeerConnectedBotRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xd9~C^',
+            self.peer._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        return cls(peer=_peer)
+
+
+class EditBusinessChatLinkRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x8c3410af
+    SUBCLASS_OF_ID = 0x3c0d4a8b
+
+    def __init__(self, slug: str, link: 'TypeInputBusinessChatLink'):
+        """
+        :returns BusinessChatLink: Instance of BusinessChatLink.
+        """
+        self.slug = slug
+        self.link = link
+
+    def to_dict(self):
+        return {
+            '_': 'EditBusinessChatLinkRequest',
+            'slug': self.slug,
+            'link': self.link.to_dict() if isinstance(self.link, TLObject) else self.link
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xaf\x104\x8c',
+            self.serialize_bytes(self.slug),
+            self.link._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _slug = reader.tgread_string()
+        _link = reader.tgread_object()
+        return cls(slug=_slug, link=_link)
 
 
 class FinishTakeoutSessionRequest(TLRequest):
@@ -595,6 +717,109 @@ class GetAutoSaveSettingsRequest(TLRequest):
         return cls()
 
 
+class GetBotBusinessConnectionRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x76a86270
+    SUBCLASS_OF_ID = 0x8af52aac
+
+    def __init__(self, connection_id: str):
+        """
+        :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
+        """
+        self.connection_id = connection_id
+
+    def to_dict(self):
+        return {
+            '_': 'GetBotBusinessConnectionRequest',
+            'connection_id': self.connection_id
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'pb\xa8v',
+            self.serialize_bytes(self.connection_id),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _connection_id = reader.tgread_string()
+        return cls(connection_id=_connection_id)
+
+
+class GetBusinessChatLinksRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x6f70dde1
+    SUBCLASS_OF_ID = 0xc6ba4a31
+
+    def to_dict(self):
+        return {
+            '_': 'GetBusinessChatLinksRequest'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xe1\xddpo',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
+
+
+class GetChannelDefaultEmojiStatusesRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x7727a7d5
+    SUBCLASS_OF_ID = 0xd3e005ca
+
+    def __init__(self, hash: int):
+        """
+        :returns account.EmojiStatuses: Instance of either EmojiStatusesNotModified, EmojiStatuses.
+        """
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'GetChannelDefaultEmojiStatusesRequest',
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b"\xd5\xa7'w",
+            struct.pack('<q', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_long()
+        return cls(hash=_hash)
+
+
+class GetChannelRestrictedStatusEmojisRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x35a9e0d5
+    SUBCLASS_OF_ID = 0xbcef6aba
+
+    def __init__(self, hash: int):
+        """
+        :returns EmojiList: Instance of either EmojiListNotModified, EmojiList.
+        """
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'GetChannelRestrictedStatusEmojisRequest',
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xd5\xe0\xa95',
+            struct.pack('<q', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_long()
+        return cls(hash=_hash)
+
+
 class GetChatThemesRequest(TLRequest):
     CONSTRUCTOR_ID = 0xd638de89
     SUBCLASS_OF_ID = 0x7fc52204
@@ -621,6 +846,25 @@ class GetChatThemesRequest(TLRequest):
     def from_reader(cls, reader):
         _hash = reader.read_long()
         return cls(hash=_hash)
+
+
+class GetConnectedBotsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x4ea4c80f
+    SUBCLASS_OF_ID = 0xe4caf7d3
+
+    def to_dict(self):
+        return {
+            '_': 'GetConnectedBotsRequest'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x0f\xc8\xa4N',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
 
 
 class GetContactSignUpNotificationRequest(TLRequest):
@@ -659,6 +903,34 @@ class GetContentSettingsRequest(TLRequest):
     @classmethod
     def from_reader(cls, reader):
         return cls()
+
+
+class GetDefaultBackgroundEmojisRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xa60ab9ce
+    SUBCLASS_OF_ID = 0xbcef6aba
+
+    def __init__(self, hash: int):
+        """
+        :returns EmojiList: Instance of either EmojiListNotModified, EmojiList.
+        """
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'GetDefaultBackgroundEmojisRequest',
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xce\xb9\n\xa6',
+            struct.pack('<q', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_long()
+        return cls(hash=_hash)
 
 
 class GetDefaultEmojiStatusesRequest(TLRequest):
@@ -945,6 +1217,25 @@ class GetPrivacyRequest(TLRequest):
     def from_reader(cls, reader):
         _key = reader.tgread_object()
         return cls(key=_key)
+
+
+class GetReactionsNotifySettingsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x6dd654c
+    SUBCLASS_OF_ID = 0x8dff0851
+
+    def to_dict(self):
+        return {
+            '_': 'GetReactionsNotifySettingsRequest'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'Le\xdd\x06',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
 
 
 class GetRecentEmojiStatusesRequest(TLRequest):
@@ -1698,6 +1989,34 @@ class ResetWebAuthorizationsRequest(TLRequest):
         return cls()
 
 
+class ResolveBusinessChatLinkRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x5492e5ee
+    SUBCLASS_OF_ID = 0x3a772c28
+
+    def __init__(self, slug: str):
+        """
+        :returns account.ResolvedBusinessChatLinks: Instance of ResolvedBusinessChatLinks.
+        """
+        self.slug = slug
+
+    def to_dict(self):
+        return {
+            '_': 'ResolveBusinessChatLinkRequest',
+            'slug': self.slug
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xee\xe5\x92T',
+            self.serialize_bytes(self.slug),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _slug = reader.tgread_string()
+        return cls(slug=_slug)
+
+
 class SaveAutoDownloadSettingsRequest(TLRequest):
     CONSTRUCTOR_ID = 0x76f36233
     SUBCLASS_OF_ID = 0xf5b399ac
@@ -2228,6 +2547,97 @@ class SetPrivacyRequest(TLRequest):
         return cls(key=_key, rules=_rules)
 
 
+class SetReactionsNotifySettingsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x316ce548
+    SUBCLASS_OF_ID = 0x8dff0851
+
+    def __init__(self, settings: 'TypeReactionsNotifySettings'):
+        """
+        :returns ReactionsNotifySettings: Instance of ReactionsNotifySettings.
+        """
+        self.settings = settings
+
+    def to_dict(self):
+        return {
+            '_': 'SetReactionsNotifySettingsRequest',
+            'settings': self.settings.to_dict() if isinstance(self.settings, TLObject) else self.settings
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'H\xe5l1',
+            self.settings._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _settings = reader.tgread_object()
+        return cls(settings=_settings)
+
+
+class ToggleConnectedBotPausedRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x646e1097
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, peer: 'TypeInputPeer', paused: bool):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.peer = peer
+        self.paused = paused
+
+    async def resolve(self, client, utils):
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'ToggleConnectedBotPausedRequest',
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
+            'paused': self.paused
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x97\x10nd',
+            self.peer._bytes(),
+            b'\xb5ur\x99' if self.paused else b'7\x97y\xbc',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _peer = reader.tgread_object()
+        _paused = reader.tgread_bool()
+        return cls(peer=_peer, paused=_paused)
+
+
+class ToggleSponsoredMessagesRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xb9d9a38d
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, enabled: bool):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.enabled = enabled
+
+    def to_dict(self):
+        return {
+            '_': 'ToggleSponsoredMessagesRequest',
+            'enabled': self.enabled
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x8d\xa3\xd9\xb9',
+            b'\xb5ur\x99' if self.enabled else b'7\x97y\xbc',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _enabled = reader.tgread_bool()
+        return cls(enabled=_enabled)
+
+
 class ToggleUsernameRequest(TLRequest):
     CONSTRUCTOR_ID = 0x58d6b376
     SUBCLASS_OF_ID = 0xf5b399ac
@@ -2299,6 +2709,305 @@ class UnregisterDeviceRequest(TLRequest):
             _other_uids.append(_x)
 
         return cls(token_type=_token_type, token=_token, other_uids=_other_uids)
+
+
+class UpdateBirthdayRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xcc6e0c11
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, birthday: Optional['TypeBirthday']=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.birthday = birthday
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateBirthdayRequest',
+            'birthday': self.birthday.to_dict() if isinstance(self.birthday, TLObject) else self.birthday
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x11\x0cn\xcc',
+            struct.pack('<I', (0 if self.birthday is None or self.birthday is False else 1)),
+            b'' if self.birthday is None or self.birthday is False else (self.birthday._bytes()),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _birthday = reader.tgread_object()
+        else:
+            _birthday = None
+        return cls(birthday=_birthday)
+
+
+class UpdateBusinessAwayMessageRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xa26a7fa5
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, message: Optional['TypeInputBusinessAwayMessage']=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.message = message
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateBusinessAwayMessageRequest',
+            'message': self.message.to_dict() if isinstance(self.message, TLObject) else self.message
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xa5\x7fj\xa2',
+            struct.pack('<I', (0 if self.message is None or self.message is False else 1)),
+            b'' if self.message is None or self.message is False else (self.message._bytes()),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _message = reader.tgread_object()
+        else:
+            _message = None
+        return cls(message=_message)
+
+
+class UpdateBusinessGreetingMessageRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x66cdafc4
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, message: Optional['TypeInputBusinessGreetingMessage']=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.message = message
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateBusinessGreetingMessageRequest',
+            'message': self.message.to_dict() if isinstance(self.message, TLObject) else self.message
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xc4\xaf\xcdf',
+            struct.pack('<I', (0 if self.message is None or self.message is False else 1)),
+            b'' if self.message is None or self.message is False else (self.message._bytes()),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _message = reader.tgread_object()
+        else:
+            _message = None
+        return cls(message=_message)
+
+
+class UpdateBusinessIntroRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xa614d034
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, intro: Optional['TypeInputBusinessIntro']=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.intro = intro
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateBusinessIntroRequest',
+            'intro': self.intro.to_dict() if isinstance(self.intro, TLObject) else self.intro
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'4\xd0\x14\xa6',
+            struct.pack('<I', (0 if self.intro is None or self.intro is False else 1)),
+            b'' if self.intro is None or self.intro is False else (self.intro._bytes()),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _intro = reader.tgread_object()
+        else:
+            _intro = None
+        return cls(intro=_intro)
+
+
+class UpdateBusinessLocationRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x9e6b131a
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, geo_point: Optional['TypeInputGeoPoint']=None, address: Optional[str]=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.geo_point = geo_point
+        self.address = address
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateBusinessLocationRequest',
+            'geo_point': self.geo_point.to_dict() if isinstance(self.geo_point, TLObject) else self.geo_point,
+            'address': self.address
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x1a\x13k\x9e',
+            struct.pack('<I', (0 if self.geo_point is None or self.geo_point is False else 2) | (0 if self.address is None or self.address is False else 1)),
+            b'' if self.geo_point is None or self.geo_point is False else (self.geo_point._bytes()),
+            b'' if self.address is None or self.address is False else (self.serialize_bytes(self.address)),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 2:
+            _geo_point = reader.tgread_object()
+        else:
+            _geo_point = None
+        if flags & 1:
+            _address = reader.tgread_string()
+        else:
+            _address = None
+        return cls(geo_point=_geo_point, address=_address)
+
+
+class UpdateBusinessWorkHoursRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x4b00e066
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, business_work_hours: Optional['TypeBusinessWorkHours']=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.business_work_hours = business_work_hours
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateBusinessWorkHoursRequest',
+            'business_work_hours': self.business_work_hours.to_dict() if isinstance(self.business_work_hours, TLObject) else self.business_work_hours
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'f\xe0\x00K',
+            struct.pack('<I', (0 if self.business_work_hours is None or self.business_work_hours is False else 1)),
+            b'' if self.business_work_hours is None or self.business_work_hours is False else (self.business_work_hours._bytes()),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _business_work_hours = reader.tgread_object()
+        else:
+            _business_work_hours = None
+        return cls(business_work_hours=_business_work_hours)
+
+
+class UpdateColorRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x7cefa15d
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, for_profile: Optional[bool]=None, color: Optional[int]=None, background_emoji_id: Optional[int]=None):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.for_profile = for_profile
+        self.color = color
+        self.background_emoji_id = background_emoji_id
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateColorRequest',
+            'for_profile': self.for_profile,
+            'color': self.color,
+            'background_emoji_id': self.background_emoji_id
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b']\xa1\xef|',
+            struct.pack('<I', (0 if self.for_profile is None or self.for_profile is False else 2) | (0 if self.color is None or self.color is False else 4) | (0 if self.background_emoji_id is None or self.background_emoji_id is False else 1)),
+            b'' if self.color is None or self.color is False else (struct.pack('<i', self.color)),
+            b'' if self.background_emoji_id is None or self.background_emoji_id is False else (struct.pack('<q', self.background_emoji_id)),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _for_profile = bool(flags & 2)
+        if flags & 4:
+            _color = reader.read_int()
+        else:
+            _color = None
+        if flags & 1:
+            _background_emoji_id = reader.read_long()
+        else:
+            _background_emoji_id = None
+        return cls(for_profile=_for_profile, color=_color, background_emoji_id=_background_emoji_id)
+
+
+class UpdateConnectedBotRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x43d8521d
+    SUBCLASS_OF_ID = 0x8af52aac
+
+    def __init__(self, bot: 'TypeInputUser', recipients: 'TypeInputBusinessBotRecipients', can_reply: Optional[bool]=None, deleted: Optional[bool]=None):
+        """
+        :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
+        """
+        self.bot = bot
+        self.recipients = recipients
+        self.can_reply = can_reply
+        self.deleted = deleted
+
+    async def resolve(self, client, utils):
+        self.bot = utils.get_input_user(await client.get_input_entity(self.bot))
+
+    def to_dict(self):
+        return {
+            '_': 'UpdateConnectedBotRequest',
+            'bot': self.bot.to_dict() if isinstance(self.bot, TLObject) else self.bot,
+            'recipients': self.recipients.to_dict() if isinstance(self.recipients, TLObject) else self.recipients,
+            'can_reply': self.can_reply,
+            'deleted': self.deleted
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x1dR\xd8C',
+            struct.pack('<I', (0 if self.can_reply is None or self.can_reply is False else 1) | (0 if self.deleted is None or self.deleted is False else 2)),
+            self.bot._bytes(),
+            self.recipients._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _can_reply = bool(flags & 1)
+        _deleted = bool(flags & 2)
+        _bot = reader.tgread_object()
+        _recipients = reader.tgread_object()
+        return cls(bot=_bot, recipients=_recipients, can_reply=_can_reply, deleted=_deleted)
 
 
 class UpdateDeviceLockedRequest(TLRequest):
@@ -2422,6 +3131,37 @@ class UpdatePasswordSettingsRequest(TLRequest):
         _password = reader.tgread_object()
         _new_settings = reader.tgread_object()
         return cls(password=_password, new_settings=_new_settings)
+
+
+class UpdatePersonalChannelRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xd94305e0
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, channel: 'TypeInputChannel'):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.channel = channel
+
+    async def resolve(self, client, utils):
+        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
+
+    def to_dict(self):
+        return {
+            '_': 'UpdatePersonalChannelRequest',
+            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xe0\x05C\xd9',
+            self.channel._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _channel = reader.tgread_object()
+        return cls(channel=_channel)
 
 
 class UpdateProfileRequest(TLRequest):

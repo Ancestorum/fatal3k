@@ -2,7 +2,7 @@
 from ...tl.tlobject import TLObject
 from ...tl.tlobject import TLRequest
 from typing import Optional, List, Union, TYPE_CHECKING
-from . import account, auth, bots, channels, chatlists, contacts, folders, help, langpack, messages, payments, phone, photos, stats, stickers, stories, updates, upload, users
+from . import account, auth, bots, channels, chatlists, contacts, folders, fragment, help, langpack, messages, payments, phone, photos, premium, smsjobs, stats, stickers, stories, updates, upload, users
 import os
 import struct
 from datetime import datetime
@@ -226,6 +226,110 @@ class InvokeAfterMsgsRequest(TLRequest):
 
         _query = reader.tgread_object()
         return cls(msg_ids=_msg_ids, query=_query)
+
+
+class InvokeWithApnsSecretRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xdae54f8
+    SUBCLASS_OF_ID = 0xb7b2364b
+
+    def __init__(self, nonce: str, secret: str, query: 'TypeX'):
+        """
+        :returns X: This type has no constructors.
+        """
+        self.nonce = nonce
+        self.secret = secret
+        self.query = query
+
+    def to_dict(self):
+        return {
+            '_': 'InvokeWithApnsSecretRequest',
+            'nonce': self.nonce,
+            'secret': self.secret,
+            'query': self.query.to_dict() if isinstance(self.query, TLObject) else self.query
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xf8T\xae\r',
+            self.serialize_bytes(self.nonce),
+            self.serialize_bytes(self.secret),
+            self.query._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _nonce = reader.tgread_string()
+        _secret = reader.tgread_string()
+        _query = reader.tgread_object()
+        return cls(nonce=_nonce, secret=_secret, query=_query)
+
+
+class InvokeWithBusinessConnectionRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xdd289f8e
+    SUBCLASS_OF_ID = 0xb7b2364b
+
+    def __init__(self, connection_id: str, query: 'TypeX'):
+        """
+        :returns X: This type has no constructors.
+        """
+        self.connection_id = connection_id
+        self.query = query
+
+    def to_dict(self):
+        return {
+            '_': 'InvokeWithBusinessConnectionRequest',
+            'connection_id': self.connection_id,
+            'query': self.query.to_dict() if isinstance(self.query, TLObject) else self.query
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x8e\x9f(\xdd',
+            self.serialize_bytes(self.connection_id),
+            self.query._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _connection_id = reader.tgread_string()
+        _query = reader.tgread_object()
+        return cls(connection_id=_connection_id, query=_query)
+
+
+class InvokeWithGooglePlayIntegrityRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x1df92984
+    SUBCLASS_OF_ID = 0xb7b2364b
+
+    def __init__(self, nonce: str, token: str, query: 'TypeX'):
+        """
+        :returns X: This type has no constructors.
+        """
+        self.nonce = nonce
+        self.token = token
+        self.query = query
+
+    def to_dict(self):
+        return {
+            '_': 'InvokeWithGooglePlayIntegrityRequest',
+            'nonce': self.nonce,
+            'token': self.token,
+            'query': self.query.to_dict() if isinstance(self.query, TLObject) else self.query
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x84)\xf9\x1d',
+            self.serialize_bytes(self.nonce),
+            self.serialize_bytes(self.token),
+            self.query._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _nonce = reader.tgread_string()
+        _token = reader.tgread_string()
+        _query = reader.tgread_object()
+        return cls(nonce=_nonce, token=_token, query=_query)
 
 
 class InvokeWithLayerRequest(TLRequest):

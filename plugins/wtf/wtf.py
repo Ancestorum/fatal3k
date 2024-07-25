@@ -134,7 +134,7 @@ def get_last_wtf(gch, reader_id):
     cid = get_client_id()
     
     sql = 'SELECT * FROM %s ORDER BY last DESC;' % (reader_id)
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, qer=True)
     
     qres = clear_nex(gch, qres, reader_id)
     
@@ -165,7 +165,7 @@ def get_opened(gch, reader_id):
     cid = get_client_id()
     
     sql = 'SELECT * FROM %s ORDER BY last DESC;' % (reader_id)
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, qer=True)
     
     qres = clear_nex(gch, qres, reader_id)
     
@@ -187,7 +187,7 @@ def get_rdr_wtf(gch, reader_id, entity):
     cid = get_client_id()
     
     sql = "SELECT * FROM %s WHERE entity=?;" % (reader_id)
-    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity)
+    qres = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity, qer=True)
     
     if qres:
         return qres[0]
@@ -233,7 +233,7 @@ def save_pos(gch, jid, entity, last, part, spart, qop, reader_id=''):
         sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql)
     
     sql = "SELECT * FROM %s WHERE entity=?" % (reader_id)
-    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity)
+    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, entity, qer=True)
     
     if not res:
         sql = "INSERT INTO %s (entity, part, spart, qop, last) VALUES (?, ?, ?, ?, ?);" % (reader_id)
@@ -242,7 +242,7 @@ def save_pos(gch, jid, entity, last, part, spart, qop, reader_id=''):
         sql = "UPDATE %s SET part=?, spart=?, qop=?, last=? WHERE entity=?;" % (reader_id)
         args = part, spart, qop, last, entity
     
-    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, *args)
+    res = sqlquery('dynamic/%s/%s/readers.db' % (cid, gch), sql, *args, qer=True)
     
     if res == '':
         sql = '''CREATE TABLE %s(entity VARCHAR NOT NULL, 

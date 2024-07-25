@@ -462,17 +462,54 @@ class RecoverPasswordRequest(TLRequest):
         return cls(code=_code, new_settings=_new_settings)
 
 
-class RequestFirebaseSmsRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x89464b50
+class ReportMissingCodeRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xcb9deff6
     SUBCLASS_OF_ID = 0xf5b399ac
 
-    def __init__(self, phone_number: str, phone_code_hash: str, safety_net_token: Optional[str]=None, ios_push_secret: Optional[str]=None):
+    def __init__(self, phone_number: str, phone_code_hash: str, mnc: str):
+        """
+        :returns Bool: This type has no constructors.
+        """
+        self.phone_number = phone_number
+        self.phone_code_hash = phone_code_hash
+        self.mnc = mnc
+
+    def to_dict(self):
+        return {
+            '_': 'ReportMissingCodeRequest',
+            'phone_number': self.phone_number,
+            'phone_code_hash': self.phone_code_hash,
+            'mnc': self.mnc
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xf6\xef\x9d\xcb',
+            self.serialize_bytes(self.phone_number),
+            self.serialize_bytes(self.phone_code_hash),
+            self.serialize_bytes(self.mnc),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _phone_number = reader.tgread_string()
+        _phone_code_hash = reader.tgread_string()
+        _mnc = reader.tgread_string()
+        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash, mnc=_mnc)
+
+
+class RequestFirebaseSmsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0x8e39261e
+    SUBCLASS_OF_ID = 0xf5b399ac
+
+    def __init__(self, phone_number: str, phone_code_hash: str, safety_net_token: Optional[str]=None, play_integrity_token: Optional[str]=None, ios_push_secret: Optional[str]=None):
         """
         :returns Bool: This type has no constructors.
         """
         self.phone_number = phone_number
         self.phone_code_hash = phone_code_hash
         self.safety_net_token = safety_net_token
+        self.play_integrity_token = play_integrity_token
         self.ios_push_secret = ios_push_secret
 
     def to_dict(self):
@@ -481,16 +518,18 @@ class RequestFirebaseSmsRequest(TLRequest):
             'phone_number': self.phone_number,
             'phone_code_hash': self.phone_code_hash,
             'safety_net_token': self.safety_net_token,
+            'play_integrity_token': self.play_integrity_token,
             'ios_push_secret': self.ios_push_secret
         }
 
     def _bytes(self):
         return b''.join((
-            b'PKF\x89',
-            struct.pack('<I', (0 if self.safety_net_token is None or self.safety_net_token is False else 1) | (0 if self.ios_push_secret is None or self.ios_push_secret is False else 2)),
+            b'\x1e&9\x8e',
+            struct.pack('<I', (0 if self.safety_net_token is None or self.safety_net_token is False else 1) | (0 if self.play_integrity_token is None or self.play_integrity_token is False else 4) | (0 if self.ios_push_secret is None or self.ios_push_secret is False else 2)),
             self.serialize_bytes(self.phone_number),
             self.serialize_bytes(self.phone_code_hash),
             b'' if self.safety_net_token is None or self.safety_net_token is False else (self.serialize_bytes(self.safety_net_token)),
+            b'' if self.play_integrity_token is None or self.play_integrity_token is False else (self.serialize_bytes(self.play_integrity_token)),
             b'' if self.ios_push_secret is None or self.ios_push_secret is False else (self.serialize_bytes(self.ios_push_secret)),
         ))
 
@@ -504,11 +543,15 @@ class RequestFirebaseSmsRequest(TLRequest):
             _safety_net_token = reader.tgread_string()
         else:
             _safety_net_token = None
+        if flags & 4:
+            _play_integrity_token = reader.tgread_string()
+        else:
+            _play_integrity_token = None
         if flags & 2:
             _ios_push_secret = reader.tgread_string()
         else:
             _ios_push_secret = None
-        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash, safety_net_token=_safety_net_token, ios_push_secret=_ios_push_secret)
+        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash, safety_net_token=_safety_net_token, play_integrity_token=_play_integrity_token, ios_push_secret=_ios_push_secret)
 
 
 class RequestPasswordRecoveryRequest(TLRequest):
@@ -531,35 +574,45 @@ class RequestPasswordRecoveryRequest(TLRequest):
 
 
 class ResendCodeRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x3ef1a9bf
+    CONSTRUCTOR_ID = 0xcae47523
     SUBCLASS_OF_ID = 0x6ce87081
 
-    def __init__(self, phone_number: str, phone_code_hash: str):
+    def __init__(self, phone_number: str, phone_code_hash: str, reason: Optional[str]=None):
         """
         :returns auth.SentCode: Instance of either SentCode, SentCodeSuccess.
         """
         self.phone_number = phone_number
         self.phone_code_hash = phone_code_hash
+        self.reason = reason
 
     def to_dict(self):
         return {
             '_': 'ResendCodeRequest',
             'phone_number': self.phone_number,
-            'phone_code_hash': self.phone_code_hash
+            'phone_code_hash': self.phone_code_hash,
+            'reason': self.reason
         }
 
     def _bytes(self):
         return b''.join((
-            b'\xbf\xa9\xf1>',
+            b'#u\xe4\xca',
+            struct.pack('<I', (0 if self.reason is None or self.reason is False else 1)),
             self.serialize_bytes(self.phone_number),
             self.serialize_bytes(self.phone_code_hash),
+            b'' if self.reason is None or self.reason is False else (self.serialize_bytes(self.reason)),
         ))
 
     @classmethod
     def from_reader(cls, reader):
+        flags = reader.read_int()
+
         _phone_number = reader.tgread_string()
         _phone_code_hash = reader.tgread_string()
-        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash)
+        if flags & 1:
+            _reason = reader.tgread_string()
+        else:
+            _reason = None
+        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash, reason=_reason)
 
 
 class ResetAuthorizationsRequest(TLRequest):
@@ -703,10 +756,10 @@ class SignInRequest(TLRequest):
 
 
 class SignUpRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x80eee427
+    CONSTRUCTOR_ID = 0xaac7b717
     SUBCLASS_OF_ID = 0xb9e04e39
 
-    def __init__(self, phone_number: str, phone_code_hash: str, first_name: str, last_name: str):
+    def __init__(self, phone_number: str, phone_code_hash: str, first_name: str, last_name: str, no_joined_notifications: Optional[bool]=None):
         """
         :returns auth.Authorization: Instance of either Authorization, AuthorizationSignUpRequired.
         """
@@ -714,6 +767,7 @@ class SignUpRequest(TLRequest):
         self.phone_code_hash = phone_code_hash
         self.first_name = first_name
         self.last_name = last_name
+        self.no_joined_notifications = no_joined_notifications
 
     def to_dict(self):
         return {
@@ -721,12 +775,14 @@ class SignUpRequest(TLRequest):
             'phone_number': self.phone_number,
             'phone_code_hash': self.phone_code_hash,
             'first_name': self.first_name,
-            'last_name': self.last_name
+            'last_name': self.last_name,
+            'no_joined_notifications': self.no_joined_notifications
         }
 
     def _bytes(self):
         return b''.join((
-            b"'\xe4\xee\x80",
+            b'\x17\xb7\xc7\xaa',
+            struct.pack('<I', (0 if self.no_joined_notifications is None or self.no_joined_notifications is False else 1)),
             self.serialize_bytes(self.phone_number),
             self.serialize_bytes(self.phone_code_hash),
             self.serialize_bytes(self.first_name),
@@ -735,9 +791,12 @@ class SignUpRequest(TLRequest):
 
     @classmethod
     def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _no_joined_notifications = bool(flags & 1)
         _phone_number = reader.tgread_string()
         _phone_code_hash = reader.tgread_string()
         _first_name = reader.tgread_string()
         _last_name = reader.tgread_string()
-        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash, first_name=_first_name, last_name=_last_name)
+        return cls(phone_number=_phone_number, phone_code_hash=_phone_code_hash, first_name=_first_name, last_name=_last_name, no_joined_notifications=_no_joined_notifications)
 

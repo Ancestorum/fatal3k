@@ -5,8 +5,8 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeAccessPointRule, TypeChat, TypeDataJSON, TypeDocument, TypeJSONValue, TypeMessageEntity, TypePeer, TypePremiumSubscriptionOption, TypeRecentMeUrl, TypeUser
-    from ...tl.types.help import TypeCountry, TypeCountryCode, TypeTermsOfService
+    from ...tl.types import TypeAccessPointRule, TypeChat, TypeDataJSON, TypeDocument, TypeJSONValue, TypeMessageEntity, TypePeer, TypePremiumSubscriptionOption, TypeRecentMeUrl, TypeTimezone, TypeUser
+    from ...tl.types.help import TypeCountry, TypeCountryCode, TypePeerColorOption, TypePeerColorSet, TypeTermsOfService
 
 
 
@@ -501,6 +501,208 @@ class PassportConfigNotModified(TLObject):
         return cls()
 
 
+class PeerColorOption(TLObject):
+    CONSTRUCTOR_ID = 0xadec6ebe
+    SUBCLASS_OF_ID = 0x56b8ae98
+
+    def __init__(self, color_id: int, hidden: Optional[bool]=None, colors: Optional['TypePeerColorSet']=None, dark_colors: Optional['TypePeerColorSet']=None, channel_min_level: Optional[int]=None, group_min_level: Optional[int]=None):
+        """
+        Constructor for help.PeerColorOption: Instance of PeerColorOption.
+        """
+        self.color_id = color_id
+        self.hidden = hidden
+        self.colors = colors
+        self.dark_colors = dark_colors
+        self.channel_min_level = channel_min_level
+        self.group_min_level = group_min_level
+
+    def to_dict(self):
+        return {
+            '_': 'PeerColorOption',
+            'color_id': self.color_id,
+            'hidden': self.hidden,
+            'colors': self.colors.to_dict() if isinstance(self.colors, TLObject) else self.colors,
+            'dark_colors': self.dark_colors.to_dict() if isinstance(self.dark_colors, TLObject) else self.dark_colors,
+            'channel_min_level': self.channel_min_level,
+            'group_min_level': self.group_min_level
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xben\xec\xad',
+            struct.pack('<I', (0 if self.hidden is None or self.hidden is False else 1) | (0 if self.colors is None or self.colors is False else 2) | (0 if self.dark_colors is None or self.dark_colors is False else 4) | (0 if self.channel_min_level is None or self.channel_min_level is False else 8) | (0 if self.group_min_level is None or self.group_min_level is False else 16)),
+            struct.pack('<i', self.color_id),
+            b'' if self.colors is None or self.colors is False else (self.colors._bytes()),
+            b'' if self.dark_colors is None or self.dark_colors is False else (self.dark_colors._bytes()),
+            b'' if self.channel_min_level is None or self.channel_min_level is False else (struct.pack('<i', self.channel_min_level)),
+            b'' if self.group_min_level is None or self.group_min_level is False else (struct.pack('<i', self.group_min_level)),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _hidden = bool(flags & 1)
+        _color_id = reader.read_int()
+        if flags & 2:
+            _colors = reader.tgread_object()
+        else:
+            _colors = None
+        if flags & 4:
+            _dark_colors = reader.tgread_object()
+        else:
+            _dark_colors = None
+        if flags & 8:
+            _channel_min_level = reader.read_int()
+        else:
+            _channel_min_level = None
+        if flags & 16:
+            _group_min_level = reader.read_int()
+        else:
+            _group_min_level = None
+        return cls(color_id=_color_id, hidden=_hidden, colors=_colors, dark_colors=_dark_colors, channel_min_level=_channel_min_level, group_min_level=_group_min_level)
+
+
+class PeerColorProfileSet(TLObject):
+    CONSTRUCTOR_ID = 0x767d61eb
+    SUBCLASS_OF_ID = 0x11cbe12c
+
+    def __init__(self, palette_colors: List[int], bg_colors: List[int], story_colors: List[int]):
+        """
+        Constructor for help.PeerColorSet: Instance of either PeerColorSet, PeerColorProfileSet.
+        """
+        self.palette_colors = palette_colors
+        self.bg_colors = bg_colors
+        self.story_colors = story_colors
+
+    def to_dict(self):
+        return {
+            '_': 'PeerColorProfileSet',
+            'palette_colors': [] if self.palette_colors is None else self.palette_colors[:],
+            'bg_colors': [] if self.bg_colors is None else self.bg_colors[:],
+            'story_colors': [] if self.story_colors is None else self.story_colors[:]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xeba}v',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.palette_colors)),b''.join(struct.pack('<i', x) for x in self.palette_colors),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.bg_colors)),b''.join(struct.pack('<i', x) for x in self.bg_colors),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.story_colors)),b''.join(struct.pack('<i', x) for x in self.story_colors),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        reader.read_int()
+        _palette_colors = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _palette_colors.append(_x)
+
+        reader.read_int()
+        _bg_colors = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _bg_colors.append(_x)
+
+        reader.read_int()
+        _story_colors = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _story_colors.append(_x)
+
+        return cls(palette_colors=_palette_colors, bg_colors=_bg_colors, story_colors=_story_colors)
+
+
+class PeerColorSet(TLObject):
+    CONSTRUCTOR_ID = 0x26219a58
+    SUBCLASS_OF_ID = 0x11cbe12c
+
+    def __init__(self, colors: List[int]):
+        """
+        Constructor for help.PeerColorSet: Instance of either PeerColorSet, PeerColorProfileSet.
+        """
+        self.colors = colors
+
+    def to_dict(self):
+        return {
+            '_': 'PeerColorSet',
+            'colors': [] if self.colors is None else self.colors[:]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'X\x9a!&',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.colors)),b''.join(struct.pack('<i', x) for x in self.colors),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        reader.read_int()
+        _colors = []
+        for _ in range(reader.read_int()):
+            _x = reader.read_int()
+            _colors.append(_x)
+
+        return cls(colors=_colors)
+
+
+class PeerColors(TLObject):
+    CONSTRUCTOR_ID = 0xf8ed08
+    SUBCLASS_OF_ID = 0xe3f6733
+
+    def __init__(self, hash: int, colors: List['TypePeerColorOption']):
+        """
+        Constructor for help.PeerColors: Instance of either PeerColorsNotModified, PeerColors.
+        """
+        self.hash = hash
+        self.colors = colors
+
+    def to_dict(self):
+        return {
+            '_': 'PeerColors',
+            'hash': self.hash,
+            'colors': [] if self.colors is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.colors]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x08\xed\xf8\x00',
+            struct.pack('<i', self.hash),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.colors)),b''.join(x._bytes() for x in self.colors),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_int()
+        reader.read_int()
+        _colors = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _colors.append(_x)
+
+        return cls(hash=_hash, colors=_colors)
+
+
+class PeerColorsNotModified(TLObject):
+    CONSTRUCTOR_ID = 0x2ba1f5ce
+    SUBCLASS_OF_ID = 0xe3f6733
+
+    def to_dict(self):
+        return {
+            '_': 'PeerColorsNotModified'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xce\xf5\xa1+',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
+
+
 class PremiumPromo(TLObject):
     CONSTRUCTOR_ID = 0x5334759c
     SUBCLASS_OF_ID = 0xc987a338
@@ -895,6 +1097,62 @@ class TermsOfServiceUpdateEmpty(TLObject):
     def from_reader(cls, reader):
         _expires = reader.tgread_date()
         return cls(expires=_expires)
+
+
+class TimezonesList(TLObject):
+    CONSTRUCTOR_ID = 0x7b74ed71
+    SUBCLASS_OF_ID = 0xca76e475
+
+    def __init__(self, timezones: List['TypeTimezone'], hash: int):
+        """
+        Constructor for help.TimezonesList: Instance of either TimezonesListNotModified, TimezonesList.
+        """
+        self.timezones = timezones
+        self.hash = hash
+
+    def to_dict(self):
+        return {
+            '_': 'TimezonesList',
+            'timezones': [] if self.timezones is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.timezones],
+            'hash': self.hash
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'q\xedt{',
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.timezones)),b''.join(x._bytes() for x in self.timezones),
+            struct.pack('<i', self.hash),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        reader.read_int()
+        _timezones = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _timezones.append(_x)
+
+        _hash = reader.read_int()
+        return cls(timezones=_timezones, hash=_hash)
+
+
+class TimezonesListNotModified(TLObject):
+    CONSTRUCTOR_ID = 0x970708cc
+    SUBCLASS_OF_ID = 0xca76e475
+
+    def to_dict(self):
+        return {
+            '_': 'TimezonesListNotModified'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xcc\x08\x07\x97',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
 
 
 class UserInfo(TLObject):

@@ -292,6 +292,25 @@ class ExportContactTokenRequest(TLRequest):
         return cls()
 
 
+class GetBirthdaysRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xdaeda864
+    SUBCLASS_OF_ID = 0xe7aabff
+
+    def to_dict(self):
+        return {
+            '_': 'GetBirthdaysRequest'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'd\xa8\xed\xda',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
+
+
 class GetBlockedRequest(TLRequest):
     CONSTRUCTOR_ID = 0x9a868f80
     SUBCLASS_OF_ID = 0xffba4f4f
@@ -784,41 +803,6 @@ class SetBlockedRequest(TLRequest):
 
         _limit = reader.read_int()
         return cls(id=_id, limit=_limit, my_stories_from=_my_stories_from)
-
-
-class ToggleStoriesHiddenRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x753fb865
-    SUBCLASS_OF_ID = 0xf5b399ac
-
-    def __init__(self, id: 'TypeInputUser', hidden: bool):
-        """
-        :returns Bool: This type has no constructors.
-        """
-        self.id = id
-        self.hidden = hidden
-
-    async def resolve(self, client, utils):
-        self.id = utils.get_input_user(await client.get_input_entity(self.id))
-
-    def to_dict(self):
-        return {
-            '_': 'ToggleStoriesHiddenRequest',
-            'id': self.id.to_dict() if isinstance(self.id, TLObject) else self.id,
-            'hidden': self.hidden
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'e\xb8?u',
-            self.id._bytes(),
-            b'\xb5ur\x99' if self.hidden else b'7\x97y\xbc',
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _id = reader.tgread_object()
-        _hidden = reader.tgread_bool()
-        return cls(id=_id, hidden=_hidden)
 
 
 class ToggleTopPeersRequest(TLRequest):
