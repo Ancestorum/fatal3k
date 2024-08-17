@@ -2982,7 +2982,7 @@ def set_user_access(jid, access=0, gch=''):
             sql = "UPDATE access SET access=? WHERE jid=?;"
             args = access.strip(), jid.strip()
         else:
-            sql = "DELETE FROM access WHERE jid='%s';" % ()
+            sql = "DELETE FROM access WHERE jid=?;"
             args = (jid.strip(),)
     
     cid = get_client_id()
