@@ -3354,7 +3354,11 @@ def keep_alive_check():
     inc_client_var('keep_alive_checks')
 
     jconn = get_client_conn()
-    jconn.SendAndCallForResponse(iq, keep_alive_check_answ, {'sId': Id})
+    
+    objl = dir(jconn)
+    
+    if 'SendAndCallForResponse' in objl:
+        jconn.SendAndCallForResponse(iq, keep_alive_check_answ, {'sId': Id})
 
 @handle_xmpp_exc(quiet=True)
 def keep_alive_check_answ(coze, res, sId):
