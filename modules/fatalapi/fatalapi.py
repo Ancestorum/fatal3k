@@ -3833,9 +3833,12 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     load_locale(jid)
     load_help(jid)
     
-    sprint('\nConnecting: %s' % (jid))
+    sprint('\nConnecting: %s' % (jid)) 
     
     connect_server = get_cfg_param(jid, server)
+
+    if connect_server != server:
+        sprint('\\Specific server: %s' % (connect_server))
 
     proxy = get_fatal_var('fproxy')
     certificate = get_cfg_param('cert')
