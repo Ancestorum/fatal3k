@@ -22,6 +22,31 @@ __all__ = []
 from fatalapi import *
 from functools import reduce
 
+def fix_en_to_ru_layout(text):
+    # Создаем словарь для замены символов
+    replacements = {
+        'q': 'й', 'w': 'ц', 'e': 'у', 'r': 'к', 't': 'е', 'y': 'н',
+        'u': 'г', 'i': 'ш', 'o': 'щ', 'p': 'з', 'a': 'ф', 's': 'ы',
+        'd': 'в', 'f': 'а', 'g': 'п', 'h': 'р', 'j': 'о', 'k': 'л',
+        'l': 'д', 'z': 'я', 'x': 'ч', 'c': 'с', 'v': 'м', 'b': 'и',
+        'n': 'т', 'm': 'ь', '[': 'х', ']': 'ъ', ';': 'ж', '\'': 'э',
+        ',': 'б', '.': 'ю', '/': '.', '\\': '/', '~': 'Ё', '{': 'Х',
+        '+': 'Ё', ':': 'Ж', '"': 'Э', '<': 'Б', '>': 'Ю', '?': '.'
+    }
+    
+    # Проходимся по каждому символу строки и заменяем его согласно словарю
+    fixed_text = []
+    for char in text:
+        if char.lower() in replacements:
+            replacement_char = replacements.get(char.lower())
+            if char.isupper():
+                replacement_char = replacement_char.upper()
+            fixed_text.append(replacement_char)
+        else:
+            fixed_text.append(char)
+            
+    return ''.join(fixed_text)
+
 def handler_turn_last(type, source, parameters):
     cid = get_client_id()
     
@@ -32,7 +57,7 @@ def handler_turn_last(type, source, parameters):
     jid = get_true_jid(source)
     
     if parameters:
-        rep = reduce(lambda x, y: global_en2ru_table.get(x, x) + global_en2ru_table.get(y, y), parameters)
+        rep = fix_en_to_ru_layout(parameters)
         
         return reply(type, source, rep)
     else:
@@ -41,7 +66,7 @@ def handler_turn_last(type, source, parameters):
 
         tmsg = rmv_fatal_var(cid, 'turn_msgs', groupchat, jid)
 
-        rep = reduce(lambda x, y: global_en2ru_table.get(x, x) + global_en2ru_table.get(y, y), tmsg)
+        rep = fix_en_to_ru_layout(tmsg)
         
         return reply(type, source, rep)
 
