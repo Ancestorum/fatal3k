@@ -5,7 +5,8 @@
 
 #  Initial Copyright © 2008 dimichxp <dimichxp@gmail.com>
 #  Idea © 2008 Als <Als@exploit.in>
-#  Copyright © 2009-2012 Ancestors Soft
+#  Copyright © 2024 GigaChat
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -31,7 +32,8 @@ def fix_en_to_ru_layout(text):
         'l': 'д', 'z': 'я', 'x': 'ч', 'c': 'с', 'v': 'м', 'b': 'и',
         'n': 'т', 'm': 'ь', '[': 'х', ']': 'ъ', ';': 'ж', '\'': 'э',
         ',': 'б', '.': 'ю', '/': '.', '\\': '/', '~': 'Ё', '{': 'Х',
-        '+': 'Ё', ':': 'Ж', '"': 'Э', '<': 'Б', '>': 'Ю', '?': '.'
+        '+': 'Ё', ':': 'Ж', '"': 'Э', '<': 'Б', '>': 'Ю', '?': ',', 
+        '&': '?'
     }
     
     # Проходимся по каждому символу строки и заменяем его согласно словарю
@@ -47,17 +49,43 @@ def fix_en_to_ru_layout(text):
             
     return ''.join(fixed_text)
 
+def fix_ru_to_en_layout(text):
+    # Создаем словарь для замены символов
+    layout_map = {
+        'й': 'q', 'ц': 'w', 'у': 'e', 'к': 'r', 'е': 't', 'н': 'y',
+        'г': 'u', 'ш': 'i', 'щ': 'o', 'з': 'p', 'ф': 'a', 'ы': 's',
+        'в': 'd', 'а': 'f', 'п': 'g', 'р': 'h', 'о': 'j', 'л': 'k',
+        'д': 'l', 'я': 'z', 'ч': 'x', 'с': 'c', 'м': 'v', 'и': 'b',
+        'т': 'n', 'ь': 'm', 'х': '[', 'ъ': ']', 'ж': ';', 'э': '\'',
+        'ю': '.', 'б': ',', 'ё': '`'
+    }
+    
+    fixed_text = []
+    for char in text:
+        if char in layout_map:
+            fixed_char = layout_map.get(char)
+            if char.isupper():
+                fixed_char = fixed_char.upper()
+            fixed_text.append(fixed_char)
+        else:
+            fixed_text.append(char)
+            
+    return ''.join(fixed_text)
+
 def handler_turn_last(type, source, parameters):
     cid = get_client_id()
     
-    global_en2ru_table = dict(list(zip("qwertyuiop[]asdfghjkl;'zxcvbnm,./`йцукенгшщзхъфывапролджэячсмитьбю.ёQWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?~ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,Ё", "йцукенгшщзхъфывапролджэячсмитьбю.ёqwertyuiop[]asdfghjkl;'zxcvbnm,./`ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,ЁQWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?~")))
-
     nick = source[2]
     groupchat = source[1]
     jid = get_true_jid(source)
     
+    nicks = tuple(get_fatal_var(cid, 'gchrosters', groupchat))
+    
     if parameters:
         rep = fix_en_to_ru_layout(parameters)
+        
+        if rep == parameters:
+            rep = fix_ru_to_en_layout(parameters)
         
         return reply(type, source, rep)
     else:
@@ -66,9 +94,36 @@ def handler_turn_last(type, source, parameters):
 
         tmsg = rmv_fatal_var(cid, 'turn_msgs', groupchat, jid)
 
-        rep = fix_en_to_ru_layout(tmsg)
+        nck = ''
+        dlm = ':'
+        sst = ''
+
+        for ni in nicks:
+            if tmsg.startswith(ni):
+                nck = ni
+                
+                mspl = tmsg.split(ni)
+                
+                sst = mspl[1].strip()
+                
+                if sst.startswith(',') or sst.startswith(':'):
+                    dlm = sst[0]
+                    sst = sst[1:].strip()
+
+        if nck:
+            rep = fix_en_to_ru_layout(sst)
+            rep = '%s%s %s' % (nck, dlm, rep)
+            
+            if rep == tmsg:
+                rep = fix_ru_to_en_layout(sst)
+                rep = '%s%s %s' % (nck, dlm, rep)
+        else:
+            rep = fix_en_to_ru_layout(tmsg)
+            
+            if rep == tmsg:
+                rep = fix_ru_to_en_layout(tmsg)
         
-        return reply(type, source, rep)
+        return msg(groupchat, rep)
 
 def handler_turn_save_msg(type, source, body):
     cid = get_client_id()
