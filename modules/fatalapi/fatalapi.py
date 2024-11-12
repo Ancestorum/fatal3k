@@ -2891,7 +2891,11 @@ def get_stripped(jid):
     if isinstance(jid, xmpp.JID):
         return jid.getStripped()
     
-    return safe_split(jid, '/')[0]
+    sfspl = safe_split(jid, '/')
+    
+    if sfspl[0].count('@conference.'):
+        return jid
+    return sfspl[0]
 
 def get_resource(jid):
     if not jid: 

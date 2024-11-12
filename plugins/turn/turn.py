@@ -79,7 +79,10 @@ def handler_turn_last(type, source, parameters):
     groupchat = source[1]
     jid = get_true_jid(source)
     
-    nicks = tuple(get_fatal_var(cid, 'gchrosters', groupchat))
+    nicks = get_fatal_var(cid, 'gchrosters', groupchat)
+    
+    if nicks:
+        nicks = tuple(nicks)
     
     if parameters:
         rep = fix_en_to_ru_layout(parameters)
