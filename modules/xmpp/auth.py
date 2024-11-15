@@ -1,6 +1,8 @@
 ##   auth.py
 ##
 ##   Copyright (C) 2003-2005 Alexey "Snake" Nezhdanov
+##   Partial copyright (C) 2024 Gajjim project
+##   Partial copyright (C) 2009-2024 Ancestors Soft
 ##
 ##   This program is free software; you can redistribute it and/or modify
 ##   it under the terms of the GNU General Public License as published by
@@ -31,50 +33,6 @@ import binascii
 import logging
 import hashlib
 from hashlib import pbkdf2_hmac
-
-def b64decode(data, return_type=str):
-    if not data:
-        raise ValueError('No data to decode')
-    if isinstance(data, str):
-        data = data.encode()
-    result = base64.b64decode(data)
-    if return_type == bytes:
-        return result
-    return result.decode()
-
-def b64encode(data, return_type=str):
-    if not data:
-        raise ValueError('No data to encode')
-    if isinstance(data, str):
-        data = data.encode()
-    result = base64.b64encode(data)
-    if return_type == bytes:
-        return result
-    return result.decode()
-
-def _hmac(key, message):
-    return hmac.new(key=key, msg=message.encode(), digestmod='sha1').digest()
-
-def _xor(x, y):
-    return bytes([px ^ py for px, py in zip(x, y)])
-
-def _h(data):
-    return hashlib.new('sha1', data).digest()
-
-def _scram_parse(scram_data):
-    return dict(s.split('=', 1) for s in scram_data.split(','))
-
-def HH(some): return hashlib.md5(some).hexdigest()
-def H(some): return hashlib.md5(some).digest()
-
-def C(some): 
-    sms = b''
-    for sm in some:
-        if type(sm) is bytes:
-            sms += sm + b':'
-        else:
-            sms += sm.encode() + b':'
-    return sms[:-1]
 
 def app_file(filename, data):
     try:
@@ -165,6 +123,54 @@ class SASL(PlugIn):
         self._client_nonce = '%x' % int(binascii.hexlify(os.urandom(24)), 16)
         self._client_first_message_bare = ''
         self._channel_binding = 'n,,'
+        self._hash_method = 'sha512'
+        self._scrmsh512 = "SCRAM-SHA-512"
+        self._scrmsh256 = "SCRAM-SHA-256"
+        self._scrmsh1 = "SCRAM-SHA-1"
+
+    def b64decode(self,data, return_type=str):
+        if not data:
+            raise ValueError('No data to decode')
+        if isinstance(data, str):
+            data = data.encode()
+        result = base64.b64decode(data)
+        if return_type == bytes:
+            return result
+        return result.decode()
+
+    def b64encode(self,data, return_type=str):
+        if not data:
+            raise ValueError('No data to encode')
+        if isinstance(data, str):
+            data = data.encode()
+        result = base64.b64encode(data)
+        if return_type == bytes:
+            return result
+        return result.decode()
+
+    def HH(self,some): return hashlib.md5(some).hexdigest()
+    def H(self,some): return hashlib.md5(some).digest()
+
+    def C(self,some): 
+        sms = b''
+        for sm in some:
+            if type(sm) is bytes:
+                sms += sm + b':'
+            else:
+                sms += sm.encode() + b':'
+        return sms[:-1]
+
+    def _hmac(self,key, message):
+        return hmac.new(key=key, msg=message.encode(), digestmod=self._hash_method).digest()
+
+    def _xor(self,x, y):
+        return bytes([px ^ py for px, py in zip(x, y)])
+
+    def _h(self,data):
+        return hashlib.new(self._hash_method, data).digest()
+
+    def _scram_parse(self,scram_data):
+        return dict(s.split('=', 1) for s in scram_data.split(','))
 
     def nonce_length(self):
         return len(self._client_nonce)
@@ -207,14 +213,24 @@ class SASL(PlugIn):
         self._owner.RegisterHandler('success',self.SASLHandler,xmlns=NS_SASL)
         if "ANONYMOUS" in mecs and self.username == None:
             node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':'ANONYMOUS'})
-        elif "SCRAM-SHA-1" in mecs:
+        elif self._scrmsh512 or self._scrmsh256 or self._scrmsh1 in mecs:
             self._mech = 'SSHA'
             self._client_first_message_bare = 'n=%s,r=%s' % (self.username, self._client_nonce)
             client_first_message = '%s%s' % (self._channel_binding, self._client_first_message_bare)
             
-            payload = b64encode(client_first_message)
+            payload = self.b64encode(client_first_message)
             
-            node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':'SCRAM-SHA-1'}, payload=[payload])
+            node = None
+                        
+            if self._scrmsh512 in mecs:
+                self._hash_method = 'sha512'
+                node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':self._scrmsh512}, payload=[payload])
+            elif self._scrmsh256 in mecs:
+                self._hash_method = 'sha256'
+                node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':self._scrmsh256}, payload=[payload])
+            elif self._scrmsh1 in mecs:
+                self._hash_method = 'sha1'
+                node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':self._scrmsh1}, payload=[payload])
         elif "DIGEST-MD5" in mecs:
             self._mech = 'DMD5'
             node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':'DIGEST-MD5'})
@@ -254,36 +270,36 @@ class SASL(PlugIn):
     
         if self._mech == 'SSHA':
             server_first_message = challenge.getData()
-            server_first_message = b64decode(server_first_message)
-            schallenge = _scram_parse(server_first_message)
+            server_first_message = self.b64decode(server_first_message)
+            schallenge = self._scram_parse(server_first_message)
             client_nonce = schallenge['r'][:self.nonce_length()]
             
             if client_nonce != self._client_nonce:
                 raise AuthFail('Invalid client nonce received from server')
 
-            salt = b64decode(schallenge['s'], bytes)
+            salt = self.b64decode(schallenge['s'], bytes)
             iteration_count = int(schallenge['i'])
 
             if iteration_count < 4096:
                 raise AuthFail('Salt iteration count to low: %s' % iteration_count)
 
-            salted_password = pbkdf2_hmac('sha1', self.password.encode(), salt, iteration_count)
+            salted_password = pbkdf2_hmac(self._hash_method, self.password.encode(), salt, iteration_count)
             
-            client_final_message_wo_proof = 'c=%s,r=%s' % (b64encode(self._channel_binding), schallenge['r'])
+            client_final_message_wo_proof = 'c=%s,r=%s' % (self.b64encode(self._channel_binding), schallenge['r'])
 
-            client_key = _hmac(salted_password, 'Client Key')
-            stored_key = _h(client_key)
+            client_key = self._hmac(salted_password, 'Client Key')
+            stored_key = self._h(client_key)
             
             auth_message = '%s,%s,%s' % (self._client_first_message_bare, server_first_message, client_final_message_wo_proof)
-            client_signature = _hmac(stored_key, auth_message)
-            client_proof = _xor(client_key, client_signature)
+            client_signature = self._hmac(stored_key, auth_message)
+            client_proof = self._xor(client_key, client_signature)
 
-            client_finale_message = 'c=%s,r=%s,p=%s' % (b64encode(self._channel_binding), schallenge['r'], b64encode(client_proof))
+            client_finale_message = 'c=%s,r=%s,p=%s' % (self.b64encode(self._channel_binding), schallenge['r'], self.b64encode(client_proof))
 
-            server_key = _hmac(salted_password, 'Server Key')
-            _server_signature = _hmac(server_key, auth_message)
+            server_key = self._hmac(salted_password, 'Server Key')
+            _server_signature = self._hmac(server_key, auth_message)
 
-            payload = b64encode(client_finale_message)
+            payload = self.b64encode(client_finale_message)
             
             node = Node('response', attrs={'xmlns': NS_SASL}, payload=[payload])
             self._owner.send(node.__str__())
@@ -311,10 +327,10 @@ class SASL(PlugIn):
                 resp['nc']=('00000001')
                 resp['qop']='auth'
                 resp['digest-uri']='xmpp/'+self._owner.Server
-                mdd = H(C([resp['username'],resp['realm'],self.password]))
-                A1=C([mdd,resp['nonce'],resp['cnonce']])
-                A2=C(['AUTHENTICATE',resp['digest-uri']])
-                response=HH(C([HH(A1),resp['nonce'],resp['nc'],resp['cnonce'],resp['qop'],HH(A2)]))
+                mdd = self.H(self.C([resp['username'],resp['realm'],self.password]))
+                A1=self.C([mdd,resp['nonce'],resp['cnonce']])
+                A2=self.C(['AUTHENTICATE',resp['digest-uri']])
+                response=self.HH(self.C([self.HH(A1),resp['nonce'],resp['nc'],resp['cnonce'],resp['qop'],self.HH(A2)]))
                 resp['response']=response
                 resp['charset']='utf-8'
                 sasl_data=''

@@ -1065,7 +1065,7 @@ def tgbot_polling_proc():
     cid = get_client_id()
     tbot = get_fatal_var(cid, 'tgbot')
 
-    tbot.infinity_polling()
+    tbot.infinity_polling(timeout=10, long_polling_timeout = 5)
 
 def album_worker(msgs):
     cid = get_client_id()

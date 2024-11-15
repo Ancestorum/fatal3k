@@ -735,9 +735,10 @@ def handler_help_commands(type, source, parameters):
             rep.sort()
             answ = l('List of commands in category "%s" (total: %s):\n\n%s.') % (parameters, total, ', '.join(rep))
             
-            if dsbl:
-                dsbl.sort()
-                answ += l('\n\nFollowing commands are turned off in this groupchat (total: %s):\n\n%s.') % (len(dsbl), ', '.join(dsbl))
+            if user_level(source[0], source[1]) >= 20:
+                if dsbl:
+                    dsbl.sort()
+                    answ += l('\n\nFollowing commands are turned off in this groupchat (total: %s):\n\n%s.') % (len(dsbl), ', '.join(dsbl))
                 
             if type in ['console', 'telegram']:
                 return reply(type, source, answ)

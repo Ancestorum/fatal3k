@@ -2892,9 +2892,7 @@ def get_stripped(jid):
         return jid.getStripped()
     
     sfspl = safe_split(jid, '/')
-    
-    if sfspl[0].count('@conference.'):
-        return jid
+
     return sfspl[0]
 
 def get_resource(jid):
