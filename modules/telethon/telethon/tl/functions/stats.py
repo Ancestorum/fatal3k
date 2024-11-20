@@ -11,31 +11,31 @@ if TYPE_CHECKING:
 
 
 class GetBroadcastRevenueStatsRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x75dfb671
+    CONSTRUCTOR_ID = 0xf788ee19
     SUBCLASS_OF_ID = 0x2cee3078
 
-    def __init__(self, channel: 'TypeInputChannel', dark: Optional[bool]=None):
+    def __init__(self, peer: 'TypeInputPeer', dark: Optional[bool]=None):
         """
         :returns stats.BroadcastRevenueStats: Instance of BroadcastRevenueStats.
         """
-        self.channel = channel
+        self.peer = peer
         self.dark = dark
 
     async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'GetBroadcastRevenueStatsRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'dark': self.dark
         }
 
     def _bytes(self):
         return b''.join((
-            b'q\xb6\xdfu',
+            b'\x19\xee\x88\xf7',
             struct.pack('<I', (0 if self.dark is None or self.dark is False else 1)),
-            self.channel._bytes(),
+            self.peer._bytes(),
         ))
 
     @classmethod
@@ -43,82 +43,82 @@ class GetBroadcastRevenueStatsRequest(TLRequest):
         flags = reader.read_int()
 
         _dark = bool(flags & 1)
-        _channel = reader.tgread_object()
-        return cls(channel=_channel, dark=_dark)
+        _peer = reader.tgread_object()
+        return cls(peer=_peer, dark=_dark)
 
 
 class GetBroadcastRevenueTransactionsRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x69280f
+    CONSTRUCTOR_ID = 0x70990b6d
     SUBCLASS_OF_ID = 0x676ea15
 
-    def __init__(self, channel: 'TypeInputChannel', offset: int, limit: int):
+    def __init__(self, peer: 'TypeInputPeer', offset: int, limit: int):
         """
         :returns stats.BroadcastRevenueTransactions: Instance of BroadcastRevenueTransactions.
         """
-        self.channel = channel
+        self.peer = peer
         self.offset = offset
         self.limit = limit
 
     async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'GetBroadcastRevenueTransactionsRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'offset': self.offset,
             'limit': self.limit
         }
 
     def _bytes(self):
         return b''.join((
-            b'\x0f(i\x00',
-            self.channel._bytes(),
+            b'm\x0b\x99p',
+            self.peer._bytes(),
             struct.pack('<i', self.offset),
             struct.pack('<i', self.limit),
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        _channel = reader.tgread_object()
+        _peer = reader.tgread_object()
         _offset = reader.read_int()
         _limit = reader.read_int()
-        return cls(channel=_channel, offset=_offset, limit=_limit)
+        return cls(peer=_peer, offset=_offset, limit=_limit)
 
 
 class GetBroadcastRevenueWithdrawalUrlRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x2a65ef73
+    CONSTRUCTOR_ID = 0x9df4faad
     SUBCLASS_OF_ID = 0xd15cc8e5
 
-    def __init__(self, channel: 'TypeInputChannel', password: 'TypeInputCheckPasswordSRP'):
+    def __init__(self, peer: 'TypeInputPeer', password: 'TypeInputCheckPasswordSRP'):
         """
         :returns stats.BroadcastRevenueWithdrawalUrl: Instance of BroadcastRevenueWithdrawalUrl.
         """
-        self.channel = channel
+        self.peer = peer
         self.password = password
 
     async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
+        self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
 
     def to_dict(self):
         return {
             '_': 'GetBroadcastRevenueWithdrawalUrlRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'password': self.password.to_dict() if isinstance(self.password, TLObject) else self.password
         }
 
     def _bytes(self):
         return b''.join((
-            b's\xefe*',
-            self.channel._bytes(),
+            b'\xad\xfa\xf4\x9d',
+            self.peer._bytes(),
             self.password._bytes(),
         ))
 
     @classmethod
     def from_reader(cls, reader):
-        _channel = reader.tgread_object()
+        _peer = reader.tgread_object()
         _password = reader.tgread_object()
-        return cls(channel=_channel, password=_password)
+        return cls(peer=_peer, password=_password)
 
 
 class GetBroadcastStatsRequest(TLRequest):

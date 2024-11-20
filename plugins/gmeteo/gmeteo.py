@@ -23,6 +23,14 @@ import urllib3
 
 from fatalapi import *
 
+def hg_to_pa(mmhg):
+    hpa = round((mmhg * 101325 / 760) / 100)
+    return hpa
+
+def aver(minm, maxm):
+    av = round((int(minm) + int(maxm)) / 2)
+    return av
+
 def get_meteo_info(query):
     city = query.lower()
 
@@ -32,10 +40,10 @@ def get_meteo_info(query):
     if not qres:
         sql = "SELECT city FROM weather WHERE value=?;"
         qres = sqlquery('static/gismeteo.db', sql, query)
-    
+
     if qres:
         info = qres[0][0]
-        
+
         return info
     else:
         return ''
@@ -43,7 +51,7 @@ def get_meteo_info(query):
 def get_gis_weather(ccode):
     try:
         url = 'http://informer.gismeteo.ru/xml/%s_1.xml' % (ccode)
-        http = urllib3.PoolManager()    
+        http = urllib3.PoolManager()
         header = {'User-Agent': 'Opera/9.80 (Windows NT 5.1) Presto/2.12.388 Version/12.18'}
 
         resp = http.request('GET', url, headers=header)
@@ -51,7 +59,7 @@ def get_gis_weather(ccode):
         return wxml
     except Exception:
         return ''
-         
+  
 def get_element_attvals(dom, element, idx=0):
     try:
         attvals = {}
@@ -79,7 +87,7 @@ def parse_xml(xml):
         return dom
     except Exception:
         return ''
-        
+           
 def handler_weather_gismeteo(type, source, parameters):
     gmweekday = {'1': l('Sunday'), '2': l('Monday'), '3': l('Tuesday'), '4': l('Wednesday'), '5': l('Thursday'), '6': l('Friday'), '7': l('Saturday'), '8': l('Sunday')}
     
@@ -134,28 +142,25 @@ def handler_weather_gismeteo(type, source, parameters):
                 year = forecast['year']
                 hour = forecast['hour']
                 rep += l('%s.%s.%s %s:00:\n') % (day, month, year, hour)            
-                            
                 temperature = get_element_attvals(dom, 'temperature', indx)
-                tempmin = temperature['min']
-                tempmax = temperature['max']
-                rep += l('Temperature: %s-%s°C.\n') % (tempmin, tempmax)
+
+                temp = aver(temperature['min'], temperature['max'])
+                rep += l('Temperature: %s°C.\n') % (temp)
             
                 relwet = get_element_attvals(dom, 'relwet', indx)
-                wetmin = relwet['min']
-                wetmax = relwet['max']
-                rep += l('Humidity: %s-%s%%.\n') % (wetmin, wetmax)
+                wet = aver(relwet['min'], relwet['max'])
+                rep += l('Humidity: %s%%.\n') % (wet)
             
                 wind = get_element_attvals(dom, 'wind', indx)
                 ndir = wind['direction']
                 wdir = gmwinddir[ndir]
-                windmin = wind['min']
-                windmax = wind['max']
-                rep += l('Wind: %s, %s-%s m/s.\n') % (wdir, windmin, windmax)
+                wind = aver(wind['min'], wind['max'])
+                rep += l('Wind: %s, %s m/s.\n') % (wdir, wind)
             
                 pressure = get_element_attvals(dom, 'pressure', indx)
-                pressmin = pressure['min']
-                pressmax = pressure['max']
-                rep += l('Pressure: %s-%s mmHg.\n') % (pressmin, pressmax)
+                press_hg = aver(pressure['min'], pressure['max'])
+                press_pa = hg_to_pa(press_hg)
+                rep += l('Pressure: %s hPa (%s mmHg).\n') % (press_pa, press_hg)
             
                 phenomena = get_element_attvals(dom, 'phenomena', indx)
                 ncloud = phenomena['cloudiness']
@@ -173,5 +178,5 @@ def handler_weather_gismeteo(type, source, parameters):
             return reply(type, source, l('Not found!'))
     else:
         return reply(type, source, l('Invalid syntax!'))
-        
+  
 register_command_handler(handler_weather_gismeteo, 'gismeteo', 11)

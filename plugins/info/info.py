@@ -446,7 +446,6 @@ def show_reminds(gch, jid, reminds, pref='', suff='', cycle=False):
     
     nick = ''
     
-    
     if is_groupchat(jid):
         freml = [rel for rel in reminds if rel[1] == jid and rel[6] == 'run']
     else:
@@ -915,6 +914,8 @@ def handler_user_join(groupchat, nick, aff, role):
 
     cid = get_client_id()
     
+    fjid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
+    
     check_sql = "SELECT nick FROM users WHERE nick=?"
     qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, nick)
     
@@ -926,11 +927,11 @@ def handler_user_join(groupchat, nick, aff, role):
     if qres:
         upd_sql = "UPDATE users SET ujoin=?, jid=? WHERE nick=?;"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, ujoin, jid.strip(), nick)
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, ujoin, fjid.strip(), nick) 
     else:
         ins_sql = "INSERT INTO users (nick, jid, ujoin, uleave, reason) VALUES (?, ?, ?, ?, ?);"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql, nick, jid.strip(), ujoin, ujoin, '')
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql, nick, fjid.strip(), ujoin, ujoin, '')
         
     reminds = get_reminds(groupchat)
     
@@ -1185,8 +1186,9 @@ def handler_nicks(type, source, parameters):
         prob_jid = parameters
         
         if check_jid(prob_jid):
-            sql = "SELECT nick, ujoin FROM users WHERE jid=? ORDER BY ujoin DESC;"
-            qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, prob_jid)
+            prob_jid = prob_jid
+            sql = "SELECT nick, ujoin FROM users WHERE jid LIKE ? ORDER BY ujoin DESC;"
+            qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, prob_jid + '%')
             
             if qres:
                 qres = [li[0] for li in qres]
@@ -1198,8 +1200,12 @@ def handler_nicks(type, source, parameters):
             jid = get_info_jid(groupchat, prob_nick)
             
             if jid:
-                sql = "SELECT nick, ujoin FROM users WHERE jid=? ORDER BY ujoin DESC;"
-                qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, jid)
+                jid = get_stripped(jid)
+                if groupchat == jid:
+                    return reply(type, source, l('Unknown error!'))
+                    
+                sql = "SELECT nick, ujoin FROM users WHERE jid LIKE ? ORDER BY ujoin DESC;"
+                qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), sql, jid + '%')
                 
                 if qres:
                     qres = [li[0] for li in qres]
@@ -1223,20 +1229,21 @@ def handler_nicks(type, source, parameters):
                 letm = float(li[2])
                 jid = li[3]
                 
-                if ctm - jotm <= 86400:
-                    if is_gch_user(groupchat, nick):
-                        jltms = l('Joined: %s') % (time.strftime('%d.%m.%Y, %H:%M:%S.', time.localtime(jotm)))
-                    else:
-                        jltms = l('Left: %s') % (time.strftime('%d.%m.%Y, %H:%M:%S.', time.localtime(letm)))
-                    
-                    nlst.append('%s / %s / %s' % (nick, jid, jltms))
-            
+                if is_gch_user(groupchat, nick):
+                    jltms = l('Joined: %s') % (time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(jotm)))
+                    nlst.append('%s - %s (%s)' % (nick, jid, jltms))
+                else:
+                    if ctm - letm <= 259200:
+                        jtms = l('Joined: %s') % (time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(jotm)))
+                        ltms = l('Left: %s') % (time.strftime('%d.%m.%Y, %H:%M:%S', time.localtime(letm)))
+                        nlst.append('%s - %s (%s; %s)' % (nick, jid, jtms, ltms))
+                            
             nlst = get_num_list(nlst)
             
             if nlst:
-                rep = l('Users which visited this groupchat last 24 hours (total: %s):\n\n%s') % (len(nlst), '\n'.join(nlst))
+                rep = l('Users which visited this groupchat last 3 days (total: %s):\n\n%s') % (len(nlst), '\n'.join(nlst))
             else:
-                rep = l('There were not users last twenty-four hours!')
+                rep = l('There were not users last 3 days!')
         else:
             rep = l('Unknown error!')
         
@@ -1314,7 +1321,10 @@ def handler_http_get(type, source, parameters):
         url = splp[-1]    
     
     if url:
-        resp = requests.get(url.strip(), stream=True)
+        try:
+            resp = requests.get(url.strip(), stream=True)
+        except Exception:
+            sprs = False
     else:
         sprs = False
     
@@ -1594,8 +1604,11 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
         return reply(type, source, l('This command can be used only in groupchat!'))
     
     if not recover and not jid:
-        jid = get_info_jid(groupchat, nick)
-    
+        jid = get_info_jid(groupchat, nick).split('/')[0]
+        
+    if (type == 'private') and (jid == groupchat):
+        return reply(type, source, l('Only public remind and ctask avalible in this groupchat!'))
+
     if parameters:
         spltdp = parameters.split(' ', 1)
         

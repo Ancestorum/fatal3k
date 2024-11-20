@@ -326,7 +326,10 @@ def handler_pai(type, source, body):
                             
                             return msg(groupchat, rep)
                         else:	
-                            return reply(type, source, rep)
+                            if random.randint(0, 3) != 0:
+                                return reply(type, source, rep)
+                            else:
+                                return msg(groupchat, rep)
                 elif [ron for ron in reply_on if ron in body] and not [roff for roff in reply_off if roff in body]:
                     rep = get_reply(body, groupchat)
                     
@@ -340,7 +343,10 @@ def handler_pai(type, source, body):
                             
                             return msg(groupchat, rep)
                         else:	
-                            return reply(type, source, rep)
+                            if random.randint(0, 3) != 0:
+                                return reply(type, source, rep)
+                            else:
+                                return msg(groupchat, rep)
                 else:
                     if get_int_fatal_var(cid, 'pai_occ', groupchat) == 0:
                         paoc = 100 - occurrence_freq
@@ -371,7 +377,10 @@ def handler_pai(type, source, body):
                                         
                                 return msg(groupchat, rep)
                             else:	
-                                return reply(type, source, rep)
+                                if random.randint(0, 3) != 0:
+                                    return reply(type, source, rep)
+                                else:
+                                    return msg(groupchat, rep)
                         return
                 
                 paoc = get_int_fatal_var(cid, 'pai_occ', groupchat)
@@ -793,6 +802,15 @@ def handler_pai_show(type, source, parameters):
 
 #-------------------------------------Handlers---------------------------------------------
 
+
+def handler_pai_random(type, source, parameters):
+    groupchat = source[1]
+    if not is_groupchat(groupchat):
+        return reply(type, source, l('This command can be used only in groupchat!'))
+    return get_reply('', groupchat)
+
+
+register_command_handler(handler_pai_random, 'pai_random', 30)
 register_command_handler(handler_pai_control, 'pai', 30)
 register_command_handler(handler_pai_learn, 'pai_learn', 30)
 register_command_handler(handler_pai_occ, 'pai_occ', 30)

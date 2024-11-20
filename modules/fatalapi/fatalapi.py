@@ -2794,15 +2794,15 @@ def msg(target, body, chatid=0):
         except Exception:
             log_exc_error()
             return
-    
+
     if target == 'telegram':
         tbot = cgv('tgbot')
         
         if tbot:
             tbot.send_message(chatid, body)
-        
+
         return
-    
+
     if target == 'tgclient':
         tgcli = cgv('tgram_client')
         

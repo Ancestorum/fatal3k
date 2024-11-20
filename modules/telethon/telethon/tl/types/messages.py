@@ -5,7 +5,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeAvailableEffect, TypeAvailableReaction, TypeBotApp, TypeBotInlineResult, TypeChat, TypeChatAdminWithInvites, TypeChatFull, TypeChatInviteImporter, TypeDialog, TypeDialogFilter, TypeDocument, TypeEmojiGroup, TypeEncryptedFile, TypeExportedChatInvite, TypeForumTopic, TypeHighScore, TypeInlineBotSwitchPM, TypeInlineBotWebView, TypeMessage, TypeMessagePeerReaction, TypeMessagePeerVote, TypeMessageViews, TypeMessagesFilter, TypeMissingInvitee, TypePeerSettings, TypeQuickReply, TypeReaction, TypeSavedDialog, TypeSavedReactionTag, TypeSearchResultsCalendarPeriod, TypeSearchResultsPosition, TypeSponsoredMessage, TypeStickerKeyword, TypeStickerPack, TypeStickerSet, TypeStickerSetCovered, TypeTextWithEntities, TypeUpdates, TypeUser, TypeWebPage
+    from ...tl.types import TypeAvailableEffect, TypeAvailableReaction, TypeBotApp, TypeBotInlineResult, TypeChat, TypeChatAdminWithInvites, TypeChatFull, TypeChatInviteImporter, TypeDialog, TypeDialogFilter, TypeDocument, TypeEmojiGroup, TypeEncryptedFile, TypeExportedChatInvite, TypeForumTopic, TypeHighScore, TypeInlineBotSwitchPM, TypeInlineBotWebView, TypeInlineQueryPeerType, TypeMessage, TypeMessagePeerReaction, TypeMessagePeerVote, TypeMessageViews, TypeMessagesFilter, TypeMissingInvitee, TypePeerSettings, TypeQuickReply, TypeReaction, TypeSavedDialog, TypeSavedReactionTag, TypeSearchResultsCalendarPeriod, TypeSearchResultsPosition, TypeSponsoredMessage, TypeStickerKeyword, TypeStickerPack, TypeStickerSet, TypeStickerSetCovered, TypeTextWithEntities, TypeUpdates, TypeUser, TypeWebPage
     from ...tl.types.updates import TypeState
 
 
@@ -429,6 +429,38 @@ class BotCallbackAnswer(TLObject):
             _url = None
         _cache_time = reader.read_int()
         return cls(cache_time=_cache_time, alert=_alert, has_url=_has_url, native_ui=_native_ui, message=_message, url=_url)
+
+
+class BotPreparedInlineMessage(TLObject):
+    CONSTRUCTOR_ID = 0x8ecf0511
+    SUBCLASS_OF_ID = 0xef9119bb
+
+    def __init__(self, id: str, expire_date: Optional[datetime]):
+        """
+        Constructor for messages.BotPreparedInlineMessage: Instance of BotPreparedInlineMessage.
+        """
+        self.id = id
+        self.expire_date = expire_date
+
+    def to_dict(self):
+        return {
+            '_': 'BotPreparedInlineMessage',
+            'id': self.id,
+            'expire_date': self.expire_date
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x11\x05\xcf\x8e',
+            self.serialize_bytes(self.id),
+            self.serialize_datetime(self.expire_date),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _id = reader.tgread_string()
+        _expire_date = reader.tgread_date()
+        return cls(id=_id, expire_date=_expire_date)
 
 
 class BotResults(TLObject):
@@ -2261,6 +2293,60 @@ class PeerSettings(TLObject):
             _users.append(_x)
 
         return cls(settings=_settings, chats=_chats, users=_users)
+
+
+class PreparedInlineMessage(TLObject):
+    CONSTRUCTOR_ID = 0xff57708d
+    SUBCLASS_OF_ID = 0x490ddf4d
+
+    def __init__(self, query_id: int, result: 'TypeBotInlineResult', peer_types: List['TypeInlineQueryPeerType'], cache_time: int, users: List['TypeUser']):
+        """
+        Constructor for messages.PreparedInlineMessage: Instance of PreparedInlineMessage.
+        """
+        self.query_id = query_id
+        self.result = result
+        self.peer_types = peer_types
+        self.cache_time = cache_time
+        self.users = users
+
+    def to_dict(self):
+        return {
+            '_': 'PreparedInlineMessage',
+            'query_id': self.query_id,
+            'result': self.result.to_dict() if isinstance(self.result, TLObject) else self.result,
+            'peer_types': [] if self.peer_types is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.peer_types],
+            'cache_time': self.cache_time,
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x8dpW\xff',
+            struct.pack('<q', self.query_id),
+            self.result._bytes(),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.peer_types)),b''.join(x._bytes() for x in self.peer_types),
+            struct.pack('<i', self.cache_time),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _query_id = reader.read_long()
+        _result = reader.tgread_object()
+        reader.read_int()
+        _peer_types = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _peer_types.append(_x)
+
+        _cache_time = reader.read_int()
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(query_id=_query_id, result=_result, peer_types=_peer_types, cache_time=_cache_time, users=_users)
 
 
 class QuickReplies(TLObject):

@@ -3,7 +3,7 @@
 #  fatal plugin
 #  chatterbox plugin
 
-#  Copyright © 2023 U2 <gx1608@mail.ru>
+#  Copyright © 2023 U2 <u2_office@mail.ru>
 #  A bit of editions © 2023 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify

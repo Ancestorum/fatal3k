@@ -5,7 +5,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeBankCardOpenUrl, TypeChat, TypeDataJSON, TypeInvoice, TypePaymentFormMethod, TypePaymentRequestedInfo, TypePaymentSavedCredentials, TypePeer, TypeShippingOption, TypeStarsTransaction, TypeUpdates, TypeUser, TypeWebDocument
+    from ...tl.types import TypeBankCardOpenUrl, TypeChat, TypeDataJSON, TypeInvoice, TypePaymentFormMethod, TypePaymentRequestedInfo, TypePaymentSavedCredentials, TypePeer, TypeShippingOption, TypeStarGift, TypeStarsRevenueStatus, TypeStarsSubscription, TypeStarsTransaction, TypeStatsGraph, TypeUpdates, TypeUser, TypeUserStarGift, TypeWebDocument
 
 
 
@@ -217,20 +217,21 @@ class GiveawayInfo(TLObject):
 
 
 class GiveawayInfoResults(TLObject):
-    CONSTRUCTOR_ID = 0xcd5570
+    CONSTRUCTOR_ID = 0xe175e66f
     SUBCLASS_OF_ID = 0x96a377bd
 
-    def __init__(self, start_date: Optional[datetime], finish_date: Optional[datetime], winners_count: int, activated_count: int, winner: Optional[bool]=None, refunded: Optional[bool]=None, gift_code_slug: Optional[str]=None):
+    def __init__(self, start_date: Optional[datetime], finish_date: Optional[datetime], winners_count: int, winner: Optional[bool]=None, refunded: Optional[bool]=None, gift_code_slug: Optional[str]=None, stars_prize: Optional[int]=None, activated_count: Optional[int]=None):
         """
         Constructor for payments.GiveawayInfo: Instance of either GiveawayInfo, GiveawayInfoResults.
         """
         self.start_date = start_date
         self.finish_date = finish_date
         self.winners_count = winners_count
-        self.activated_count = activated_count
         self.winner = winner
         self.refunded = refunded
         self.gift_code_slug = gift_code_slug
+        self.stars_prize = stars_prize
+        self.activated_count = activated_count
 
     def to_dict(self):
         return {
@@ -238,22 +239,23 @@ class GiveawayInfoResults(TLObject):
             'start_date': self.start_date,
             'finish_date': self.finish_date,
             'winners_count': self.winners_count,
-            'activated_count': self.activated_count,
             'winner': self.winner,
             'refunded': self.refunded,
-            'gift_code_slug': self.gift_code_slug
+            'gift_code_slug': self.gift_code_slug,
+            'stars_prize': self.stars_prize,
+            'activated_count': self.activated_count
         }
 
     def _bytes(self):
-        assert ((self.winner or self.winner is not None) and (self.gift_code_slug or self.gift_code_slug is not None)) or ((self.winner is None or self.winner is False) and (self.gift_code_slug is None or self.gift_code_slug is False)), 'winner, gift_code_slug parameters must all be False-y (like None) or all me True-y'
         return b''.join((
-            b'pU\xcd\x00',
-            struct.pack('<I', (0 if self.winner is None or self.winner is False else 1) | (0 if self.refunded is None or self.refunded is False else 2) | (0 if self.gift_code_slug is None or self.gift_code_slug is False else 1)),
+            b'o\xe6u\xe1',
+            struct.pack('<I', (0 if self.winner is None or self.winner is False else 1) | (0 if self.refunded is None or self.refunded is False else 2) | (0 if self.gift_code_slug is None or self.gift_code_slug is False else 8) | (0 if self.stars_prize is None or self.stars_prize is False else 16) | (0 if self.activated_count is None or self.activated_count is False else 4)),
             self.serialize_datetime(self.start_date),
             b'' if self.gift_code_slug is None or self.gift_code_slug is False else (self.serialize_bytes(self.gift_code_slug)),
+            b'' if self.stars_prize is None or self.stars_prize is False else (struct.pack('<q', self.stars_prize)),
             self.serialize_datetime(self.finish_date),
             struct.pack('<i', self.winners_count),
-            struct.pack('<i', self.activated_count),
+            b'' if self.activated_count is None or self.activated_count is False else (struct.pack('<i', self.activated_count)),
         ))
 
     @classmethod
@@ -263,14 +265,21 @@ class GiveawayInfoResults(TLObject):
         _winner = bool(flags & 1)
         _refunded = bool(flags & 2)
         _start_date = reader.tgread_date()
-        if flags & 1:
+        if flags & 8:
             _gift_code_slug = reader.tgread_string()
         else:
             _gift_code_slug = None
+        if flags & 16:
+            _stars_prize = reader.read_long()
+        else:
+            _stars_prize = None
         _finish_date = reader.tgread_date()
         _winners_count = reader.read_int()
-        _activated_count = reader.read_int()
-        return cls(start_date=_start_date, finish_date=_finish_date, winners_count=_winners_count, activated_count=_activated_count, winner=_winner, refunded=_refunded, gift_code_slug=_gift_code_slug)
+        if flags & 4:
+            _activated_count = reader.read_int()
+        else:
+            _activated_count = None
+        return cls(start_date=_start_date, finish_date=_finish_date, winners_count=_winners_count, winner=_winner, refunded=_refunded, gift_code_slug=_gift_code_slug, stars_prize=_stars_prize, activated_count=_activated_count)
 
 
 class PaymentForm(TLObject):
@@ -279,7 +288,7 @@ class PaymentForm(TLObject):
 
     def __init__(self, form_id: int, bot_id: int, title: str, description: str, invoice: 'TypeInvoice', provider_id: int, url: str, users: List['TypeUser'], can_save_credentials: Optional[bool]=None, password_missing: Optional[bool]=None, photo: Optional['TypeWebDocument']=None, native_provider: Optional[str]=None, native_params: Optional['TypeDataJSON']=None, additional_methods: Optional[List['TypePaymentFormMethod']]=None, saved_info: Optional['TypePaymentRequestedInfo']=None, saved_credentials: Optional[List['TypePaymentSavedCredentials']]=None):
         """
-        Constructor for payments.PaymentForm: Instance of either PaymentForm, PaymentFormStars.
+        Constructor for payments.PaymentForm: Instance of either PaymentForm, PaymentFormStars, PaymentFormStarGift.
         """
         self.form_id = form_id
         self.bot_id = bot_id
@@ -396,13 +405,45 @@ class PaymentForm(TLObject):
         return cls(form_id=_form_id, bot_id=_bot_id, title=_title, description=_description, invoice=_invoice, provider_id=_provider_id, url=_url, users=_users, can_save_credentials=_can_save_credentials, password_missing=_password_missing, photo=_photo, native_provider=_native_provider, native_params=_native_params, additional_methods=_additional_methods, saved_info=_saved_info, saved_credentials=_saved_credentials)
 
 
+class PaymentFormStarGift(TLObject):
+    CONSTRUCTOR_ID = 0xb425cfe1
+    SUBCLASS_OF_ID = 0xa0483f19
+
+    def __init__(self, form_id: int, invoice: 'TypeInvoice'):
+        """
+        Constructor for payments.PaymentForm: Instance of either PaymentForm, PaymentFormStars, PaymentFormStarGift.
+        """
+        self.form_id = form_id
+        self.invoice = invoice
+
+    def to_dict(self):
+        return {
+            '_': 'PaymentFormStarGift',
+            'form_id': self.form_id,
+            'invoice': self.invoice.to_dict() if isinstance(self.invoice, TLObject) else self.invoice
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xe1\xcf%\xb4',
+            struct.pack('<q', self.form_id),
+            self.invoice._bytes(),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _form_id = reader.read_long()
+        _invoice = reader.tgread_object()
+        return cls(form_id=_form_id, invoice=_invoice)
+
+
 class PaymentFormStars(TLObject):
     CONSTRUCTOR_ID = 0x7bf6b15c
     SUBCLASS_OF_ID = 0xa0483f19
 
     def __init__(self, form_id: int, bot_id: int, title: str, description: str, invoice: 'TypeInvoice', users: List['TypeUser'], photo: Optional['TypeWebDocument']=None):
         """
-        Constructor for payments.PaymentForm: Instance of either PaymentForm, PaymentFormStars.
+        Constructor for payments.PaymentForm: Instance of either PaymentForm, PaymentFormStars, PaymentFormStarGift.
         """
         self.form_id = form_id
         self.bot_id = bot_id
@@ -727,36 +768,193 @@ class SavedInfo(TLObject):
         return cls(has_saved_credentials=_has_saved_credentials, saved_info=_saved_info)
 
 
+class StarGifts(TLObject):
+    CONSTRUCTOR_ID = 0x901689ea
+    SUBCLASS_OF_ID = 0x6178d9a4
+
+    def __init__(self, hash: int, gifts: List['TypeStarGift']):
+        """
+        Constructor for payments.StarGifts: Instance of either StarGiftsNotModified, StarGifts.
+        """
+        self.hash = hash
+        self.gifts = gifts
+
+    def to_dict(self):
+        return {
+            '_': 'StarGifts',
+            'hash': self.hash,
+            'gifts': [] if self.gifts is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.gifts]
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xea\x89\x16\x90',
+            struct.pack('<i', self.hash),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.gifts)),b''.join(x._bytes() for x in self.gifts),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _hash = reader.read_int()
+        reader.read_int()
+        _gifts = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _gifts.append(_x)
+
+        return cls(hash=_hash, gifts=_gifts)
+
+
+class StarGiftsNotModified(TLObject):
+    CONSTRUCTOR_ID = 0xa388a368
+    SUBCLASS_OF_ID = 0x6178d9a4
+
+    def to_dict(self):
+        return {
+            '_': 'StarGiftsNotModified'
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'h\xa3\x88\xa3',
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        return cls()
+
+
+class StarsRevenueAdsAccountUrl(TLObject):
+    CONSTRUCTOR_ID = 0x394e7f21
+    SUBCLASS_OF_ID = 0x4a228b15
+
+    def __init__(self, url: str):
+        """
+        Constructor for payments.StarsRevenueAdsAccountUrl: Instance of StarsRevenueAdsAccountUrl.
+        """
+        self.url = url
+
+    def to_dict(self):
+        return {
+            '_': 'StarsRevenueAdsAccountUrl',
+            'url': self.url
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'!\x7fN9',
+            self.serialize_bytes(self.url),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _url = reader.tgread_string()
+        return cls(url=_url)
+
+
+class StarsRevenueStats(TLObject):
+    CONSTRUCTOR_ID = 0xc92bb73b
+    SUBCLASS_OF_ID = 0xa54755f3
+
+    def __init__(self, revenue_graph: 'TypeStatsGraph', status: 'TypeStarsRevenueStatus', usd_rate: float):
+        """
+        Constructor for payments.StarsRevenueStats: Instance of StarsRevenueStats.
+        """
+        self.revenue_graph = revenue_graph
+        self.status = status
+        self.usd_rate = usd_rate
+
+    def to_dict(self):
+        return {
+            '_': 'StarsRevenueStats',
+            'revenue_graph': self.revenue_graph.to_dict() if isinstance(self.revenue_graph, TLObject) else self.revenue_graph,
+            'status': self.status.to_dict() if isinstance(self.status, TLObject) else self.status,
+            'usd_rate': self.usd_rate
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b';\xb7+\xc9',
+            self.revenue_graph._bytes(),
+            self.status._bytes(),
+            struct.pack('<d', self.usd_rate),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _revenue_graph = reader.tgread_object()
+        _status = reader.tgread_object()
+        _usd_rate = reader.read_double()
+        return cls(revenue_graph=_revenue_graph, status=_status, usd_rate=_usd_rate)
+
+
+class StarsRevenueWithdrawalUrl(TLObject):
+    CONSTRUCTOR_ID = 0x1dab80b7
+    SUBCLASS_OF_ID = 0x8466a0ee
+
+    def __init__(self, url: str):
+        """
+        Constructor for payments.StarsRevenueWithdrawalUrl: Instance of StarsRevenueWithdrawalUrl.
+        """
+        self.url = url
+
+    def to_dict(self):
+        return {
+            '_': 'StarsRevenueWithdrawalUrl',
+            'url': self.url
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\xb7\x80\xab\x1d',
+            self.serialize_bytes(self.url),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        _url = reader.tgread_string()
+        return cls(url=_url)
+
+
 class StarsStatus(TLObject):
-    CONSTRUCTOR_ID = 0x8cf4ee60
+    CONSTRUCTOR_ID = 0xbbfa316c
     SUBCLASS_OF_ID = 0x6e9c1d6f
 
-    def __init__(self, balance: int, history: List['TypeStarsTransaction'], chats: List['TypeChat'], users: List['TypeUser'], next_offset: Optional[str]=None):
+    def __init__(self, balance: int, chats: List['TypeChat'], users: List['TypeUser'], subscriptions: Optional[List['TypeStarsSubscription']]=None, subscriptions_next_offset: Optional[str]=None, subscriptions_missing_balance: Optional[int]=None, history: Optional[List['TypeStarsTransaction']]=None, next_offset: Optional[str]=None):
         """
         Constructor for payments.StarsStatus: Instance of StarsStatus.
         """
         self.balance = balance
-        self.history = history
         self.chats = chats
         self.users = users
+        self.subscriptions = subscriptions
+        self.subscriptions_next_offset = subscriptions_next_offset
+        self.subscriptions_missing_balance = subscriptions_missing_balance
+        self.history = history
         self.next_offset = next_offset
 
     def to_dict(self):
         return {
             '_': 'StarsStatus',
             'balance': self.balance,
-            'history': [] if self.history is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.history],
             'chats': [] if self.chats is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.chats],
             'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users],
+            'subscriptions': [] if self.subscriptions is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.subscriptions],
+            'subscriptions_next_offset': self.subscriptions_next_offset,
+            'subscriptions_missing_balance': self.subscriptions_missing_balance,
+            'history': [] if self.history is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.history],
             'next_offset': self.next_offset
         }
 
     def _bytes(self):
         return b''.join((
-            b'`\xee\xf4\x8c',
-            struct.pack('<I', (0 if self.next_offset is None or self.next_offset is False else 1)),
+            b'l1\xfa\xbb',
+            struct.pack('<I', (0 if self.subscriptions is None or self.subscriptions is False else 2) | (0 if self.subscriptions_next_offset is None or self.subscriptions_next_offset is False else 4) | (0 if self.subscriptions_missing_balance is None or self.subscriptions_missing_balance is False else 16) | (0 if self.history is None or self.history is False else 8) | (0 if self.next_offset is None or self.next_offset is False else 1)),
             struct.pack('<q', self.balance),
-            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.history)),b''.join(x._bytes() for x in self.history),
+            b'' if self.subscriptions is None or self.subscriptions is False else b''.join((b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.subscriptions)),b''.join(x._bytes() for x in self.subscriptions))),
+            b'' if self.subscriptions_next_offset is None or self.subscriptions_next_offset is False else (self.serialize_bytes(self.subscriptions_next_offset)),
+            b'' if self.subscriptions_missing_balance is None or self.subscriptions_missing_balance is False else (struct.pack('<q', self.subscriptions_missing_balance)),
+            b'' if self.history is None or self.history is False else b''.join((b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.history)),b''.join(x._bytes() for x in self.history))),
             b'' if self.next_offset is None or self.next_offset is False else (self.serialize_bytes(self.next_offset)),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.chats)),b''.join(x._bytes() for x in self.chats),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
@@ -767,12 +965,32 @@ class StarsStatus(TLObject):
         flags = reader.read_int()
 
         _balance = reader.read_long()
-        reader.read_int()
-        _history = []
-        for _ in range(reader.read_int()):
-            _x = reader.tgread_object()
-            _history.append(_x)
+        if flags & 2:
+            reader.read_int()
+            _subscriptions = []
+            for _ in range(reader.read_int()):
+                _x = reader.tgread_object()
+                _subscriptions.append(_x)
 
+        else:
+            _subscriptions = None
+        if flags & 4:
+            _subscriptions_next_offset = reader.tgread_string()
+        else:
+            _subscriptions_next_offset = None
+        if flags & 16:
+            _subscriptions_missing_balance = reader.read_long()
+        else:
+            _subscriptions_missing_balance = None
+        if flags & 8:
+            reader.read_int()
+            _history = []
+            for _ in range(reader.read_int()):
+                _x = reader.tgread_object()
+                _history.append(_x)
+
+        else:
+            _history = None
         if flags & 1:
             _next_offset = reader.tgread_string()
         else:
@@ -789,7 +1007,63 @@ class StarsStatus(TLObject):
             _x = reader.tgread_object()
             _users.append(_x)
 
-        return cls(balance=_balance, history=_history, chats=_chats, users=_users, next_offset=_next_offset)
+        return cls(balance=_balance, chats=_chats, users=_users, subscriptions=_subscriptions, subscriptions_next_offset=_subscriptions_next_offset, subscriptions_missing_balance=_subscriptions_missing_balance, history=_history, next_offset=_next_offset)
+
+
+class UserStarGifts(TLObject):
+    CONSTRUCTOR_ID = 0x6b65b517
+    SUBCLASS_OF_ID = 0x104df2c
+
+    def __init__(self, count: int, gifts: List['TypeUserStarGift'], users: List['TypeUser'], next_offset: Optional[str]=None):
+        """
+        Constructor for payments.UserStarGifts: Instance of UserStarGifts.
+        """
+        self.count = count
+        self.gifts = gifts
+        self.users = users
+        self.next_offset = next_offset
+
+    def to_dict(self):
+        return {
+            '_': 'UserStarGifts',
+            'count': self.count,
+            'gifts': [] if self.gifts is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.gifts],
+            'users': [] if self.users is None else [x.to_dict() if isinstance(x, TLObject) else x for x in self.users],
+            'next_offset': self.next_offset
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x17\xb5ek',
+            struct.pack('<I', (0 if self.next_offset is None or self.next_offset is False else 1)),
+            struct.pack('<i', self.count),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.gifts)),b''.join(x._bytes() for x in self.gifts),
+            b'' if self.next_offset is None or self.next_offset is False else (self.serialize_bytes(self.next_offset)),
+            b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.users)),b''.join(x._bytes() for x in self.users),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _count = reader.read_int()
+        reader.read_int()
+        _gifts = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _gifts.append(_x)
+
+        if flags & 1:
+            _next_offset = reader.tgread_string()
+        else:
+            _next_offset = None
+        reader.read_int()
+        _users = []
+        for _ in range(reader.read_int()):
+            _x = reader.tgread_object()
+            _users.append(_x)
+
+        return cls(count=_count, gifts=_gifts, users=_users, next_offset=_next_offset)
 
 
 class ValidatedRequestedInfo(TLObject):

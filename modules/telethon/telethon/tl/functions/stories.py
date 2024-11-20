@@ -6,7 +6,7 @@ import os
 import struct
 from datetime import datetime
 if TYPE_CHECKING:
-    from ...tl.types import TypeInputMedia, TypeInputPeer, TypeInputPrivacyRule, TypeMediaArea, TypeMessageEntity, TypeReaction, TypeReportReason
+    from ...tl.types import TypeInputMedia, TypeInputPeer, TypeInputPrivacyRule, TypeMediaArea, TypeMessageEntity, TypeReaction
 
 
 
@@ -759,16 +759,16 @@ class ReadStoriesRequest(TLRequest):
 
 
 class ReportRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x1923fa8c
-    SUBCLASS_OF_ID = 0xf5b399ac
+    CONSTRUCTOR_ID = 0x19d8eb45
+    SUBCLASS_OF_ID = 0xacd3f438
 
-    def __init__(self, peer: 'TypeInputPeer', id: List[int], reason: 'TypeReportReason', message: str):
+    def __init__(self, peer: 'TypeInputPeer', id: List[int], option: bytes, message: str):
         """
-        :returns Bool: This type has no constructors.
+        :returns ReportResult: Instance of either ReportResultChooseOption, ReportResultAddComment, ReportResultReported.
         """
         self.peer = peer
         self.id = id
-        self.reason = reason
+        self.option = option
         self.message = message
 
     async def resolve(self, client, utils):
@@ -779,16 +779,16 @@ class ReportRequest(TLRequest):
             '_': 'ReportRequest',
             'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer,
             'id': [] if self.id is None else self.id[:],
-            'reason': self.reason.to_dict() if isinstance(self.reason, TLObject) else self.reason,
+            'option': self.option,
             'message': self.message
         }
 
     def _bytes(self):
         return b''.join((
-            b'\x8c\xfa#\x19',
+            b'E\xeb\xd8\x19',
             self.peer._bytes(),
             b'\x15\xc4\xb5\x1c',struct.pack('<i', len(self.id)),b''.join(struct.pack('<i', x) for x in self.id),
-            self.reason._bytes(),
+            self.serialize_bytes(self.option),
             self.serialize_bytes(self.message),
         ))
 
@@ -801,9 +801,69 @@ class ReportRequest(TLRequest):
             _x = reader.read_int()
             _id.append(_x)
 
-        _reason = reader.tgread_object()
+        _option = reader.tgread_bytes()
         _message = reader.tgread_string()
-        return cls(peer=_peer, id=_id, reason=_reason, message=_message)
+        return cls(peer=_peer, id=_id, option=_option, message=_message)
+
+
+class SearchPostsRequest(TLRequest):
+    CONSTRUCTOR_ID = 0xd1810907
+    SUBCLASS_OF_ID = 0x17790b35
+
+    def __init__(self, offset: str, limit: int, hashtag: Optional[str]=None, area: Optional['TypeMediaArea']=None, peer: Optional['TypeInputPeer']=None):
+        """
+        :returns stories.FoundStories: Instance of FoundStories.
+        """
+        self.offset = offset
+        self.limit = limit
+        self.hashtag = hashtag
+        self.area = area
+        self.peer = peer
+
+    async def resolve(self, client, utils):
+        if self.peer:
+            self.peer = utils.get_input_peer(await client.get_input_entity(self.peer))
+
+    def to_dict(self):
+        return {
+            '_': 'SearchPostsRequest',
+            'offset': self.offset,
+            'limit': self.limit,
+            'hashtag': self.hashtag,
+            'area': self.area.to_dict() if isinstance(self.area, TLObject) else self.area,
+            'peer': self.peer.to_dict() if isinstance(self.peer, TLObject) else self.peer
+        }
+
+    def _bytes(self):
+        return b''.join((
+            b'\x07\t\x81\xd1',
+            struct.pack('<I', (0 if self.hashtag is None or self.hashtag is False else 1) | (0 if self.area is None or self.area is False else 2) | (0 if self.peer is None or self.peer is False else 4)),
+            b'' if self.hashtag is None or self.hashtag is False else (self.serialize_bytes(self.hashtag)),
+            b'' if self.area is None or self.area is False else (self.area._bytes()),
+            b'' if self.peer is None or self.peer is False else (self.peer._bytes()),
+            self.serialize_bytes(self.offset),
+            struct.pack('<i', self.limit),
+        ))
+
+    @classmethod
+    def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        if flags & 1:
+            _hashtag = reader.tgread_string()
+        else:
+            _hashtag = None
+        if flags & 2:
+            _area = reader.tgread_object()
+        else:
+            _area = None
+        if flags & 4:
+            _peer = reader.tgread_object()
+        else:
+            _peer = None
+        _offset = reader.tgread_string()
+        _limit = reader.read_int()
+        return cls(offset=_offset, limit=_limit, hashtag=_hashtag, area=_area, peer=_peer)
 
 
 class SendReactionRequest(TLRequest):

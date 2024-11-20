@@ -45,41 +45,6 @@ class CheckUsernameRequest(TLRequest):
         return cls(channel=_channel, username=_username)
 
 
-class ClickSponsoredMessageRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x18afbc93
-    SUBCLASS_OF_ID = 0xf5b399ac
-
-    def __init__(self, channel: 'TypeInputChannel', random_id: bytes=None):
-        """
-        :returns Bool: This type has no constructors.
-        """
-        self.channel = channel
-        self.random_id = random_id if random_id is not None else int.from_bytes(os.urandom(4), 'big', signed=True)
-
-    async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
-
-    def to_dict(self):
-        return {
-            '_': 'ClickSponsoredMessageRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
-            'random_id': self.random_id
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\x93\xbc\xaf\x18',
-            self.channel._bytes(),
-            self.serialize_bytes(self.random_id),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _channel = reader.tgread_object()
-        _random_id = reader.tgread_bytes()
-        return cls(channel=_channel, random_id=_random_id)
-
-
 class ConvertToGigagroupRequest(TLRequest):
     CONSTRUCTOR_ID = 0xb290c69
     SUBCLASS_OF_ID = 0x8af52aac
@@ -1345,37 +1310,6 @@ class GetSendAsRequest(TLRequest):
         return cls(peer=_peer)
 
 
-class GetSponsoredMessagesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xec210fbf
-    SUBCLASS_OF_ID = 0x7f4169e0
-
-    def __init__(self, channel: 'TypeInputChannel'):
-        """
-        :returns messages.SponsoredMessages: Instance of either SponsoredMessages, SponsoredMessagesEmpty.
-        """
-        self.channel = channel
-
-    async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
-
-    def to_dict(self):
-        return {
-            '_': 'GetSponsoredMessagesRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\xbf\x0f!\xec',
-            self.channel._bytes(),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _channel = reader.tgread_object()
-        return cls(channel=_channel)
-
-
 class InviteToChannelRequest(TLRequest):
     CONSTRUCTOR_ID = 0xc9e33d54
     SUBCLASS_OF_ID = 0x3dbe90a1
@@ -1722,45 +1656,6 @@ class ReportSpamRequest(TLRequest):
             _id.append(_x)
 
         return cls(channel=_channel, participant=_participant, id=_id)
-
-
-class ReportSponsoredMessageRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xaf8ff6b9
-    SUBCLASS_OF_ID = 0x26231822
-
-    def __init__(self, channel: 'TypeInputChannel', option: bytes, random_id: bytes=None):
-        """
-        :returns channels.SponsoredMessageReportResult: Instance of either SponsoredMessageReportResultChooseOption, SponsoredMessageReportResultAdsHidden, SponsoredMessageReportResultReported.
-        """
-        self.channel = channel
-        self.option = option
-        self.random_id = random_id if random_id is not None else int.from_bytes(os.urandom(4), 'big', signed=True)
-
-    async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
-
-    def to_dict(self):
-        return {
-            '_': 'ReportSponsoredMessageRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
-            'option': self.option,
-            'random_id': self.random_id
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\xb9\xf6\x8f\xaf',
-            self.channel._bytes(),
-            self.serialize_bytes(self.random_id),
-            self.serialize_bytes(self.option),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _channel = reader.tgread_object()
-        _random_id = reader.tgread_bytes()
-        _option = reader.tgread_bytes()
-        return cls(channel=_channel, option=_option, random_id=_random_id)
 
 
 class RestrictSponsoredMessagesRequest(TLRequest):
@@ -2197,15 +2092,16 @@ class TogglePreHistoryHiddenRequest(TLRequest):
 
 
 class ToggleSignaturesRequest(TLRequest):
-    CONSTRUCTOR_ID = 0x1f69b606
+    CONSTRUCTOR_ID = 0x418d549c
     SUBCLASS_OF_ID = 0x8af52aac
 
-    def __init__(self, channel: 'TypeInputChannel', enabled: bool):
+    def __init__(self, channel: 'TypeInputChannel', signatures_enabled: Optional[bool]=None, profiles_enabled: Optional[bool]=None):
         """
         :returns Updates: Instance of either UpdatesTooLong, UpdateShortMessage, UpdateShortChatMessage, UpdateShort, UpdatesCombined, Updates, UpdateShortSentMessage.
         """
         self.channel = channel
-        self.enabled = enabled
+        self.signatures_enabled = signatures_enabled
+        self.profiles_enabled = profiles_enabled
 
     async def resolve(self, client, utils):
         self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
@@ -2214,21 +2110,25 @@ class ToggleSignaturesRequest(TLRequest):
         return {
             '_': 'ToggleSignaturesRequest',
             'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
-            'enabled': self.enabled
+            'signatures_enabled': self.signatures_enabled,
+            'profiles_enabled': self.profiles_enabled
         }
 
     def _bytes(self):
         return b''.join((
-            b'\x06\xb6i\x1f',
+            b'\x9cT\x8dA',
+            struct.pack('<I', (0 if self.signatures_enabled is None or self.signatures_enabled is False else 1) | (0 if self.profiles_enabled is None or self.profiles_enabled is False else 2)),
             self.channel._bytes(),
-            b'\xb5ur\x99' if self.enabled else b'7\x97y\xbc',
         ))
 
     @classmethod
     def from_reader(cls, reader):
+        flags = reader.read_int()
+
+        _signatures_enabled = bool(flags & 1)
+        _profiles_enabled = bool(flags & 2)
         _channel = reader.tgread_object()
-        _enabled = reader.tgread_bool()
-        return cls(channel=_channel, enabled=_enabled)
+        return cls(channel=_channel, signatures_enabled=_signatures_enabled, profiles_enabled=_profiles_enabled)
 
 
 class ToggleSlowModeRequest(TLRequest):
@@ -2498,39 +2398,4 @@ class UpdateUsernameRequest(TLRequest):
         _channel = reader.tgread_object()
         _username = reader.tgread_string()
         return cls(channel=_channel, username=_username)
-
-
-class ViewSponsoredMessageRequest(TLRequest):
-    CONSTRUCTOR_ID = 0xbeaedb94
-    SUBCLASS_OF_ID = 0xf5b399ac
-
-    def __init__(self, channel: 'TypeInputChannel', random_id: bytes=None):
-        """
-        :returns Bool: This type has no constructors.
-        """
-        self.channel = channel
-        self.random_id = random_id if random_id is not None else int.from_bytes(os.urandom(4), 'big', signed=True)
-
-    async def resolve(self, client, utils):
-        self.channel = utils.get_input_channel(await client.get_input_entity(self.channel))
-
-    def to_dict(self):
-        return {
-            '_': 'ViewSponsoredMessageRequest',
-            'channel': self.channel.to_dict() if isinstance(self.channel, TLObject) else self.channel,
-            'random_id': self.random_id
-        }
-
-    def _bytes(self):
-        return b''.join((
-            b'\x94\xdb\xae\xbe',
-            self.channel._bytes(),
-            self.serialize_bytes(self.random_id),
-        ))
-
-    @classmethod
-    def from_reader(cls, reader):
-        _channel = reader.tgread_object()
-        _random_id = reader.tgread_bytes()
-        return cls(channel=_channel, random_id=_random_id)
 
