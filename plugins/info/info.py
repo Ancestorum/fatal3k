@@ -916,6 +916,9 @@ def handler_user_join(groupchat, nick, aff, role):
     
     fjid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
     
+    if not fjid:
+        return
+    
     check_sql = "SELECT nick FROM users WHERE nick=?"
     qres = sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), check_sql, nick)
     
@@ -927,11 +930,11 @@ def handler_user_join(groupchat, nick, aff, role):
     if qres:
         upd_sql = "UPDATE users SET ujoin=?, jid=? WHERE nick=?;"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, ujoin, fjid.strip(), nick) 
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), upd_sql, ujoin, sstrp(fjid), nick) 
     else:
         ins_sql = "INSERT INTO users (nick, jid, ujoin, uleave, reason) VALUES (?, ?, ?, ?, ?);"
         
-        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql, nick, fjid.strip(), ujoin, ujoin, '')
+        sqlquery('dynamic/%s/%s/users.db' % (cid, groupchat), ins_sql, nick, sstrp(fjid), ujoin, ujoin, '')
         
     reminds = get_reminds(groupchat)
     

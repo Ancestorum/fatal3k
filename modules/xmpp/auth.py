@@ -208,12 +208,13 @@ class SASL(PlugIn):
         mecs=[]
         for mec in feats.getTag('mechanisms',namespace=NS_SASL).getTags('mechanism'):
             mecs.append(mec.getData())
+        scrm = [li for li in mecs if li.startswith('SCRAM-SHA-')]    
         self._owner.RegisterHandler('challenge',self.SASLHandler,xmlns=NS_SASL)
         self._owner.RegisterHandler('failure',self.SASLHandler,xmlns=NS_SASL)
         self._owner.RegisterHandler('success',self.SASLHandler,xmlns=NS_SASL)
         if "ANONYMOUS" in mecs and self.username == None:
             node=Node('auth',attrs={'xmlns':NS_SASL,'mechanism':'ANONYMOUS'})
-        elif self._scrmsh512 or self._scrmsh256 or self._scrmsh1 in mecs:
+        elif scrm:
             self._mech = 'SSHA'
             self._client_first_message_bare = 'n=%s,r=%s' % (self.username, self._client_nonce)
             client_first_message = '%s%s' % (self._channel_binding, self._client_first_message_bare)

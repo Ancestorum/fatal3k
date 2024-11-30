@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2002-2005 Mike Mintz <mikemintz@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -42,6 +42,14 @@ def getacc_nicks(gch):
         return nicks
     return []
 
+def ulogin(groupchat, nick):
+    jid = get_client_var(groupchat, 'admin_logins', nick)
+
+    if jid:
+        set_user_access(jid)
+        rmv_client_var(groupchat, 'admin_logins', nick)
+        rmv_fatal_task('auto_logout/%s' % (jid))
+
 def handler_access_login(type, source, parameters):
     jid = get_true_jid(source)
     
@@ -50,10 +58,16 @@ def handler_access_login(type, source, parameters):
     if not admpass:
         return reply('private', source, l('Password not set yet!'))
     
+    probc = source[1]
+    
+    if is_groupchat(probc):
+        nick = source[2]
+        set_client_var(probc, 'admin_logins', nick, jid)
+    
     if parameters.strip() == admpass:
         set_user_access(jid, 100)
         
-        add_fatal_task('auto_logout/%s' % (jid), handler_access_logout, ('null', source, parameters), ival=3600, once=True)
+        add_fatal_task('auto_logout/%s' % (jid), handler_access_logout, ('null', source, ''), ival=3600, once=True)
         
         return reply('private', source, l('Password adopted, a global full access has been granted!'))
     else:
@@ -71,6 +85,20 @@ def handler_access_logout(type, source, parameters):
     set_user_access(jid)
     
     return reply(type, source, l('Logout!'))
+
+def handler_auto_ulogin(groupchat, nick, reason, code):
+    ulogin(groupchat, nick)
+    
+def handler_ulogin_presence(prs):
+    ptype = prs.getType()
+    groupchat = get_stripped(prs.getFrom())
+
+    nick = get_resource(prs.getFrom())
+    
+    scode = prs.getStatusCode()
+
+    if scode == '303' and ptype == 'unavailable':
+        ulogin(groupchat, nick)
 
 def handler_access_view_access(type, source, parameters):
     accdesc = {'-100': l('(full ignoring)'), '-1': l('(blocked)'), '0': l('(none)'), '1': l('(low user)'), '10': l('(user)'), '11': l('(member)'), '15': l('(moderator)'), '16': l('(moderator)'), '20': l('(admin)'), '30': l('(owner)'), '40': l('(joiner)'), '100': l('(suderadmin)')}
@@ -329,3 +357,5 @@ register_command_handler(handler_access_set_access_glob, 'gaccess_set', 100)
 register_command_handler(handler_cmd_access, 'cmd_access', 100)
 
 register_stage1_init(get_access_state)
+register_leave_handler(handler_auto_ulogin)
+register_presence_handler(handler_ulogin_presence)

@@ -4,7 +4,7 @@
 #  pai plugin
 
 #  Idea from © 2009, Pavel Vishnevsky aka awel
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2024 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -807,7 +807,7 @@ def handler_pai_random(type, source, parameters):
     groupchat = source[1]
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))
-    return get_reply('', groupchat)
+    return get_reply(parameters, groupchat)
 
 
 register_command_handler(handler_pai_random, 'pai_random', 30)

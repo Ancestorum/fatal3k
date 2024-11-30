@@ -709,7 +709,7 @@ def handle_sticker_content(message):
                         msg(wgch, rep)    
 
 def command_messages(message):
-    if (time.time() - message.date) > 8:
+    if (time.time() - message.date) > 17:
         return
 
     cid = get_client_id()

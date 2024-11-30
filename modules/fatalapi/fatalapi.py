@@ -1313,6 +1313,13 @@ def safe_split(parameters, spl=':'):
         splited[1] = nijirel[1].lstrip()
     return splited
 
+def sstrp(st: str) -> str:
+    if st:
+        if isinstance(st, str):
+            return st.strip()
+        return ''
+    return ''
+
 #-------------------------------- Fatal console routine -----------------------------------
 
 def ftcompl(text, state):
