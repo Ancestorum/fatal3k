@@ -47,6 +47,7 @@ from xmpp import simplexml
 from xml.parsers.expat import ExpatError
 import xml.etree.ElementTree as etree
 from xml.etree.ElementTree import ParseError
+from typing import Union
 
 from fatalvar import *
 from fataldmn import *
@@ -1027,27 +1028,24 @@ def sfr_dic_val(dic, oer, *args):
             return oer
     return dic
 
-def get_num_list(lst):
+def get_num_list(lst: list, bra: str=')') -> list:
     if lst:
-        nlst = ['%d) %s' % (lst.index(li) + 1, li) for li in lst]
+        nlst = ['%d%c %s' % (lst.index(li) + 1, bra, li) for li in lst]
         return nlst
-    else:
-        return []
+    return []
 
 def str_to_list(strng, spltr=','):
     if strng:
         lst = strng.split(spltr)
         lst = [li.strip() for li in lst]
         return lst
-    else:
-        return []
+    return []
 
 def list_to_str(lst, spltr=','):
     if type(lst) == list and lst:
         strng = spltr.join(lst)
         return strng
-    else:
-        return ''
+    return ''
 
 def sort_list_dist(lst, rv=False):
     if lst:
@@ -1057,8 +1055,7 @@ def sort_list_dist(lst, rv=False):
         sili.sort(reverse=rv)
              
         return sili
-    else:
-        return []
+    return []
 
 def strip_list_items(lst):
     if lst:
@@ -1300,17 +1297,17 @@ def timeElapsed(time, nz=False):
         return repl[0].strip()
     return rep
 
-def safe_split(parameters, spl=':'):
+def safe_split(parameters: str, spl: str=':') -> list:
     nijirel = parameters.split(spl, 1)
     
     splited = ['', '']
         
     if len(nijirel) == 1:
-        splited[0] = nijirel[0].lstrip()
+        splited[0] = nijirel[0].strip()
         splited[1] = ''
     elif len(nijirel) == 2:
-        splited[0] = nijirel[0].lstrip()
-        splited[1] = nijirel[1].lstrip()
+        splited[0] = nijirel[0].strip()
+        splited[1] = nijirel[1].strip()
     return splited
 
 def sstrp(st: str) -> str:
@@ -2774,6 +2771,35 @@ def leave_groupchat(groupchat, status=''):
         rmv_gch_roster(groupchat)
         remove_chatroom(groupchat)
 
+def send_tgbot_msg(chatid: Union[int, str], body: str) -> str:
+    tbot = get_client_var('tgbot')
+    
+    if tbot:
+        try:
+            tbot.send_message(chatid, body)
+        except Exception:
+            cnt = 3
+            snt = 0
+            while cnt != 0:
+                try:
+                    time.sleep(1)
+                    snt += 1
+                    tbot.send_message(chatid, '<%d> %s' % (snt, body))
+                    return body
+                except Exception:
+                    cnt -= 1
+            return ''
+
+def send_tgcli_msg(chatid: Union[int, str], body: str) -> str:
+    tgcli = get_client_var('tgram_client')
+    
+    if tgcli:
+        try:
+            craiot(tgcli.send_message(chatid, body))
+            return body
+        except Exception:
+            return ''
+
 def msg(target, body, chatid=0):
     if target == 'null':
         return body
@@ -2803,18 +2829,12 @@ def msg(target, body, chatid=0):
             return
 
     if target == 'telegram':
-        tbot = cgv('tgbot')
-        
-        if tbot:
-            tbot.send_message(chatid, body)
+        send_tgbot_msg(chatid, body)
 
         return
 
     if target == 'tgclient':
-        tgcli = cgv('tgram_client')
-        
-        if tgcli:
-            craiot(tgcli.send_message(chatid, body))
+        send_tgcli_msg(chatid, body)
         
         return
     
@@ -3770,7 +3790,6 @@ def reconnect(jid, password, resource, port=5222, tlssl=1):
         rmv_fatal_var(jid, 'gchrosters')
         
         set_fatal_var(jid, 'reconnect', 1)
-        #rmv_all_tasks()
         
         init_fatal_event('client_event')
         
@@ -3886,6 +3905,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
 
         return
     else:
+        rmv_client_var('reconnect')
         sprint('\\Connected using %s.' % (jconn.isConnected().upper()))
 
     inc_fatal_var('connected_count')
@@ -4039,7 +4059,7 @@ def connect_client(jid, password='', resource='', port=5222, tlssl=1):
     threading.stack_size(stk_size)
     
     set_client_var('main_xmpp_stanza_pc', mn_xmpp_thr)
-    set_client_var('reconnect', 0)
+    rmv_client_var('reconnect')
     
     set_client_var('client_state', True)
     set_fatal_event('client_event')

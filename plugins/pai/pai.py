@@ -802,13 +802,11 @@ def handler_pai_show(type, source, parameters):
 
 #-------------------------------------Handlers---------------------------------------------
 
-
 def handler_pai_random(type, source, parameters):
     groupchat = source[1]
     if not is_groupchat(groupchat):
         return reply(type, source, l('This command can be used only in groupchat!'))
     return get_reply(parameters, groupchat)
-
 
 register_command_handler(handler_pai_random, 'pai_random', 30)
 register_command_handler(handler_pai_control, 'pai', 30)

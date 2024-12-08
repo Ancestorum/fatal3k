@@ -742,7 +742,7 @@ def command_messages(message):
     
     set_fatal_var(cid, 'last_tg_msg', message)
     
-    if message.text.startswith('/'): 
+    if message.text.startswith('/') and message.text[1] != ' ': 
         cmdname = message.text.split()[0]
         wprname = cmdname.replace('/','').strip()
         
@@ -948,7 +948,8 @@ def command_messages(message):
                 wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
                 
                 for wgch in wgchs:
-                    msg(wgch, rep)    
+                    if not rep.endswith('_') and not message.text.startswith('/'):
+                        msg(wgch, rep)
 
 def msg_worker(message, public=False):
     cid = get_client_id()
@@ -1059,13 +1060,18 @@ def msg_worker(message, public=False):
         wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
                         
         for wgch in wgchs:
-            fatalapi.msg(wgch, rep)    
+            if not rep.endswith('_') and not caption.startswith('/'):
+                fatalapi.msg(wgch, rep)    
 
 def tgbot_polling_proc():
     cid = get_client_id()
     tbot = get_fatal_var(cid, 'tgbot')
     
-    tbot.infinity_polling(timeout=10, long_polling_timeout = 5)
+    while True:
+        try:
+            tbot.polling(non_stop=True, timeout=80, logger_level=0)
+        except Exception:
+            time.sleep(3)
         
 def album_worker(msgs):
     cid = get_client_id()
@@ -1161,7 +1167,7 @@ def init_tgm_bot():
     if not is_var_set(cid, 'tgbot'):
         bot_api_token = get_cfg_param('tgbot_api_token')
 
-        tbot = telebot.TeleBot(bot_api_token)
+        tbot = telebot.TeleBot(bot_api_token, threaded=False)
         
         set_fatal_var(cid, 'tgbot', tbot)
         

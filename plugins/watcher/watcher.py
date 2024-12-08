@@ -152,7 +152,8 @@ def handler_watcher_mess(type, source, body):
                     if bnick != nick:
                         rep = emoji.emojize(rep)
                         
-                        return msg('telegram', rep, wjid)
+                        if not rep.endswith('_') and not body.startswith('/ '):
+                            return msg('telegram', rep, wjid)
                 else:
                     if type != 'private':
                         return msg(wjid, rep)

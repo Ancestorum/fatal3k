@@ -172,7 +172,11 @@ def handler_weather_gismeteo(type, source, parameters):
                 else:
                     rep += l('Sky: %s, %s.') % (cloud, precip)
                 indx += 1
-            
+                
+                if type == 'public':
+                    rep = sstrp(rep)
+                    break
+                
             return reply(type, source, rep)
         else:
             return reply(type, source, l('Not found!'))

@@ -428,17 +428,20 @@ def recover_remind(gch, rem_handler, recover, reminds):
         rem4 = rem[4]
         rem8 = int(rem[8])
         
-        nick = get_rem_nick(gch, remj)
+        if type == 'private':
+            nick = get_rem_nick(gch, remj)
+        else:
+            nick = rem[0]
         
         source = [gch + '/' + nick, gch, nick]
         
         if not ':' in rem2:
-            rem2 = time.strftime('%H:%M:%S', time.localtime(int(rem4)))
+            rem2 = round((int(rem4) - curt) / 60)
         
         parameters = '%s %s' % (rem2, rem[5])
         
         rem_handler(type, source, parameters, recover, rem[1], rem3, rem[7], rem8, rem[9])
-
+        
 def show_reminds(gch, jid, reminds, pref='', suff='', cycle=False):
     cid = get_client_id()
     
@@ -1613,6 +1616,14 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
         return reply(type, source, l('Only public remind and ctask avalible in this groupchat!'))
 
     if parameters:
+        spldas = safe_split(parameters, ',')
+        probda = spldas[0]
+        day = 0
+        
+        if probda.isdigit():
+            day = int(probda)
+            parameters = spldas[1]
+        
         spltdp = parameters.split(' ', 1)
         
         if len(spltdp) == 2 and not '-' in spltdp[0]:
@@ -1633,7 +1644,7 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                         
                 if brtime:
                     return reply(type, source, l('Invalid syntax!'))
-                
+                                
                 if len(rtime) == 3:
                     sc = int(rtime[2])
                     mn = int(rtime[1])
@@ -1647,20 +1658,29 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     mn = int(rtime[0])
                     hr = ctm[3]
                     
-                if hr:
-                    ctm[3] = hr
-                    
+                if (hr > 24) or (mn > 59) or (sc > 59):
+                    return reply(type, source, l('Invalid syntax!'))
+                
+                ctm[3] = hr
                 ctm[4] = mn
                 ctm[5] = sc
-                    
+
+                if day > ctm[2]:
+                    ctm[2] = day
+
                 dst = tuple(ctm)
                 cts = trunc(time.time())
                 dts = trunc(time.mktime(dst))
                 
                 secs = dts - cts
-                
-                if abs(secs) != secs and not recover:
-                    return reply(type, source, l('Expired remind!'))
+                                
+                if abs(secs) != secs:
+                    if not day or day == ctm[2]:
+                        ctm[2] += 1
+                        
+                    dst = tuple(ctm)
+                    dts = trunc(time.mktime(dst))
+                    secs = dts - cts
             else:
                 rtimes = spltdp[0]
                 
@@ -1696,6 +1716,9 @@ def handler_remind(type, source, parameters, recover=False, jid='', rcts='', tim
                     jid = groupchat
                 
                 if not recover:
+                    if day:
+                        rtimes = '%d, %s' % (day, rtimes)
+                        
                     save_remind(groupchat, nick, jid, rtimes, cts, dts, mess, 'run', timerid, cycle, mod)
                 
                 if cycle:
