@@ -1060,8 +1060,9 @@ def msg_worker(message, public=False):
         wgchs = list(get_dict_fatal_var(cid, 'watchers', chatid, 'gchs'))
                         
         for wgch in wgchs:
-            if not rep.endswith('_') and not caption.startswith('/'):
-                fatalapi.msg(wgch, rep)    
+            if caption:
+                if not rep.endswith('_') and not caption.startswith('/'):
+                    fatalapi.msg(wgch, rep)    
 
 def tgbot_polling_proc():
     cid = get_client_id()

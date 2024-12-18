@@ -1198,13 +1198,13 @@ def is_fl_domain(domain):
                 return True
     return False
 
-def check_jid(jid):
+def check_jid(jid: str, nst: str=3) -> bool:
     def check_domain(dmnpart):
         if dmnpart:
             sdmnp = dmnpart.split('.')
             sdmnp = rmv_empty_items(sdmnp)
 
-            if len(sdmnp) >= 2 and len(sdmnp) <= 3:
+            if len(sdmnp) >= 2 and len(sdmnp) <= nst:
                 fldmn = sdmnp[-1]
 
                 if is_fl_domain(fldmn):
@@ -2778,7 +2778,7 @@ def send_tgbot_msg(chatid: Union[int, str], body: str) -> str:
         try:
             tbot.send_message(chatid, body)
         except Exception:
-            cnt = 3
+            cnt = 5
             snt = 0
             while cnt != 0:
                 try:
