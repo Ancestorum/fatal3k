@@ -1198,13 +1198,13 @@ def is_fl_domain(domain):
                 return True
     return False
 
-def check_jid(jid: str, nst: str=3) -> bool:
+def check_jid(jid: str, mdl: str=3) -> bool:
     def check_domain(dmnpart):
         if dmnpart:
             sdmnp = dmnpart.split('.')
             sdmnp = rmv_empty_items(sdmnp)
 
-            if len(sdmnp) >= 2 and len(sdmnp) <= nst:
+            if len(sdmnp) >= 2 and len(sdmnp) <= mdl:
                 fldmn = sdmnp[-1]
 
                 if is_fl_domain(fldmn):
