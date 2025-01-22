@@ -3,7 +3,7 @@
 #  fatal variables module
 #  fatalvar.py
 
-#  Copyright © 2009-2024 Ancestors Soft
+#  Copyright © 2009-2025 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -32,6 +32,7 @@ from threading import Event
 
 import xmpp
 import alias
+import fatalapi as fapi
 
 # Console colors
 
@@ -57,7 +58,7 @@ cl_warn = cl_magenta + cl_blink
 def _app_file(filename, data):
     try:
         if os.path.exists(filename):
-            if os.path.getsize(filename) >= 3145728:
+            if os.path.getsize(filename) >= 512000:
                 fp = open(filename, 'w', encoding='utf-8')
             else:
                 fp = open(filename, 'a', encoding='utf-8')
@@ -96,22 +97,8 @@ def _eval_md5(path):
     except Exception:
         return ''
 
-def cid():
-    return get_client_id()
-
-def get_client_id():
-    curr_thr = threading.currentThread()
-    thr_name = curr_thr.getName()
-    sptnm = thr_name.split('/', 1) 
-    cid = sptnm[0]
-    
-    if cid == 'all' or not thr_name.count('/'):
-        cid = get_fatal_var('curr_cons_owner')
-    
-    return cid
-
 def change_locale(locale):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     loco = get_fatal_var(cid, 'locale')
     
@@ -149,7 +136,7 @@ def reld_acc_lc_msgs(locale, cid):
             loco.msgsLoad(locf)    
 
 def get_lc_str(orig):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     loco = get_fatal_var(cid, 'locale')
     
@@ -159,7 +146,7 @@ def get_lc_str(orig):
     return ''
 
 def set_lc_str(orig, alt):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     loco = get_fatal_var(cid, 'locale')
 
@@ -168,7 +155,7 @@ def set_lc_str(orig, alt):
 
 def set_help_locale(locale, cid=''):
     if not cid:
-        cid = get_client_id()
+        cid = fapi.get_client_id()
     
     hlpo = get_fatal_var(cid, 'help')
     
@@ -203,7 +190,7 @@ def reld_acc_hlp_msgs(locale, cid):
             hlpo.msgsLoad(locf)    
 
 def get_help_sect(hnam, sect):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
 
     hlpo = get_fatal_var(cid, 'help')
 
@@ -213,7 +200,7 @@ def get_help_sect(hnam, sect):
     return ''
 
 def set_help_sect(hnam, sect, sval):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     hlpo = get_fatal_var(cid, 'help')
     
@@ -221,7 +208,7 @@ def set_help_sect(hnam, sect, sval):
         hlpo.setHelpSect(hnam, sect, sval)
 
 def add_help_sect(hnam, sect, sval):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     hlpo = get_fatal_var(cid, 'help')
     
@@ -229,7 +216,7 @@ def add_help_sect(hnam, sect, sval):
         hlpo.addHelpSect(hnam, sect, sval)
 
 def start_scheduler(tname, sdel=8):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -237,7 +224,7 @@ def start_scheduler(tname, sdel=8):
         tsko.Start(tname, sdel)
 
 def add_fatal_task(tskn, func, args=(), ival=60, once=False, inthr=True):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -245,7 +232,7 @@ def add_fatal_task(tskn, func, args=(), ival=60, once=False, inthr=True):
         tsko.addTask(func, args, tskn, ival, once, inthr)
 
 def rmv_fatal_task(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -253,7 +240,7 @@ def rmv_fatal_task(tskn):
         tsko.rmvTask(tskn)
 
 def enum_fatal_tasks():
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -270,7 +257,7 @@ def is_thr_exists(thr_name):
     return False
 
 def is_task_exists(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -278,7 +265,7 @@ def is_task_exists(tskn):
         return tsko.isTaskExists(tskn)
 
 def list_fatal_tasks():
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -286,7 +273,7 @@ def list_fatal_tasks():
         return tsko.lstTasks()
  
 def recalc_task_miv():
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -294,7 +281,7 @@ def recalc_task_miv():
         tsko.recalcTaskGCD()
  
 def get_task_miv():
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -302,7 +289,7 @@ def get_task_miv():
         return tsko.getTaskMiv()
         
 def get_task_count(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -310,7 +297,7 @@ def get_task_count(tskn):
         return tsko.getTaskCount(tskn)
 
 def get_task_last(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -318,7 +305,7 @@ def get_task_last(tskn):
         return tsko.getTaskLast(tskn)
     
 def set_task_last(tskn, last, resume=True):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -326,7 +313,7 @@ def set_task_last(tskn, last, resume=True):
         tsko.setTaskLast(tskn, last, resume)
 
 def set_task_remns(tskn, remns):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -334,7 +321,7 @@ def set_task_remns(tskn, remns):
         tsko.setTaskRemns(tskn, remns)
 
 def get_task_remns(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -342,7 +329,7 @@ def get_task_remns(tskn):
         return tsko.getTaskRemns(tskn)
 
 def set_task_count(tskn, count=0):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -350,7 +337,7 @@ def set_task_count(tskn, count=0):
         tsko.setTaskCount(tskn, count)
         
 def get_task_ival(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -358,7 +345,7 @@ def get_task_ival(tskn):
         return tsko.getTaskIval(tskn)
  
 def get_task_next(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -366,7 +353,7 @@ def get_task_next(tskn):
         return tsko.getTaskNext(tskn)
         
 def get_task_nnxt(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -374,7 +361,7 @@ def get_task_nnxt(tskn):
         return tsko.getTaskNNXT(tskn)
  
 def set_task_next(tskn, tnxt):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -382,7 +369,7 @@ def set_task_next(tskn, tnxt):
         tsko.setTaskNext(tskn, tnxt)
         
 def get_task_strd(tskn):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -390,7 +377,7 @@ def get_task_strd(tskn):
         return tsko.getTaskStrd(tskn)
 
 def rmv_all_tasks():
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -398,7 +385,7 @@ def rmv_all_tasks():
         tsko.Clear()
 
 def stop_scheduler():
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     tsko = get_fatal_var(cid, 'scheduler')
     
@@ -459,7 +446,7 @@ def enum_cfg_params():
     return _fatalConfig.Params()
 
 def is_event_set(ename):
-    cid = get_client_id()    
+    cid = fapi.get_client_id()    
     
     evnt = _fatalVars.getVar(cid, ename, 'evnt')
     
@@ -468,7 +455,7 @@ def is_event_set(ename):
     return False
 
 def is_event_init(ename):
-    cid = get_client_id()    
+    cid = fapi.get_client_id()    
     
     evnt = _fatalVars.getVar(cid, ename)
     
@@ -485,7 +472,7 @@ def ife(ename, cid=None):
 
 def init_fatal_event(ename, cid=None):
     if not cid:
-        cid = get_client_id()    
+        cid = fapi.get_client_id()    
 
     _fatalVars.setVar(cid, ename, 'evnt', Event())
 
@@ -494,7 +481,7 @@ def wfe(ename, timeout=None, cid=None):
 
 def wait_fatal_event(ename, timeout=None, cid=None):
     if not cid:
-        cid = get_client_id()
+        cid = fapi.get_client_id()
     
     evnt = _fatalVars.getVar(cid, ename, 'evnt')
     
@@ -512,7 +499,7 @@ def sfe(ename, cid=None):
 
 def set_fatal_event(ename, cid=None):
     if not cid:
-        cid = get_client_id()
+        cid = fapi.get_client_id()
     
     evnt = get_fatal_var(cid, ename, 'evnt')
 
@@ -521,11 +508,11 @@ def set_fatal_event(ename, cid=None):
     rmv_fatal_var(cid, ename)
 
 def cgv(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return get_fatal_var(cid, *args)
 
 def get_client_var(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return get_fatal_var(cid, *args)
 
 def find_fatal_var(patt):
@@ -556,22 +543,22 @@ def get_list_fatal_var(*args):
     return list(vval)
 
 def csv(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     set_fatal_var(cid, *args)
  
 def set_client_var(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     set_fatal_var(cid, *args)
  
 def set_fatal_var(*args):
     _fatalVars.setVar(*args)
 
 def rcv(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return rmv_fatal_var(cid, *args)
 
 def rmv_client_var(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return rmv_fatal_var(cid, *args)
     
 def rmv_fatal_var(*args):
@@ -583,7 +570,7 @@ def add_fatal_var(var, value={}):
     return _fatalVars.addVar(var, value)
 
 def inc_client_var(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return inc_fatal_var(cid, *args)
 
 def inc_fatal_var(*args):
@@ -610,7 +597,7 @@ def inc_fatal_var(*args):
     return 0
 
 def dec_client_var(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return dec_fatal_var(cid, *args)
 
 def dec_fatal_var(*args):
@@ -640,11 +627,11 @@ def enum_fatal_vars():
     return _fatalVars.Vars()
 
 def iscvs(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return is_var_set(cid, *args)
 
 def is_cvar_set(*args):
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     return is_var_set(cid, *args)
 
 def is_var_set(*args):
@@ -739,7 +726,7 @@ class _fCycleTasks(object):
         self._just_started = False
 
     def _shift_times(self):
-        cid = get_client_id()
+        cid = fapi.get_client_id()
         
         if self._miv > 1:
             try:
@@ -843,7 +830,7 @@ class _fCycleTasks(object):
                             nnx = time.strftime('%H:%M:%S', time.localtime(nela + nnx))        
                         
                         if inth and self._thrd:
-                            cid = get_client_id()
+                            cid = fapi.get_client_id()
                             thrc = inc_fatal_var('info', 'thr')
                             st_time = time.strftime('%H.%M.%S', time.localtime(trunc(time.time())))
                             thr_name = '%s.%s%d.%s' % ('%s/task_manager' % (cid), func.__name__, thrc, st_time)
@@ -1806,7 +1793,7 @@ _fatalVars.addVar('info', {'start': 0, 'ses': 0, 'msg': 0, 'prs': 0, 'iq': 0, 'c
 _fatalVars.addVar('repos', 'https://github.com/Ancestorum/fatal3k')
 
 _revision = get_revision()
-_fatalVars.addVar('ftver', {'rev': _revision, 'caps': 'http://fatal-dev.ru/bot/caps', 'botver': {'name': 'fatal-bot [Neutrino]', 'ver': 'v3.1%s', 'os': ''}})
+_fatalVars.addVar('ftver', {'rev': _revision, 'caps': 'http://fatal-dev.ru/bot/caps', 'botver': {'name': 'fatal3k [Neutrino]', 'ver': 'v3.1%s', 'os': ''}})
 
 #-------------------------------- Misc vars --------------------------------
 

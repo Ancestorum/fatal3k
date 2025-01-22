@@ -3,7 +3,7 @@
 #  fatal API module
 #  fatalapi.py
 
-#  Copyright © 2009-2024 Ancestors Soft
+#  Copyright © 2009-2025 Ancestors Soft
 #  Some useful ideas © 2010 Quality <admin@qabber.ru>
 
 #  This program is free software; you can redistribute it and/or modify
@@ -140,7 +140,7 @@ def d(file=''):
 
 def copyright():
     fatal_copy_head = ' ' + '=' * 41
-    fatal_copy_mid = '< Copyright (c) 2009-2024 Ancestors Soft  >'
+    fatal_copy_mid = '< Copyright (c) 2009-2025 Ancestors Soft  >'
     fatal_copy_foot = ' ' + '=' * 41
 
     sprint()
@@ -165,7 +165,7 @@ def fatal_version():
     
     vstr = '\n+----------------------------------------------------+\n'
     vstr += '+fatal-bot %s,   free   jabber(XMPP)   bot.+\n' % (fver)
-    vstr += '+----> Copyright (c) 2009-2024 Ancestors Soft. <-----+\n'
+    vstr += '+----> Copyright (c) 2009-2025 Ancestors Soft. <-----+\n'
     
     sprint(vstr, cl_bgreen, True)
 
@@ -234,6 +234,10 @@ def write_file(filename, data):
 
 def _app_file(filename, data):
     try:
+        if os.path.exists(filename):
+            if os.path.getsize(filename) >= 512000:
+                os.remove(filename)
+
         fp = open(filename, 'a', encoding='utf-8')
 
         fp.write(data)
@@ -265,7 +269,7 @@ def iso_to_tms(isof):
         except Exception:
             return time.time()
 
-def log_null_cmdr(data, file='syslogs/ncmdr.log'):
+def log_null_cmdr(data, file='syslogs/ncmdr.log'):    
     stm = time.time()
     
     sstm = str(stm)
@@ -753,6 +757,9 @@ def call_in_sep_thr(*args):
     except Exception:
         dec_fatal_var('info', 'thr')
         log_exc_error()
+
+def cid():
+    return get_client_id()
 
 def get_client_id():
     curr_thr = threading.currentThread()

@@ -5,7 +5,7 @@
 
 #  Initial Copyright © 2007 dimichxp <dimichxp@gmail.com>
 #  Modifications Copyright © 2007 Als <Als@exploit.in>
-#  Copyright © 2009-2023 Ancestors Soft
+#  Copyright © 2009-2025 Ancestors Soft
 
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import sqlite3 as db
 import threading
 from threading import Lock
 from contextlib import contextmanager
+import fatalapi as fapi
 
 def rmv_empty_items(lst):
     if lst:
@@ -31,67 +32,10 @@ def rmv_empty_items(lst):
         return lst
     return []
 
-def get_client_id():
-    curr_thr = threading.currentThread()
-    thr_name = curr_thr.getName()
-    sptnm = thr_name.split('/', 1)
-    cid = sptnm[0]
-    return cid
-
-def is_db_exists(dbpath):
-    if isinstance(dbpath, str):
-        dbpath = dbpath.encode('utf-8')
-
-    if os.path.exists(dbpath):
-        dbsize = os.path.getsize(dbpath)
-        if dbsize == 1:
-            return False
-        return True
-    return False
-
-def sqlquery(dbpath, query, *args):
-    if query:
-        cursor, connection = None, None
-        
-        chkq = query.lower()
-        spls = chkq.split()
-        hdcmd = spls[0]
-        
-        if not is_db_exists(dbpath):
-            if hdcmd != 'create':
-                return ''
-        
-        try:
-            connection = db.connect(dbpath)
-            cursor = connection.cursor()
-            
-            if query.count(';') > 1:
-                cursor.executescript(query)
-            else:
-                if args:
-                    cursor.execute(query, args)
-                else:
-                    cursor.execute(query)
-            
-            result = cursor.fetchall()
-            connection.commit()
-            cursor.close()
-            connection.close()
-            
-            return result
-        except Exception:
-            if cursor:
-               cursor.close()
-                
-            if connection:
-                connection.commit()
-                connection.close()
-    return ''
-
 def alias_exists(alias, gch=''):
     sql = 'SELECT * FROM aliasdb WHERE alias=?;'
     
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     if gch:
         qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
@@ -111,12 +55,12 @@ def set_alias(alias, body, gch=''):
         sql = "UPDATE aliasdb SET body=? WHERE alias=?;"
         args = body.strip(), alias.strip()
     
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, *args)
+        qres = fapi.sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, *args)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql, *args)
+        qres = fapi.sqlquery('dynamic/%s/alias.db' % (cid), sql, *args)
     
     return qres
     
@@ -130,24 +74,24 @@ def set_access(alias, access, gch=''):
     
     args = access.strip(), alias.strip()
     
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, *args)
+        qres = fapi.sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, *args)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql, *args)
+        qres = fapi.sqlquery('dynamic/%s/alias.db' % (cid), sql, *args)
     
     return qres
     
 def remove_alias(alias, gch=''):
     sql = "DELETE FROM aliasdb WHERE alias=?;"
     
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     if gch:
-        rep = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
+        rep = fapi.sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
     else:
-        rep = sqlquery('dynamic/%s/alias.db' % (cid), sql, alias)
+        rep = fapi.sqlquery('dynamic/%s/alias.db' % (cid), sql, alias)
         
     return rep
 
@@ -156,12 +100,12 @@ def get_alias_list(gch='', oer={}):
     
     sql = "SELECT alias, body FROM aliasdb;"
     
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
+        qres = fapi.sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql)
+        qres = fapi.sqlquery('dynamic/%s/alias.db' % (cid), sql)
     
     if qres == '':
         return oer
@@ -180,12 +124,12 @@ def get_access_list(gch='',oer={}):
     
     sql = "SELECT alias, access FROM aliasdb;"
     
-    cid = get_client_id()
+    cid = fapi.get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
+        qres = fapi.sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql)
+        qres = fapi.sqlquery('dynamic/%s/alias.db' % (cid), sql)
     
     if qres == '':
         return oer
