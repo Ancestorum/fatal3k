@@ -38,9 +38,9 @@ def alias_exists(alias, gch=''):
     cid = fapi.get_client_id()
     
     if gch:
-        qres = sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
+        qres = fapi.sqlquery('dynamic/%s/%s/alias.db' % (cid, gch), sql, alias)
     else:
-        qres = sqlquery('dynamic/%s/alias.db' % (cid), sql, alias)
+        qres = fapi.sqlquery('dynamic/%s/alias.db' % (cid), sql, alias)
     
     if qres:
         return True
