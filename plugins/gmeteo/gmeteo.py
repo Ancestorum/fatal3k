@@ -88,7 +88,7 @@ def parse_xml(xml):
     except Exception:
         return ''
            
-def handler_weather_gismeteo(type, source, parameters):
+def handler_weather_gismeteo(ttyp, source, parameters):
     gmweekday = {'1': l('Sunday'), '2': l('Monday'), '3': l('Tuesday'), '4': l('Wednesday'), '5': l('Thursday'), '6': l('Friday'), '7': l('Saturday'), '8': l('Sunday')}
     
     gmmonth = {'01': l('january'), '02': l('february'), '03': l('march'), '04': l('april'), '05': l('may'), '06': l('june'), '07': l('july'), '08': l('august'), '09': l('september'), '10': l('october'), '11': l('november'), '12': l('december')}
@@ -111,7 +111,7 @@ def handler_weather_gismeteo(type, source, parameters):
             city_code = get_meteo_info(city_code)
             
             if not city_code:
-                return reply(type, source, l('Not found!'))
+                return reply(ttyp, source, l('Not found!'))
         else:
             ccode = get_meteo_info(city_code)
         
@@ -119,12 +119,12 @@ def handler_weather_gismeteo(type, source, parameters):
             wzxml = get_gis_weather(ccode)
             
             if not wzxml:
-                return reply(type, source, l('Unknown error!'))
+                return reply(ttyp, source, l('Unknown error!'))
 
             dom = parse_xml(wzxml)
 
             if not dom:
-                return reply(type, source, l('Parser error!'))
+                return reply(ttyp, source, l('Parser error!'))
 
             if city_code.isdigit():
                 town = get_meteo_info(city_code)
@@ -134,6 +134,11 @@ def handler_weather_gismeteo(type, source, parameters):
             
             rep = l('Weather %s:\n\n') % (town)
             
+            curtm = time.time()
+            curdt = time.localtime(curtm)
+            curda = curdt[2]
+            curhr = curdt[3]
+            
             indx = 0
             while indx < 4:
                 forecast = get_element_attvals(dom, 'forecast', indx)
@@ -141,6 +146,14 @@ def handler_weather_gismeteo(type, source, parameters):
                 month = forecast['month']
                 year = forecast['year']
                 hour = forecast['hour']
+                               
+                forhr = int(hour)
+                forda = int(day)
+                
+                if (forhr < curhr) and (forda == curda):
+                    indx += 1
+                    continue
+                
                 rep += l('%s.%s.%s %s:00:\n') % (day, month, year, hour)            
                 temperature = get_element_attvals(dom, 'temperature', indx)
 
@@ -173,14 +186,15 @@ def handler_weather_gismeteo(type, source, parameters):
                     rep += l('Sky: %s, %s.') % (cloud, precip)
                 indx += 1
                 
-                if type == 'public':
-                    rep = sstrp(rep)
+                if ttyp == 'public':
                     break
-                
-            return reply(type, source, rep)
+            
+            rep = sstrp(rep)
+            
+            return reply(ttyp, source, rep)
         else:
-            return reply(type, source, l('Not found!'))
+            return reply(ttyp, source, l('Not found!'))
     else:
-        return reply(type, source, l('Invalid syntax!'))
+        return reply(ttyp, source, l('Invalid syntax!'))
   
 register_command_handler(handler_weather_gismeteo, 'gismeteo', 11)
