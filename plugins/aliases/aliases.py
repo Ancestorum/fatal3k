@@ -146,8 +146,7 @@ def handler_galiasadd(type, source, parameters):
     
     aliaso = get_fatal_var(cid, 'alias')
     
-    #pl = aliaso.parse_cmd(parameters)
-    pl = spltdp
+    pl = aliaso.parse_cmd(parameters)
     
     if len(pl) < 2:
         rep = l('Invalid syntax!')
