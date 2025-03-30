@@ -174,10 +174,10 @@ def handler_acomm_body(type, source, body):
             if acomm:
                 rcomm = acomm
             
-            params = params.replace('%nick%', snick)
-            params = params.replace('%jid%', sjid)
-            params = params.replace('%groupchat%', groupchat)
-            params = params.replace('%body%', body)
+            params = srepl(params, '%nick%', snick)
+            params = srepl(params, '%jid%', sjid)
+            params = srepl(params, '%groupchat%', groupchat)
+            params = srepl(params, '%body%', body)
             
             if is_var_set('commands', rcomm) and exp:
                 if exp.findall(body):
@@ -212,10 +212,10 @@ def handler_acomm_status(prs):
         if acomm:
             rcomm = acomm
         
-        params = params.replace('%nick%', snick)
-        params = params.replace('%jid%', sjid)
-        params = params.replace('%groupchat%', groupchat)
-        params = params.replace('%status%', status)
+        params = srepl(params, '%nick%', snick)
+        params = srepl(params, '%jid%', sjid)
+        params = srepl(params, '%groupchat%', groupchat)
+        params = srepl(params, '%status%', status)
 
         if is_var_set('commands', rcomm) and exp:
             if exp.findall(status):
@@ -240,9 +240,9 @@ def handler_acomm_status(prs):
             if acomm:
                 rcomm = acomm
             
-            params = params.replace('%nick%', newnick)
-            params = params.replace('%jid%', sjid)
-            params = params.replace('%groupchat%', groupchat)
+            params = srepl(params, '%nick%', newnick)
+            params = srepl(params, '%jid%', sjid)
+            params = srepl(params, '%groupchat%', groupchat)
             
             if is_var_set('commands', rcomm) and exp:
                 if exp.findall(newnick):
@@ -278,10 +278,10 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         if acomm:
             rcomm = acomm
         
-        params = params.replace('%nick%', snick)
-        params = params.replace('%jid%', sjid)
-        params = params.replace('%fjid%', fjid)
-        params = params.replace('%groupchat%', groupchat)
+        params = srepl(params, '%nick%', snick)
+        params = srepl(params, '%jid%', sjid)
+        params = srepl(params, '%fjid%', fjid)
+        params = srepl(params, '%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
             if exp.findall(fjid):
@@ -300,10 +300,10 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         if acomm:
             rcomm = acomm
             
-        params = params.replace('%nick%', snick)
-        params = params.replace('%jid%', sjid)
-        params = params.replace('%fjid%', fjid)
-        params = params.replace('%groupchat%', groupchat)
+        params = srepl(params, '%nick%', snick)
+        params = srepl(params, '%jid%', sjid)
+        params = srepl(params, '%fjid%', fjid)
+        params = srepl(params, '%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
             if exp.findall(snick):
@@ -322,10 +322,10 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         if acomm:
             rcomm = acomm
             
-        params = params.replace('%nick%', snick)
-        params = params.replace('%jid%', sjid)
-        params = params.replace('%fjid%', fjid)
-        params = params.replace('%groupchat%', groupchat)
+        params = srepl(params, '%nick%', snick)
+        params = srepl(params, '%jid%', sjid)
+        params = srepl(params, '%fjid%', fjid)
+        params = srepl(params, '%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
             if caps:

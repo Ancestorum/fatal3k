@@ -1324,6 +1324,13 @@ def sstrp(st: str) -> str:
         return ''
     return ''
 
+def srepl(st: str, pt: str, rs: str) -> str:
+    if st:
+        if isinstance(rs, str):
+            return st.replace(pt, rs)
+        return st
+    return ''
+
 #-------------------------------- Fatal console routine -----------------------------------
 
 def ftcompl(text, state):
