@@ -912,9 +912,13 @@ def get_cmd_thr_prt(access):
 
 def is_pid_alive(pid):
     if os.name == 'posix':
-        opr = os.system('kill -0 %s > /dev/null 2>&1' % (pid))
+        cmdstr = 'sh -c "ps -p %s" 2>&1' % (pid) 
         
-        if opr == 0:
+        pipe = os.popen(cmdstr)
+        ret = pipe.read()
+        pipe.close()
+        
+        if ret.count(pid):
             return True
         return False
     elif os.name == 'nt':
@@ -1205,7 +1209,7 @@ def is_fl_domain(domain):
                 return True
     return False
 
-def check_jid(jid: str, mdl: str=3) -> bool:
+def check_jid(jid: str, mdl: int=3) -> bool:
     def check_domain(dmnpart):
         if dmnpart:
             sdmnp = dmnpart.split('.')
