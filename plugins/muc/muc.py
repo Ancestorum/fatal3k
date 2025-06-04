@@ -384,7 +384,7 @@ def set_amuc(gch, amfunc, cpatt, nick, jid):
         for amli in cpatt:
             exp = amli[0]
 
-            if exp:
+            if exp and nick:
                 amucnifi = exp.findall(nick)
             
             if amucnifi:
@@ -405,7 +405,7 @@ def set_amuc(gch, amfunc, cpatt, nick, jid):
         for amli in cpatt:
             exp = amli[0]
 
-            if exp:
+            if exp and jid:
                 amucjifi = exp.findall(jid)
             
             if amucjifi:

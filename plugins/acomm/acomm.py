@@ -258,8 +258,7 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
     sjid = get_true_jid(groupchat + '/' + snick)
 
     fjid = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'rjid')
-    caps = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'caps', 'node')
-
+    caps = get_fatal_var(cid, 'gchrosters', groupchat, nick, 'caps')
     if sjid == cid or snick == bnick:
         return
 
@@ -284,10 +283,11 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         params = srepl(params, '%groupchat%', groupchat)
         
         if is_var_set('commands', rcomm) and exp:
-            if exp.findall(fjid):
-                cmd_hnd = get_fatal_var('command_handlers', rcomm)
-                source = [groupchat + '/' + snick, groupchat, snick]
-                cmd_hnd('null', source, params)
+            if fjid:
+                if exp.findall(fjid):
+                    cmd_hnd = get_fatal_var('command_handlers', rcomm)
+                    source = [groupchat + '/' + snick, groupchat, snick]
+                    cmd_hnd('null', source, params)
                 
     for npli in npts:
         exp = npli[1]
@@ -326,10 +326,11 @@ def handler_acomm_join_jn(groupchat, nick, aff, role):
         params = srepl(params, '%jid%', sjid)
         params = srepl(params, '%fjid%', fjid)
         params = srepl(params, '%groupchat%', groupchat)
-        
+
         if is_var_set('commands', rcomm) and exp:
             if caps:
-                if exp.findall(caps):
+                capsvals = ' '.join(caps.values())
+                if exp.findall(capsvals):
                     cmd_hnd = get_fatal_var('command_handlers', rcomm)
                     source = [groupchat + '/' + snick, groupchat, snick]
                     cmd_hnd('null', source, params)
